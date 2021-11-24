@@ -1,15 +1,15 @@
 import math
 import json
 import numpy as np
-from typing import Dict, Optional, List, Any, Set, Tuple
+from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, known_addresses
 from app.models import Address, ExactMatch, GasPrice
 from app.utils import \
     safe_int, get_anonymity_score, get_order_command, \
-    entity_to_int, entity_to_str, \
-    ADDRESS_COL, NAME_COL, ENTITY_COL, CONF_COL, \
-    EOA, DEPOSIT, EXCHANGE, DEX, DEFI, ICO_WALLET, MINING
+    entity_to_int, entity_to_str, to_dict, \
+    RequestChecker, default_response, \
+    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
 from app.lib.w3 import query_web3
 
 from flask import request, Response
@@ -35,6 +35,12 @@ def cluster():
 
 @app.route('/search', methods=['GET'])
 def search():
+    is_valid_request: bool = RequestChecker(request)
+    output: Dict[str, Any] = default_response()
+
+    if not is_valid_request: 
+        return Response(output)
+
     address: str = request.args.get('address', '')
     address: str = address.lower()  # important to get lower case
 
@@ -77,32 +83,15 @@ def search():
             ),
         )
 
+    # --- fill out some of the known response fields ---
+    output['data']['query']['address'] = address
+    output['data']['query']['page'] = page
+    output['data']['query']['limit'] = size
+    output['data']['query']['filter_by']['min_conf'] = filter_min_conf
+    output['data']['query']['filter_by']['max_conf'] = filter_max_conf
+    output['data']['query']['filter_by']['entity'] = filter_entity
+    output['data']['query']['filter_by']['name'] = filter_name
 
-    def to_dict(
-        addr: Address, 
-        to_remove: List[str] = [], 
-        to_transform: List[Tuple[str, Any]] = [],
-    ) -> Dict[str, Any]:
-        """
-        Convert a raw row into the form we want to send to the frontend.
-        for `to_transform`, each element is in the tuple form: 
-            (key_to_override_value_of, function to take of the old value)
-        """
-        output: Dict[str, Any] = {  # ignore cluster columns
-            k: getattr(addr, k) for k in table_cols if 'cluster' not in k
-        }
-        output['conf'] = round(output['conf'], 3)
-        del output['meta_data']  # Q: should we keep this?
-
-        for k in to_remove:
-            if k in output:
-                del output[k]
-        for key, func in to_transform:
-            output[key] = func(output[key])
-        return output
-
-    def is_valid(obj):
-        return (obj is not None)  # and (obj != -1)
 
     def compute_anonymity_score(
         addr: Address,
@@ -201,54 +190,6 @@ def search():
 
         return dict(reveal_size=len(history), history=history)
 
-    # --- default response object template ---
-    output: Dict[str, Any] = {
-        'data': {
-            'query': {
-                'address': address, 
-                'metadata': {}, 
-                'tornado': {
-                    'exact_match': {},
-                    'gas_price': {},
-                }
-            },
-            'cluster': [],
-            'metadata': {
-                'cluster_size': 0,
-                'num_pages': 0,
-                'page': page,
-                'limit': size,
-                'filter_by': {
-                    'min_conf': filter_min_conf,
-                    'max_conf': filter_max_conf,
-                    'entity': filter_entity,
-                    'name': filter_name,
-                },
-                'schema': {
-                    ADDRESS_COL: {
-                        'type': 'string',
-                    },
-                    CONF_COL: {
-                        'type': 'float',
-                        'values': [0, 1],
-                    },
-                    ENTITY_COL: {
-                        'type': 'category',
-                        'values': [
-                            EOA, DEPOSIT, EXCHANGE, DEX, DEFI, ICO_WALLET, MINING],
-                    },
-                    NAME_COL: {
-                        'type': 'string',
-                    },
-                },
-                'sort_default': {
-                    'attribute': ENTITY_COL,
-                    'descending': False
-                }
-            }
-        },
-        'success': 0,
-    }
 
     if len(address) > 0:
         offset: int = page * size
@@ -270,12 +211,12 @@ def search():
             query_data: Dict[str, Any] = output['data']['query']
             output['data']['query'] = {
                 **query_data, 
-                **to_dict(addr, to_transform=[('entity', entity_to_str)])
+                **to_dict(addr, table_cols, to_transform=[('entity', entity_to_str)])
             }
 
             if entity == EOA:
                 # --- compute clusters if you are an EOA ---
-                if is_valid(addr.user_cluster):
+                if addr.user_cluster is not None:
                     order_command: Any = get_order_command(sort_by, desc_sort)
 
                     # find all deposit/eoa addresses in the same cluster & filtering attrs
@@ -291,6 +232,7 @@ def search():
                         cluster_: List[Dict[str, Any]] = [
                             to_dict(
                                 c,
+                                table_cols,
                                 to_remove=['id'],
                                 to_transform=[('entity', entity_to_str)],
                             ) 
@@ -305,7 +247,7 @@ def search():
                 # --- compute clusters if you are a deposit ---
                 # for deposits, we can both look up all relevant eoa's and 
                 # all relevant exchanges. These are in two different clusters
-                if is_valid(addr.user_cluster):
+                if addr.user_cluster is not None:
                     order_command: Any = get_order_command(sort_by, desc_sort)
 
                     query_: Any = Address.query.filter(
@@ -320,6 +262,7 @@ def search():
                         cluster_: Dict[str, Any] = [
                             to_dict(
                                 c,
+                                table_cols,
                                 to_remove=['id'],
                                 to_transform=[('entity', entity_to_str)],
                             )
@@ -332,7 +275,7 @@ def search():
             elif entity == EXCHANGE:
                 # --- compute clusters if you are an exchange ---
                 # find all deposit/exchange addresses in the same cluster
-                if is_valid(addr.exchange_cluster):
+                if addr.exchange_cluster is not None:
                     order_command: Any = get_order_command(sort_by, desc_sort)
 
                     query_: Any = Address.query.filter(
@@ -347,6 +290,7 @@ def search():
                         cluster_: Dict[str, Any] = [
                             to_dict(
                                 c,
+                                table_cols,
                                 to_remove=['id'],
                                 to_transform=[('entity', entity_to_str)]
                             ) 
