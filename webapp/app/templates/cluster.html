@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Tutela</title>
+    <!-- Stylesheets
+    ================================================== -->
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/cluster.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0HKGXPMPCH"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-0HKGXPMPCH');
+    </script>
+</head>
+
+<body>
+
+    <header class="container">
+        <a class="header-logo" href="https://tornado.cash/"><img width="50" src="/static/img/tornado_logo.svg"
+                alt="logo"></a>
+        <div class="nav">
+            <a class="nav-link" href="/">home</a>
+            <a class="nav-link" href="#"><strong>cluster</strong></a>
+            <a class="nav-link" href="/#about">about</a>
+            <a class="nav-link" href="/#reveals">reveals</a>
+        </div>
+    </header>
+
+    <div class="container halved-bar">
+        <div>
+            <div id="address-form">
+                <form class="input-group search-bar">
+                    <input id="input-address" type="text" class="form-control" placeholder="eg. 0x000000000000000.........."
+                        aria-label="ethereum address" aria-describedby="basic-addon2">
+                    <button class="btn" type="submit"><img width="20" src="/static/img/loupe.svg" alt="search"></button>
+                </form>
+            </div>
+            <div class="container shown" id="instructions">
+                Enter an ethereum address to see likely connected ethereum addresses (ie. its cluster)
+                based on public data on previous transactions.
+            </div>
+            <div  id="invalid-input">
+                Please enter a valid ethereum address.
+            </div>
+            <div class="results-section">
+                <div class="search-options">
+                    <div class="button-group sort-group">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            sort
+                            by</span> <span class="caret"></span></button>
+                        <ul id="sort-dropdown" class="dropdown-menu">
+                        </ul>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
+                            filter
+                            by</span> <span class="caret"></span></button>
+                        <ul id="filter-dropdown" class="dropdown-menu">
+    
+                        </ul>
+                    </div>
+                    <input id="specific-result" type="text" class="form-control"
+                        placeholder="search specific address or name" aria-label="ethereum address"
+                        aria-describedby="basic-addon2">
+                </div>
+                <div class="all-pagination">
+                    <div>
+                        results <span id="results-window"></span> out of <span class="total-results"></span>
+                    </div>
+                    <div class="pagination">
+                        <button class="page-button" id="prev-page" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </button>
+                        page
+                        <select id="page-number" class="form-select select-page" aria-label="Default select example">
+                            <option selected>1</option>
+    
+                        </select>
+                        out of <span id="total-num-pages"></span>
+                        <button class="page-button" id="next-page" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="no-clusters-msg">No clusters found.</div>
+                <div class="results">
+                    <div id="spinner" class="justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                    <table id="results-table">
+                    </table>
+    
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="query-info results-section">
+                <div class="panel-sub">about your input</div>
+                <div class="panel-title">
+                    OVERALL INFO
+                </div>
+                
+                <div class="anon-score-group">
+                    anonymity score: &nbsp;<span id="anon-score"></span> &nbsp;/ 100
+                    <div data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="hover"
+                        data-content="The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this."
+                        class="help-circle">?</div>
+                </div> 
+                <div id="query-detail-table" class="detail-table">
+                </div>
+                
+            </div>
+            
+            <div class="results-section">
+        
+                <div class="detail-page">
+                    <div class="result-identifier panel-sub">
+                        result&nbsp;<span id="result-number">0</span>&nbsp;out of&nbsp;<span class="total-results"></span>
+                    </div>
+                    <div id="detail-address" class="panel-title">
+                    </div>
+                    <div id="detail-table">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- <footer class="container">
+        <a href="https://github.com"><i class="fab fa-github"></i></a>
+        <div>
+            &nbsp; copyright 2021.
+        </div>
+    </footer> -->
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
+
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/static/js/cluster.js"></script>
+
+</body>
+
+</html>

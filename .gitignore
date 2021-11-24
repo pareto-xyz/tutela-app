@@ -1,0 +1,14 @@
+*.pyc
+data/
+**results/
+logs/
+__pycache__
+backend/assets
+backend/venv
+.DS_Store
+**/.DS_Store
+backend/app.db
+**/.sql
+webapp/migrations
+notebooks/
+**.wsgi

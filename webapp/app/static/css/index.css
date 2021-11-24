@@ -1,0 +1,236 @@
+/**
+GENERIC
+*/
+
+html {
+    scroll-behavior: smooth;
+    /* background-color: #202020; */
+    bottom: 0px;
+
+}
+
+html.ombre {
+    background: linear-gradient(180deg, rgba(125, 125, 125, 0.39) -0.79%, rgba(54, 54, 54, 0.87) -0.79%, #000000 38.83%);
+
+}
+
+:root {
+    --tcashgreen: #44f1a6;
+    --fadedgreen: #44f1a678;
+    --lightgrey: #a3a3a3;
+    --almostwhite: #ececec;
+    --fadedgrey: #5B5B5B86;
+}
+
+body {
+    font-family:'Source Code Pro';
+    background-color: transparent;
+}
+
+div {
+    color: white;
+}
+
+.full-page {
+    min-height: 100vh;
+    padding-top: 130px;
+    min-width: 780px;
+}
+
+h1 {
+    margin: 40px 0px;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Ubuntu';
+}
+
+h1, h2, h3 {
+    color: var(--tcashgreen);
+}
+
+h4 {
+    color: white;
+}
+
+.right {
+    text-align: right;
+}
+
+/**
+HEADER
+*/
+
+header {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+}
+
+header.fixed {
+    position: fixed;
+    top: 0px;
+}
+
+a {
+    color: var(--tcashgreen);
+}
+a:hover {
+    color: white;
+}
+
+.main-desc {
+    color: var(--lightgrey);
+    margin: 40px 0px;
+    text-align:center;
+    width:60%;
+}
+
+/**
+MAIN PAGE SEARCH SECTION
+*/
+
+.main {
+    display: flex;
+    /* margin-top: 100px; */
+    padding: 0px;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+}
+
+td, th {
+    text-align: left;
+    padding: 5px;
+}
+
+#input-address.fixed-width {
+    width: 500px;
+}
+
+.results {
+    overflow: scroll;
+}
+
+.btn-fill {
+    background-color: var(--tcashgreen);
+}
+
+.search-bar, .search-bar > .btn {
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    flex-wrap: nowrap;
+}
+
+#input-address {
+    border: transparent;
+    padding: 10px;
+    min-width:200px;
+}
+
+/**
+ABOUT
+*/
+
+
+.left-section-header, .right-section-header {
+    display: block;
+    width: 100%;
+    height: 50px;
+    padding: 30px 30px 50px 30px;
+    position: relative;
+    margin-bottom: 80px;
+    
+}
+
+.right-section-header:before, 
+.right-section-header:after,
+.left-section-header:before,
+.left-section-header:after {
+    width: 90%;
+    height: 100%;
+    border: 1px solid var(--fadedgreen);
+    border-radius: 6px;
+
+    content: '';
+    position: absolute;
+    display: block;
+}
+
+.left-section-header:before {
+    top: 0;
+    left: -100px;
+}
+
+/* // whatever offset amount you want */
+.left-section-header:after {
+    top: 15px;
+    left: -80px;
+}
+
+.right-section-header:before {
+    top: 0;
+    right: -100px;
+}
+
+.right-section-header:after {
+    top: 15px;
+    right: -80px;
+}
+
+.right-section-header {
+    text-align:right;
+}
+
+.section-desc {
+    color: var(--lightgrey);
+    margin: 25px 25px;
+    width: 80%;
+}
+
+.section-desc strong {
+    color: var(--almostwhite);
+}
+
+.right > .section-desc, .right.section-desc {
+    margin-left:auto;
+}
+
+.subsect {
+    display: flex;
+    flex-direction: column;
+    margin: 20px 0px;
+}
+
+.center-blocks > div {
+    flex: 1;
+    margin-right: 40px;
+}
+
+.center-blocks {
+    display: flex;
+    flex-direction: row;
+    min-width: 150px;
+}
+
+.block-title {
+    font-size: 0.9em;
+    margin: 20px 0px;
+    border-bottom: 1px solid var(--tcashgreen);
+    min-height: 2em;
+    text-transform: uppercase;
+}
+
+.block-text {
+    font-size: .9em;
+    font-weight: 300;
+
+}
+
+footer {
+    height: 100px;
+    display: flex;
+    align-items: center;
+}

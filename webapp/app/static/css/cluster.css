@@ -1,0 +1,300 @@
+
+body {
+    min-height: 100vh;
+}
+
+html {
+    background-color: #202020;
+}
+
+.panel-title {
+    color: var(--tcashgreen);
+    font-weight:500;
+    font-family: 'Ubuntu';
+    margin-bottom: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    display: block;
+    text-overflow: ellipsis;
+}
+
+.panel-sub {
+    color: var(--lightgrey);
+    font-size: 0.8em;
+}
+
+/**
+TOP
+*/
+
+.halved-bar {
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    align-items: stretch;
+    height: 100vh;
+}
+
+.halved-bar > * {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+}
+
+.anon-score-group {
+    display: none;
+    width: 100%;
+    align-items: center;;
+    font-family: 'Ubuntu';
+    font-size: 1.2em;
+    white-space: nowrap;
+}
+
+.help-circle {
+    border: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 0.8em;
+    border: 1px solid var(--lightgrey);
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    text-align: center;
+    margin: 0px 10px;
+    color: var(--lightgrey);
+}
+
+#instructions, #invalid-input, #spinner {
+    display: none;
+    margin: 10px 0px;
+}
+
+#no-clusters-msg {
+    margin: 10px 0px;
+    display: none;
+}
+
+#spinner {
+    padding: 30px;
+}
+
+/**
+RESULTS
+*/
+
+/**
+/* pagination ---------------------- */
+
+.page-button {
+    font-size: 1.5em;
+    color: var(--lightgrey);
+    background-color: transparent;
+    border:transparent;
+}
+
+.all-pagination {
+    display: none;
+    margin: 10px 0px;
+    font-size: 0.8em;
+}
+
+.shown {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.all-pagination.shown {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pagination {
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.select-page {
+    margin: 0px 10px;
+    padding: 4px;
+    border-radius:4px;
+    background-color: black;
+    color: white;
+    border: transparent;
+}
+
+/* query info ---------------- */
+
+.query-info {
+    background-color: var(--fadedgrey);
+    border-radius: 5px;
+    margin-left: 30px;
+    padding: 15px;
+    width: 100%;
+}
+
+
+
+/* results list ------------------ */
+
+.results-section {
+    visibility: hidden;
+    flex-direction: column;
+}
+
+.results-section:not(:first-child) {
+    margin-top: 30px;
+}
+
+.results-section:last-child {
+    height:100%;
+}
+
+
+.results {
+    background-color: var(--fadedgrey);
+    max-height: 80vh;
+    overflow: scroll;
+    flex: 1;
+    margin-top: 15px;
+    border-radius: 5px;
+
+}
+
+#results-table {
+    width: 100%;
+}
+
+.result-entry {
+    padding: 10px;
+    border-width: 0px 0px 1px 0px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+.result-entry.selected {
+    background-color: var(--fadedgrey);
+    outline: none;
+}
+
+.entry-address {
+    white-space: nowrap;
+    overflow: hidden;
+    display: block;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 500px;
+    margin-right: 20px;
+}
+
+.entry-entity {
+    border-radius: 5px;
+    background-color: var(--fadedgreen);
+    padding: 5px;
+    font-size: .8em;
+    font-family: 'Ubuntu';
+}
+
+/* search options ----------------- */
+.search-options {
+    display: flex; 
+    flex-wrap: wrap;
+}
+
+.sort-group {
+    display: flex; 
+}
+
+.button-group {
+    margin-right: 10px;
+}
+
+#specific-result {
+    padding: 0px 0px 0px 5px;
+    font-size: 0.8em;
+    font-family: 'Ubuntu';
+    min-width: 0px;
+    flex: 1;
+    background-color: var(--fadedgrey);
+    border: transparent;
+    color: var(--lightgrey);
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.dropdown-toggle {
+    background-color: var(--fadedgrey);
+    color: white;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+ul.dropdown-menu { 
+    font-family: 'Ubuntu';
+    padding: 10px;
+    background-color: #5A5A5A;
+    color: white;
+    font-size: 0.9em;
+}
+
+.input-num {
+    max-width: 40px;
+    border: transparent;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#filter-dropdown > *{
+    margin-bottom: 5px;
+}
+
+.clear-filters {
+    display: flex;
+    justify-content: end;
+}
+
+.clear-filters > button.btn { 
+    font-size: small;
+    background-color: transparent;
+    color: var(--almostwhite);
+
+}
+
+/* detail page -------------------*/
+
+.detail-page {
+    background-color: var(--fadedgrey);
+    border-radius: 5px;
+    width: 100%;
+    margin-left: 30px;
+    flex: 1;
+    padding: 15px;
+}
+
+.result-identifier {
+    display: none;
+}
+
+#detail-table, .detail-table {
+    border-collapse: separate;
+    border-spacing: 5px 5px;
+    margin-left: -5px;
+    width: 100%;
+    font-size: 0.9em;
+}
+
+.detail-row > td{
+    background-color: var(--fadedgrey);
+    padding: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-row > td:last-child {
+    width: 100%;
+
+}
+
