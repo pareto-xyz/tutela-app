@@ -224,6 +224,7 @@ class RequestChecker:
     def check(self):
         return (self._check_address() and
                 self._check_page() and
+                self._check_limit() and
                 self._check_sort_by() and 
                 self._check_filter_by())
 
@@ -238,11 +239,11 @@ class RequestChecker:
         if len(address) != 42:
             return False
 
-        if len(address > 2):
+        if len(address) > 2:
             if address[:2] != '0x':
                 return False
 
-        if address.split() != 1:
+        if len(address.split()) != 1:
             return False
 
         self._params['address'] = address

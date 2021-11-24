@@ -60,12 +60,12 @@ def search():
 
     # --- fill out some of the known response fields ---
     output['data']['query']['address'] = address
-    output['data']['query']['page'] = page
-    output['data']['query']['limit'] = size
-    output['data']['query']['filter_by']['min_conf'] = checker.get('filter_min_conf')
-    output['data']['query']['filter_by']['max_conf'] = checker.get('filter_max_conf')
-    output['data']['query']['filter_by']['entity'] = checker.get('filter_entity')
-    output['data']['query']['filter_by']['name'] = checker.get('filter_name')
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+    output['data']['metadata']['filter_by']['min_conf'] = checker.get('filter_min_conf')
+    output['data']['metadata']['filter_by']['max_conf'] = checker.get('filter_max_conf')
+    output['data']['metadata']['filter_by']['entity'] = checker.get('filter_entity')
+    output['data']['metadata']['filter_by']['name'] = checker.get('filter_name')
 
 
     def compute_anonymity_score(
