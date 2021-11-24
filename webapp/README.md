@@ -1,6 +1,6 @@
 # Web API through Flask
 
-To run, use `python run.py --debug`. 
+To run, use `python run.py`. 
 
 ## Usage
 

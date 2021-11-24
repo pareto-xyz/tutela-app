@@ -1,41 +1,65 @@
-# Project Tornado: Anonymity Research Tools
+# Tutela: an Ethereum and Tornado Cash Anonymity Tool
 
-- See https://torn.community/t/funded-bounty-anonymity-research-tools/1437.
-- Built on top of https://github.com/etherclust/etherclust.
-- Making service accounts: https://cloud.google.com/docs/authentication/getting-started
-- Deployment to EC2: https://www.twilio.com/blog/deploy-flask-python-app-aws
-- PostgreSQL on EC2: https://faun.pub/installing-postgresql-in-aws-ubuntu-ec2-instance-b3ecc78caea5
-- More PostgreSQL: https://ubiq.co/database-blog/how-to-create-user-with-superuser-privileges-in-postgresql/
-- PostgresSQL peer auth: https://stackoverflow.com/questions/18664074/getting-error-peer-authentication-failed-for-user-postgres-when-trying-to-ge
-- Increasing mnt space: https://medium.com/@m.yunan.helmy/increase-the-size-of-ebs-volume-in-your-ec2-instance-3859e4be6cb7
-- Ubuntu hacks: https://www.geeksforgeeks.org/setting-python3-as-default-in-linux
-- Install gsutil: https://cloud.google.com/storage/docs/gsutil_install
-- Install google cloud cmdline: https://cloud.google.com/sdk/docs/install
-- Uploading files to S3: https://medium.com/expedia-group-tech/how-to-upload-large-files-to-aws-s3-200549da5ec1
-- Flask deployment: https://medium.com/innovation-incubator/deploy-a-flask-app-on-aws-ec2-d1d774c275a2
+The repo contains open-source code for [Tutela](http://tutela.xyz), an anonymity tool for Ethereum and Tornado Cash users. 
 
-## Usage 
+## About Tutela
 
-Add code to your python path:
+In response to the [Tornado Cash (TC) Anonymity Research Tools Grant](https://torn.community/t/funded-bounty-anonymity-research-tools/1437), we have built [Tutela v1](http://tutela.xyz), an Ethereum wallet anonymity detection tool, to tell you if your blockchain transactions have revealed anything about your identity. *What does this mean?* Well, for example, if you have used multiple Ethereum wallets to send tokens to a single centralized exchange deposit address, you may have revealed that your wallets are owned by the same entity.
 
-```
-source init_env.sh
-```
+We'd love to get user feedback! Tell us what you like, what you don’t and what you think is missing! Please leave your feedback in the *Tutela-Product-Feedback* channel of the [Tornado Cash Discord](https://discord.gg/xGDKUbMx).
 
-## Logs
+### The Tornado Cash User's Dilemma
 
-[10.28.21] Added Redis to cache queries, so we don't need to continually bug firebase. However, this is only a bandaid as this does not support fast querying.
+Tornado cash users have multiple addresses and use Tornado Cash to hide this fact. We believe the most important need for this user base is to know whether their addresses can already be connected by third parties.
 
-[10.29.21] Switching to an SQL model for fast queries. Removes need for firebase and Redis.
+### Tutela, an Anonymity Detection Tool
 
-[11.9.21] Important to keep uploading to db vs creating clusters files as separate. We also assume that the graph will be small enough to fit into memory. Some doubt here.
+In response, our initial MVP has focused on informing users which of their Ethereum addresses are "affiliated" (a non-blockchain analogy would be [haveibeenpwned.com](https://haveibeenpwned.com)). This involves using a clustering algorithm and two heuristics (i.e. reveals) so far, the [Ethereum deposit address reuse heuristic](https://link.springer.com/chapter/10.1007/978-3-030-51280-4_33) and the [Tornado Cash unique gas price heuristic](https://arxiv.org/abs/2005.14051). We plan to refine and add additional heuristics over time.
 
-## Computing clusters
+### Current Heuristics
 
-0. Download raw block and transaction data using `scripts/dl_bucket.py`.
-1. Sort via external merge sort (see `scripts/sort_big_csv.py`).
-2. Run `scripts/run_deposit.py` to generate `data.csv` and `metadata.csv`.
-3. Prune `data.csv` -> `data-pruned.csv` using `scripts/prune_data.csv`.
-4. Prune `metadata.csv` -> `metadata-pruned.csv` using `scripts/metadata-pruned.csv`.
-5. Run `scripts/run_nx.py` to generate `user_clusters.json` and `exchange_clusters.json`.
-6. Run `combine_metadata.py` to generate `metadata-final.csv`.
+#### Ethereum Deposit Address Reuse Heuristic
+
+When you send tokens from an Ethereum wallet to your account at a centralized exchange, the exchange creates a unique deposit address for each customer. If you reuse the same deposit address by sending tokens from multiple Ethereum wallets to it, your two wallets can be linked. Even if you send tokens from multiple wallets to multiple deposits, all of these addresses can be linked. In this way, it is possible to build a complex graph of address relationships.
+
+#### Tornado Cash Pools Unique Gas Price Heuristic
+
+Pre EIP-1559 Ethereum transactions contained a gas price. Users can set their wallet gas fee and pay a very specific gas fee (e.g. 147.4535436 Gwei) when they deposit in a Tornado Cash pool. If they also withdraw from that same Tornado cash pool, using the same wallet application (e.g. Metamask), but a different wallet address and haven’t changed the gas fee, it could reveal that two addresses are connected.
+
+#### Tornado Cash Pools Synchronous Tx Heuristic
+
+If a deposit transaction and a withdrawal transaction to a specific Tornado Cash pool share the same wallet address, then this address is now compromised, and should not add to the anonymity of future Tornado Cash transactions for that pool.
+
+### We Need Your Help!
+
+Tutela is still in its very early stages and we are looking for feedback at all levels. Let us know your thoughts, critiques, and suggestions in the *Tutela-Product-Feedback* channel of the [Tornado Cash Discord](https://discord.gg/xGDKUbMx).. How can we make Tutela something useful for you? What features or heuristics are we missing?
+
+### Next Steps
+
+Our plan for the next two months is to refine and develop Tutela v1 by:
+
+1. Getting your feedback!
+2. Refining the deposit reuse heuristic
+3. Adding anonymity set scoring for Tornado Cash pools
+4. Providing transaction by transaction reveal data (studying anonymity over time)
+5. Identifying, testing and implementing Tornado Cash Specific Heuristics:
+    1. **Transactions between deposit and withdrawal addresses** from a specific TC pool
+    2. **Linking equal value deposits and withdrawals to specific deposit and withdrawal addresses** - if there are multiple (say 12) deposit transactions coming from a deposit address and later there are 12 withdraw transactions to the same withdraw address, then we could link all these deposit transactions to the withdraw transactions
+    3. **Careless TC anonymity mining** - anonymity mining is a clever way to incentivize users to participate in mixing. However, if users carelessly claim their Anonymity Points (AP) or Tornado tokens, then they can reduce their anonymity set. For instance, if a user withdraws their earned AP tokens to a deposit address, then we can approximate the maximum time a user has left their funds in the mixing pool. This is because users can only claim AP and TORN tokens after deposit transactions that were already withdrawn.
+    4. **Profiling deposit and withdrawal addresses** - collect and analyze the behaviour of all addresses that have interacted with Tornado cash pools
+    5. **Wallet fingerprinting** - different wallets work in different ways. We have several ideas on how we can distinguish between them. It will allow us to further fragment the anonymity sets of withdraw transactions.
+
+### Technical Summary
+
+Ethereum and Tornado Cash transactions are downloaded using BigQuery. The deposit address reuse algorithm was adapted from the existing implementation in [etherclust](https://github.com/etherclust/etherclust). Our Python implementation can be found in `src/`; it is written to scalably operate over the >1 Tb of Ethereum data. The Tornado-specific heuristics can be found in `scripts/tornadocash`, again written in Python. The Tutela web application lives in `webapp/` and is written in Flask with a PostgreSQL database for storing clusters. The frontend is written in Javascript, HTML, and CSS. 
+
+## Updates
+
+We aim to provide consistent updates over time as we improve Tutela. 
+
+- **(11/17)** We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
+- **(11/23)** We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of CEXs for clustering from 171 to 332, and added a list of common addresses that we omit from consideration when classifying deposits. Improvements were made to the gas price and synchronous TCash reveals: searching by address will now return TCash specific information in the backend. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters.
+
+## Contributors
+
+Development of the web application and clustering was done by [mhw32](https://github.com/mhw32), [kkailiwang](https://github.com/kkailiwang), [Tiggy560](https://github.com/Tiggy560), and [nickbax](https://github.com/nickbax), with support from [Convex Labs](https://www.convexlabs.xyz). Development of TCash heuristics was done by [seresistvanandras](https://github.com/seresistvanandras), [unbalancedparentheses](https://github.com/unbalancedparentheses), [tomasdema](https://github.com/tomasdema), [entropidelic](https://github.com/entropidelic), [HermanObst](https://github.com/HermanObst), and [pefontana](https://github.com/pefontana). 
