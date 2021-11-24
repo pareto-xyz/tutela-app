@@ -1,7 +1,7 @@
 import math
 import json
 import numpy as np
-from typing import Dict, Optional, List, Any, Set
+from typing import Dict, Optional, List, Any, Set, Tuple
 
 from app import app, w3, ns, known_addresses
 from app.models import \
@@ -165,7 +165,7 @@ def search():
 
         return dict(reveal_size=len(history), history=history)
 
-    def query_tornado_stats(address: str) -> Dict[str, Any]:
+    def query_tornado_stats(address: str) -> Dict[str, int]:
         """
         Given a user address, we want to supply a few statistics:
 
@@ -173,7 +173,25 @@ def search():
         2) Number of withdraws made to Tornado pools.
         3) Number of deposits made that are part of a cluster or of a TCash reveal.
         """
-        pass
+        # find all txs where the from_address is the current user.
+        deposits: Optional[List[TornadoDeposit]] = \
+            TornadoDeposit.query.filter_by(from_address = address).all()
+
+        num_deposit: int = len(deposits.hash.unique())
+
+        # find all txs where the recipient_address is the current user
+        withdraws: Optional[List[TornadoWithdraw]] = \
+            TornadoWithdraw.query.filter_by(recipient_address = address).all()
+
+        num_withdraw: int = len(withdraws.hash.unique())
+
+        stats: Dict[str, int] = dict(
+            num_deposit = num_deposit,
+            num_withdraw = num_withdraw,
+            num_compromised = 0,
+        )
+        return stats
+
 
     if len(address) > 0:
         offset: int = page * size
@@ -308,10 +326,14 @@ def search():
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        output['data']['tornado']['summary'] = tornado_dict
+
         exact_match_dict: Dict[str, Any] = query_exact_match_heuristic(address)
         gas_price_dict: Dict[str, Any] = query_gas_price_heuristic(address)
-        output['data']['tornado']['exact_match'] = exact_match_dict
-        output['data']['tornado']['gas_price'] = gas_price_dict
+        # NOTE: _key means it will be ignored in the frontend
+        output['data']['tornado']['_exact_match'] = exact_match_dict
+        output['data']['tornado']['_gas_price'] = gas_price_dict
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1

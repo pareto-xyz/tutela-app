@@ -152,9 +152,13 @@ def default_response() -> Dict[str, Any]:
                 'metadata': {}, 
             },
             'tornado': {
-                'summary': {},
-                'exact_match': {},
-                'gas_price': {},
+                'summary': {
+                    'num_deposit': 0,
+                    'num_withdraw': 0,
+                    'num_compromised': 0,
+                },
+                '_exact_match': {},
+                '_gas_price': {},
             },
             'cluster': [],
             'metadata': {
