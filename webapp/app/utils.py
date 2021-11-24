@@ -109,3 +109,11 @@ def entity_to_int(s):
         return 6
     else:
         raise Exception(f'Fatal error: {s}')
+
+
+class RequestChecker:
+    """
+    Given a request object with its args, make sure that it is 
+    providing valid arguments.
+    """
+    pass

@@ -53,11 +53,7 @@ def search():
     else:
         desc_sort: bool = bool(
             request.args.get(
-                'descending',
-                False,
-                type=lambda v: v.lower() != 'false',
-            )
-        )
+                'descending', False, type=lambda v: v.lower() != 'false'))
 
     # --- user can filter by columns (* means everything is supported) ---
     filter_min_conf: float = float(request.args.get('filter_min_' + CONF_COL, 0))
