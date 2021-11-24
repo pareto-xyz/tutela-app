@@ -57,8 +57,8 @@ Ethereum and Tornado Cash transactions are downloaded using BigQuery. The deposi
 
 We aim to provide consistent updates over time as we improve Tutela. 
 
-- 11/17 We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
-- 11/23 We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of CEXs for clustering from 171 to 332, and added a list of common addresses that we omit from consideration when classifying deposits. Improvements were made to the gas price and synchronous TCash reveals: searching by address will now return TCash specific information in the backend. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters. 
+- **(11/17)** We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
+- **(11/23)** We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of CEXs for clustering from 171 to 332, and added a list of common addresses that we omit from consideration when classifying deposits. Improvements were made to the gas price and synchronous TCash reveals: searching by address will now return TCash specific information in the backend. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters.
 
 ## Contributors
 
