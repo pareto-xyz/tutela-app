@@ -6,7 +6,7 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, known_addresses
 from app.models import Address, ExactMatch, GasPrice
 from app.utils import \
-    safe_int, get_anonymity_score, get_order_command, \
+    get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
     RequestChecker, default_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
