@@ -1,12 +1,10 @@
 # Tutela: an Ethereum and Tornado Cash Anonymity Tool
 
-The repo contains a Python implementation of [Tutela](http://tutela.xyz), an anonymity tool for Ethereum and Tornado Cash users. 
+The repo contains open-source code for [Tutela](http://tutela.xyz), an anonymity tool for Ethereum and Tornado Cash users. 
 
 ## About Tutela
 
-In response to the [Tornado Cash (TC) Anonymity Research Tools Grant](https://torn.community/t/funded-bounty-anonymity-research-tools/1437), we have built [Tutela v1](http://tutela.xyz), an Ethereum wallet anonymity detection tool, to tell you if your blockchain transactions have revealed anything about your identity.
-
-What does this mean? Well, for example, if you have used multiple Ethereum wallets to send tokens to a single centralized exchange deposit address, you may have revealed that your wallets are owned by the same entity.
+In response to the [Tornado Cash (TC) Anonymity Research Tools Grant](https://torn.community/t/funded-bounty-anonymity-research-tools/1437), we have built [Tutela v1](http://tutela.xyz), an Ethereum wallet anonymity detection tool, to tell you if your blockchain transactions have revealed anything about your identity. *What does this mean?* Well, for example, if you have used multiple Ethereum wallets to send tokens to a single centralized exchange deposit address, you may have revealed that your wallets are owned by the same entity.
 
 We'd love to get user feedback! Tell us what you like, what you don’t and what you think is missing! Please leave your feedback in the *Tutela-Product-Feedback* channel of the [Tornado Cash Discord](https://discord.gg/xGDKUbMx).
 
@@ -53,11 +51,14 @@ Our plan for the next two months is to refine and develop Tutela v1 by:
 
 ### Technical Summary
 
-Ethereum and Tornado Cash transactions are downloaded using BigQuery. The deposit address reuse algorithm was adapted from the existing implementation in [etherclust](https://github.com/etherclust/etherclust). Our Python implementation can be found in `src/`; it is written to scalably operate over the >1 Tb of Ethereum data. The Tornado-specific heuristics can be found in `scripts/tornadocash`, again written in Python. The Tutela web application lives in `webapp/` and is written in Flask with a PostgreSQL database for storing clusters. The frontend is written in Javascript and HTML+CSS. 
+Ethereum and Tornado Cash transactions are downloaded using BigQuery. The deposit address reuse algorithm was adapted from the existing implementation in [etherclust](https://github.com/etherclust/etherclust). Our Python implementation can be found in `src/`; it is written to scalably operate over the >1 Tb of Ethereum data. The Tornado-specific heuristics can be found in `scripts/tornadocash`, again written in Python. The Tutela web application lives in `webapp/` and is written in Flask with a PostgreSQL database for storing clusters. The frontend is written in Javascript, HTML, and CSS. 
 
 ## Updates
 
 We aim to provide consistent updates over time as we improve Tutela. 
+
+- 11/17 We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
+- 11/23 We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of CEXs for clustering from 171 to 332, and added a list of common addresses that we omit from consideration when classifying deposits. Improvements were made to the gas price and synchronous TCash reveals: searching by address will now return TCash specific information in the backend. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters. 
 
 ## Contributors
 
