@@ -35,62 +35,37 @@ def cluster():
 
 @app.route('/search', methods=['GET'])
 def search():
-    is_valid_request: bool = RequestChecker(request)
+    table_cols: Set[str] = set(Address.__table__.columns.keys())
+    checker: RequestChecker = RequestChecker(
+        request,
+        table_cols,
+        entity_key = ENTITY_COL,
+        conf_key = CONF_COL,
+        name_key = NAME_COL,
+        default_page = 0,
+        default_limit = PAGE_LIMIT,
+    )
+    is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_response()
 
     if not is_valid_request: 
         return Response(output)
 
-    address: str = request.args.get('address', '')
-    address: str = address.lower()  # important to get lower case
-
-    # --- pagination info ---
-    page: int = safe_int(request.args.get('page', 0), 0)
-    size: int = safe_int(request.args.get('limit', PAGE_LIMIT), PAGE_LIMIT)
-    size: int = min(size, PAGE_LIMIT)
-
-    table_cols: Set[str] = set(Address.__table__.columns.keys())
-
-    # user can sort by column
-    sort_by: str = request.args.get('sort', ENTITY_COL)
-    if not request.args.get('sort'):
-        desc_sort = False  # default is entity asc
-    else:
-        desc_sort: bool = bool(
-            request.args.get(
-                'descending', False, type=lambda v: v.lower() != 'false'))
-
-    # --- user can filter by columns (* means everything is supported) ---
-    filter_min_conf: float = float(request.args.get('filter_min_' + CONF_COL, 0))
-    filter_max_conf: float = float(request.args.get('filter_max_' + CONF_COL, 1))
-    filter_entity: str = request.args.get('filter_' + ENTITY_COL, '*')
-    filter_name: str = request.args.get('filter_' + NAME_COL, '*')
-
-    filter_by: List[Any] = []
-    # A bit of sanity checking for confidences.
-    if ((filter_min_conf >= 0 and filter_min_conf <= 1) and
-        (filter_max_conf >= 0 and filter_max_conf <= 1) and
-        (filter_min_conf <= filter_max_conf)):
-        filter_by.append(Address.conf >= filter_min_conf)
-        filter_by.append(Address.conf <= filter_max_conf)
-    if filter_entity != '*':
-        filter_by.append(Address.entity == entity_to_int(filter_entity))
-    if filter_name != '*': # search either
-        filter_by.append(
-            or_(
-                Address.name.ilike('%'+filter_name.lower()+'%'), 
-                Address.address.ilike(filter_name.lower()),
-            ),
-        )
+    address: str = checker.get('address')
+    page: int = checker.get('page')
+    size: int = checker.get('limit')
+    sort_by: str = checker.get('sort_by')
+    desc_sort: str = checker.get('desc_sort')
+    filter_by: List[Any] = checker.get('filter_by')
 
     # --- fill out some of the known response fields ---
     output['data']['query']['address'] = address
     output['data']['query']['page'] = page
     output['data']['query']['limit'] = size
-    output['data']['query']['filter_by']['min_conf'] = filter_min_conf
-    output['data']['query']['filter_by']['max_conf'] = filter_max_conf
-    output['data']['query']['filter_by']['entity'] = filter_entity
-    output['data']['query']['filter_by']['name'] = filter_name
+    output['data']['query']['filter_by']['min_conf'] = checker.get('filter_min_conf')
+    output['data']['query']['filter_by']['max_conf'] = checker.get('filter_max_conf')
+    output['data']['query']['filter_by']['entity'] = checker.get('filter_entity')
+    output['data']['query']['filter_by']['name'] = checker.get('filter_name')
 
 
     def compute_anonymity_score(
