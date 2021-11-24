@@ -30,8 +30,7 @@ def index():
 
 @app.route('/cluster', methods=['GET'])
 def cluster():
-    # return render_template('cluster.html')
-    return render_template('maintenance.html')
+    return render_template('cluster.html')
 
 
 @app.route('/search', methods=['GET'])
