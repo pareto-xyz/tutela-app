@@ -130,7 +130,7 @@ def search():
         rows: Optional[List[ExactMatch]] = \
             ExactMatch.query.filter_by(address = address).all()
 
-        history: Dict[str, List[Dict[str, str]]] = []
+        history: Dict[str, List[Dict[str, str]]] = {}
         if (len(rows) > 0):
             for row in rows:
                 # find cluster for this transaction (w/ this address)
@@ -151,7 +151,7 @@ def search():
         """
         rows: Optional[List[GasPrice]] = \
             GasPrice.query.filter_by(address = address).all()
-        history: Dict[str, List[Dict[str, str]]] = []
+        history: Dict[str, List[Dict[str, str]]] = {}
         if len(rows) > 0:
             for row in rows:
                 # find cluster for this tx
