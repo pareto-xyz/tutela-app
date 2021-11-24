@@ -1,4 +1,6 @@
-# Project Tornado: Anonymity Research Tools
+# Helpful Notes on Tutela Documentation
+
+Links that we found helpful in developing and deploying Tutela on EC2. Tutela uses a PostgreSQL database to store clusters.
 
 - See https://torn.community/t/funded-bounty-anonymity-research-tools/1437.
 - Built on top of https://github.com/etherclust/etherclust.
@@ -31,6 +33,8 @@ source init_env.sh
 [11.9.21] Important to keep uploading to db vs creating clusters files as separate. We also assume that the graph will be small enough to fit into memory. Some doubt here.
 
 ## Computing clusters
+
+Here is the procedure of steps to compute "deposit address reuse" clusters. This involves processing CSVs of > 1 Tb, so care must be taken to not exceed constraints on storage and RAM.
 
 0. Download raw block and transaction data using `scripts/dl_bucket.py`.
 1. Sort via external merge sort (see `scripts/sort_big_csv.py`).
