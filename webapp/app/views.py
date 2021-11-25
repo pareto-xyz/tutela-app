@@ -177,13 +177,13 @@ def search():
         deposits: Optional[List[TornadoDeposit]] = \
             TornadoDeposit.query.filter_by(from_address = address).all()
 
-        num_deposit: int = len(deposits.hash.unique())
+        num_deposit: int = len(set([d.hash for d in deposits]))
 
         # find all txs where the recipient_address is the current user
         withdraws: Optional[List[TornadoWithdraw]] = \
             TornadoWithdraw.query.filter_by(recipient_address = address).all()
 
-        num_withdraw: int = len(withdraws.hash.unique())
+        num_withdraw: int = len(set([w.hash for w in withdraws]))
 
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
