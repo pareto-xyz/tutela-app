@@ -277,7 +277,7 @@ $(function () {
             const row = $(document.createElement('tr')).addClass('detail-row');
 
             const og_value = obj[attribute];
-            const value = og_value ? og_value : "";
+            const value = (og_value != null) ? og_value : "";
             row.append(`<td>${attribute}</td`);
             row.append(`<td>
                 ${value}
