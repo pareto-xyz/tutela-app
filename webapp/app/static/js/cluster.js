@@ -22,6 +22,7 @@ $(function () {
     const spinner = $('#spinner');
     const resultIdentifier = $('.result-identifier');
     const queryTable = $('#query-detail-table');
+    const tornadoTable = $('#tornado-detail-table');
 
     let pageResults = []; //stores the results
     let firstInRange = 1;
