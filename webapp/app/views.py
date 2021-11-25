@@ -21,7 +21,7 @@ from sqlalchemy import or_
 from app.utils import get_known_attrs
 
 PAGE_LIMIT = 50
-HARD_MAX: int = 100000
+HARD_MAX: int = 1000
 
 
 @app.route('/', methods=['GET'])
