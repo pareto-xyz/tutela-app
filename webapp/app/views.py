@@ -163,23 +163,27 @@ def search():
 
         return set(cluster_txs)  # no duplicates
 
-    def query_deposit_reuse_heuristic(address: str) -> Set[str]:
+    def query_deposit_reuse_heuristic(
+        address: str, limit: int = HARD_MAX) -> Set[str]:
         """
         For the given address, find all other EOA addresses in the DAR cluster.
-        Then for each address in the cluster, find all txs in the TCash deposit
-        pool. Add all these txs to the reveal set.
+        The purpose of this is when we are computing # of deposit addr, we 
+        compute using all of the addresses in cluster, rather than just the
+        current address.
         """
-        cluster_txs: List[str] = []
+        cluster: Set[str] = {address}
 
         addr: Address = Address.query.filter_by(address = address).first()
         if addr is not None:
             cluster: List[Address] = Address.query.filter_by(
                 user_cluster = addr.user_cluster, 
                 entity = entity_to_int(EOA),
-            ).all()
-            cluster: Set[str] = set([c.address for c in cluster]) - set([address])
+            ).limit(limit).all()
+            cluster: Set[str] = set([c.address for c in cluster])
 
-    def query_tornado_stats(address: str, reveal_txs: Set[str] = set()) -> Dict[str, int]:
+        return cluster
+
+    def query_address_tornado_stats(address: str) -> Dict[str, int]:
         """
         Given a user address, we want to supply a few statistics:
 
@@ -187,6 +191,10 @@ def search():
         2) Number of withdraws made to Tornado pools.
         3) Number of deposits made that are part of a cluster or of a TCash reveal.
         """
+        exact_match_txs: Set[str] = query_exact_match_heuristic(address)
+        gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+        reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
             TornadoDeposit.query.filter_by(from_address = address).all()
@@ -203,11 +211,34 @@ def search():
         num_compromised: int = num_deposit - num_remain
 
         stats: Dict[str, int] = dict(
-            num_deposit = num_deposit,
-            num_withdraw = num_withdraw,
-            num_compromised = num_compromised,
+            address_num_deposit = num_deposit,
+            address_num_withdraw = num_withdraw,
+            address_num_compromised = num_compromised,
         )
         return stats
+
+    def query_cluster_tornado_stats(address: str) -> Dict[str, int]:
+        """
+        Same as `query_address_tornado_stats but for a cluster of
+        addresses obtained from deposit address reuse.
+        """
+        # find EOA addresses in the same cluster as address
+        cluster: Set[str] = query_deposit_reuse_heuristic(address)
+        cluster_stats: Dict[str, int] = dict(
+            cluster_num_deposit = 0,
+            cluster_num_withdraw = 0,
+            cluster_num_compromised = 0,
+        )
+        for address in cluster:
+            address_stats: Dict[str, int] = query_address_tornado_stats(address)
+            cluster_stats['cluster_num_deposit'] \
+                += address_stats['address_num_deposit']
+            cluster_stats['cluster_num_withdraw'] \
+                += address_stats['address_num_withdraw']
+            cluster_stats['cluster_num_compromised'] \
+                += address_stats['address_num_compromised']
+
+        return cluster_stats
 
 
     if len(address) > 0:
@@ -343,12 +374,10 @@ def search():
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
-        exact_match_txs: Set[str] = query_exact_match_heuristic(address)
-        gas_price_txs: Set[str] = query_gas_price_heuristic(address)
-        reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
-
-        tornado_dict: Dict[str, Any] = query_tornado_stats(address, reveal_txs)
-        output['data']['tornado']['summary'] = tornado_dict
+        address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
+        cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
+        output['data']['tornado']['summary'].update(address_tornado_dict)
+        output['data']['tornado']['summary'].update(cluster_tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
