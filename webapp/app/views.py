@@ -229,16 +229,40 @@ def search():
             cluster_num_withdraw = 0,
             cluster_num_compromised = 0,
         )
-        for address in cluster:
-            address_stats: Dict[str, int] = query_address_tornado_stats(address)
-            cluster_stats['cluster_num_deposit'] \
-                += address_stats['address_num_deposit']
-            cluster_stats['cluster_num_withdraw'] \
-                += address_stats['address_num_withdraw']
-            cluster_stats['cluster_num_compromised'] \
-                += address_stats['address_num_compromised']
+        reveal_txs: Set[str] = set()
+        deposit_txs: Set[str] = set()
+        num_deposit: int = 0
+        num_withdraw: int = 0
 
-        return cluster_stats
+        for address in cluster:
+            exact_match_txs: Set[str] = query_exact_match_heuristic(address)
+            gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+            cur_reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+
+            deposits: Optional[List[TornadoDeposit]] = \
+                TornadoDeposit.query.filter_by(from_address = address).all()
+            cur_deposit_txs: Set[str] = set([d.hash for d in deposits])
+            cur_num_deposit: int = len(cur_deposit_txs)
+
+            withdraws: Optional[List[TornadoWithdraw]] = \
+                TornadoWithdraw.query.filter_by(recipient_address = address).all()
+            cur_num_withdraw: int = len(set([w.hash for w in withdraws]))
+
+            # combine with other addresses
+            reveal_txs: Set[str] = reveal_txs.union(cur_reveal_txs)
+            deposit_txs: Set[str] = deposit_txs.union(cur_deposit_txs)
+            num_deposit += cur_num_deposit
+            num_withdraw += cur_num_withdraw
+
+        num_remain: int = len(deposit_txs - reveal_txs)
+        num_compromised: int = num_deposit - num_remain
+
+        stats: Dict[str, int] = dict(
+            cluster_num_deposit = num_deposit,
+            cluster_num_withdraw = num_withdraw,
+            cluster_num_compromised = num_compromised,
+        )
+        return stats
 
 
     if len(address) > 0:
