@@ -334,6 +334,7 @@ $(function () {
                 setPagination(query.address, metadata);
                 if (firstTime) {
                     setQueryInfo(query);
+                    setTornadoInfo(tornado);
                     setSearchOptions(schema, sort_default);
                 }
                 pageResults = []; //clear 
