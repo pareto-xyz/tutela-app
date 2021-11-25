@@ -1,9 +1,9 @@
 import math
 import json
 import numpy as np
-from typing import Dict, Optional, List, Any, Set, Tuple
+from typing import Dict, Optional, List, Any, Set
 
-from app import app, w3, ns, known_addresses
+from app import app, w3, ns, known_addresses, rds
 from app.models import \
     Address, ExactMatch, GasPrice, \
     TornadoDeposit, TornadoWithdraw
@@ -59,6 +59,10 @@ def search():
     sort_by: str = checker.get('sort_by')
     desc_sort: str = checker.get('desc_sort')
     filter_by: List[Any] = checker.get('filter_by')
+
+    if rds.exists(address):  # check if this exists in our cache
+        response: str = rds.get(address)
+        return Response(response=response)
 
     # --- fill out some of the known response fields ---
     output['data']['query']['address'] = address
@@ -410,4 +414,6 @@ def search():
         output['success'] = 1
 
     response: str = json.dumps(output)
+    rds.set(address, response)  # add to cache
+
     return Response(response=response)

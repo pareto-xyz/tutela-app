@@ -1,4 +1,5 @@
 import os
+import redis
 import pandas as pd
 from typing import Any, Dict
 from flask import Flask
@@ -12,6 +13,7 @@ app: Any = Flask(__name__)
 app.config.from_object(Config)
 db: SQLAlchemy = SQLAlchemy(app)  # init SQLite DB
 migrate: Migrate = Migrate(app, db)
+rds = redis.Redis(host='localhost', port=6379, db=0)
 
 
 class InfuraAuth:
