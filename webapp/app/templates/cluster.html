@@ -38,7 +38,7 @@
                 alt="logo"></a>
         <div class="nav">
             <a class="nav-link" href="/">home</a>
-            <a class="nav-link" href="#"><strong>cluster</strong></a>
+            <a class="nav-link" href="/cluster"><strong>cluster</strong></a>
             <a class="nav-link" href="/#about">about</a>
             <a class="nav-link" href="/#reveals">reveals</a>
         </div>
@@ -46,18 +46,19 @@
 
     <div class="container halved-bar">
         <div>
-            <div id="address-form">
-                <form class="input-group search-bar">
-                    <input id="input-address" type="text" class="form-control" placeholder="eg. 0x000000000000000.........."
-                        aria-label="ethereum address" aria-describedby="basic-addon2">
-                    <button class="btn" type="submit"><img width="20" src="/static/img/loupe.svg" alt="search"></button>
-                </form>
-            </div>
-            <div class="container shown" id="instructions">
+            <div class="shown" id="instructions">
                 Enter an ethereum address to see likely connected ethereum addresses (ie. its cluster)
                 based on public data on previous transactions.
             </div>
-            <div  id="invalid-input">
+            <div id="address-form">
+                <form class="input-group search-bar">
+                    <input id="input-address" type="text" class="form-control"
+                        placeholder="eg. 0x000000000000000.........." aria-label="ethereum address"
+                        aria-describedby="basic-addon2">
+                    <button class="btn" type="submit"><img width="20" src="/static/img/loupe.svg" alt="search"></button>
+                </form>
+            </div>
+            <div id="invalid-input">
                 Please enter a valid ethereum address.
             </div>
             <div class="results-section">
@@ -74,7 +75,7 @@
                             filter
                             by</span> <span class="caret"></span></button>
                         <ul id="filter-dropdown" class="dropdown-menu">
-    
+
                         </ul>
                     </div>
                     <input id="specific-result" type="text" class="form-control"
@@ -92,7 +93,7 @@
                         page
                         <select id="page-number" class="form-select select-page" aria-label="Default select example">
                             <option selected>1</option>
-    
+
                         </select>
                         out of <span id="total-num-pages"></span>
                         <button class="page-button" id="next-page" aria-label="Next">
@@ -102,6 +103,9 @@
                 </div>
                 <div id="no-clusters-msg">No clusters found.</div>
                 <div class="results">
+                    <div class="panel-title spaced">
+                        LINKED ADDRESSES
+                    </div>
                     <div id="spinner" class="justify-content-center">
                         <div class="spinner-border" role="status">
                             <span class="sr-only">Loading...</span>
@@ -109,35 +113,37 @@
                     </div>
                     <table id="results-table">
                     </table>
-    
+
                 </div>
             </div>
         </div>
-        <div>
+        <div class="right-side">
             <div class="query-info results-section">
                 <div class="panel-sub">about your input</div>
                 <div class="panel-title">
                     OVERALL INFO
                 </div>
-                
+
                 <div class="anon-score-group">
                     anonymity score: &nbsp;<span id="anon-score"></span> &nbsp;/ 100
                     <div data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="hover"
                         data-content="The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this."
                         class="help-circle">?</div>
-                </div> 
+                </div>
                 <div id="query-detail-table" class="detail-table">
                 </div>
-                
+
             </div>
-            
+
             <div class="results-section">
-        
+
                 <div class="detail-page">
                     <div class="result-identifier panel-sub">
-                        result&nbsp;<span id="result-number">0</span>&nbsp;out of&nbsp;<span class="total-results"></span>
+                        result&nbsp;<span id="result-number">0</span>&nbsp;out of&nbsp;<span
+                            class="total-results"></span>
                     </div>
                     <div id="detail-address" class="panel-title">
+                        SELECTED LINKED ADDRESS
                     </div>
                     <div id="detail-table">
                     </div>
@@ -145,7 +151,7 @@
             </div>
         </div>
     </div>
-   
+
     <!-- <footer class="container">
         <a href="https://github.com"><i class="fab fa-github"></i></a>
         <div>
