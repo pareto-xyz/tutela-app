@@ -323,7 +323,7 @@ $(function () {
             .then(function (response) {
                 spinner.removeClass('shown');
                 const { success, data } = response.data;
-                const { cluster, metadata, query } = data;
+                const { cluster, metadata, query, tornado } = data;
                 anonScoreGroup.addClass('shown');
                 const { schema, sort_default } = metadata;
                 setPagination(query.address, metadata);
