@@ -23,8 +23,9 @@ html.ombre {
 }
 
 body {
-    font-family:'Source Code Pro';
+    font-family:'Ubuntu';
     background-color: transparent;
+    font-size: 1.1em;
 }
 
 div {
@@ -42,7 +43,8 @@ h1 {
 }
 
 h1, h2, h3, h4 {
-    font-family: 'Ubuntu';
+    font-family: 'Source Code Pro';
+    font-weight:500;
 }
 
 h1, h2, h3 {
@@ -84,7 +86,7 @@ a:hover {
     color: var(--lightgrey);
     margin: 40px 0px;
     text-align:center;
-    width:60%;
+    width:70%;
 }
 
 /**
@@ -106,7 +108,8 @@ td, th {
 }
 
 #input-address.fixed-width {
-    width: 500px;
+    width: 600px;
+    font-size: 1.3em;
 }
 
 .results {
@@ -128,6 +131,7 @@ td, th {
     border: transparent;
     padding: 10px;
     min-width:200px;
+    font-family: 'Source Code Pro';
 }
 
 /**

@@ -23,6 +23,7 @@ $(function () {
     const resultIdentifier = $('.result-identifier');
     const queryTable = $('#query-detail-table');
     const tornadoTable = $('#tornado-detail-table');
+    const rightSide = $('.right-side');
 
     let pageResults = []; //stores the results
     let firstInRange = 1;
@@ -272,7 +273,7 @@ $(function () {
         const attributes = Object.keys(obj);
 
         for (const attribute of attributes) {
-            if (ignore.has(attribute)) {
+            if (ignore.has(attribute) || attribute[0] === '_') {
                 continue; // don't need to display this again
             }
             const row = $(document.createElement('tr')).addClass('detail-row');
@@ -289,7 +290,7 @@ $(function () {
     }
 
     function clearDetails() {
-        detailAddr.html('');
+        detailAddr.html('SELECTED LINKED ADDRESS');
         detailTable.html('');
     }
 
@@ -319,6 +320,7 @@ $(function () {
         const queryString = buildQueryString(query);
         const results = $('#results-table');
         resultsSection.addClass('shown');
+        rightSide.addClass('shown');
         spinner.addClass('shown');
         results.html('');
         resultIdentifier.removeClass('shown');
