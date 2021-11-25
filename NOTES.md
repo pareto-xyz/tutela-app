@@ -15,6 +15,8 @@ Links that we found helpful in developing and deploying Tutela on EC2. Tutela us
 - Install google cloud cmdline: https://cloud.google.com/sdk/docs/install
 - Uploading files to S3: https://medium.com/expedia-group-tech/how-to-upload-large-files-to-aws-s3-200549da5ec1
 - Flask deployment: https://medium.com/innovation-incubator/deploy-a-flask-app-on-aws-ec2-d1d774c275a2
+- Redis config: https://redis.io/topics/config
+- Redis quickstart: https://redis.io/topics/quickstart
 
 ## Usage 
 
