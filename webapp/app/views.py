@@ -122,50 +122,50 @@ def search():
 
         return score
 
-    def query_exact_match_heuristic(address: str) -> Dict[str, Any]:
+    def query_exact_match_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs
-        appear in a exact match heuristic.
+        appear in a exact match heuristic. Returns a list of all 
+        transactions with the same cluster as this address.
         """
         rows: Optional[List[ExactMatch]] = \
             ExactMatch.query.filter_by(address = address).all()
 
-        history: Dict[str, List[Dict[str, str]]] = {}
+        cluster_txs: List[str] = []
+
         if (len(rows) > 0):
             for row in rows:
                 # find cluster for this transaction (w/ this address)
                 cluster: List[ExactMatch] = ExactMatch.query.filter_by(
                     cluster = row.cluster).all()
-                cluster: List[Dict[str, str]] = [
-                    dict(address=member.address, transaction=member.transaction)
-                    for member in cluster
-                ]
-                history[row.transaction] = cluster
+                cluster: List[str] = [member.transaction for member in cluster]
+                cluster_txs.extend(cluster)
 
-        return dict(reveal_size=len(history), history=history)
+        cluster_txs: List[str] = set(cluster_txs)
+        return cluster_txs
 
-    def query_gas_price_heuristic(address: str) -> Dict[str, Any]:
+    def query_gas_price_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs 
         appears in a same gas price reveal. We will return the tx info too?
         """
         rows: Optional[List[GasPrice]] = \
             GasPrice.query.filter_by(address = address).all()
-        history: Dict[str, List[Dict[str, str]]] = {}
+
+        cluster_txs: List[str] = []
+
         if len(rows) > 0:
             for row in rows:
                 # find cluster for this tx
                 cluster: List[GasPrice] = GasPrice.query.filter_by(
                     cluster = row.cluster).all()
-                cluster: List[Dict[str, str]] = [
-                    dict(address=member.address, transaction=member.transaction)
-                    for member in cluster
-                ]
-                history[row.transaction] = cluster
+                cluster: List[str] = [member.transaction for member in cluster]
+                cluster_txs.extend(cluster)
 
-        return dict(reveal_size=len(history), history=history)
+        cluster_txs: List[str] = set(cluster_txs)
+        return cluster_txs
 
-    def query_tornado_stats(address: str) -> Dict[str, int]:
+    def query_tornado_stats(address: str, reveal_txs: Set[str] = set()) -> Dict[str, int]:
         """
         Given a user address, we want to supply a few statistics:
 
@@ -176,19 +176,22 @@ def search():
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
             TornadoDeposit.query.filter_by(from_address = address).all()
-
-        num_deposit: int = len(set([d.hash for d in deposits]))
+        deposit_txs: Set[str] = set([d.hash for d in deposits])
+        num_deposit: int = len(deposit_txs)
 
         # find all txs where the recipient_address is the current user
         withdraws: Optional[List[TornadoWithdraw]] = \
             TornadoWithdraw.query.filter_by(recipient_address = address).all()
-
         num_withdraw: int = len(set([w.hash for w in withdraws]))
+
+        # compute number of txs compromised by TCash heuristics
+        num_remain: int = len(deposit_txs - reveal_txs)
+        num_compromised: int = num_deposit - num_remain
 
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
-            num_compromised = 0,
+            num_compromised = num_compromised,
         )
         return stats
 
@@ -326,14 +329,12 @@ def search():
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
-        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
-        output['data']['tornado']['summary'] = tornado_dict
+        exact_match_txs: Set[str] = query_exact_match_heuristic(address)
+        gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+        reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
 
-        exact_match_dict: Dict[str, Any] = query_exact_match_heuristic(address)
-        gas_price_dict: Dict[str, Any] = query_gas_price_heuristic(address)
-        # NOTE: _key means it will be ignored in the frontend
-        # output['data']['tornado']['_exact_match'] = exact_match_dict
-        # output['data']['tornado']['_gas_price'] = gas_price_dict
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address, reveal_txs)
+        output['data']['tornado']['summary'] = tornado_dict
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
