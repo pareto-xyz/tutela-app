@@ -296,7 +296,7 @@ $(function () {
     function setQueryInfo(query) {
         const {address, metadata} = query;
         const combined = {...query, ...metadata};
-        populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score', 'tornado']));
+        populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score']));
     }
 
     /**
