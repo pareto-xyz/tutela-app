@@ -332,8 +332,8 @@ def search():
         exact_match_dict: Dict[str, Any] = query_exact_match_heuristic(address)
         gas_price_dict: Dict[str, Any] = query_gas_price_heuristic(address)
         # NOTE: _key means it will be ignored in the frontend
-        output['data']['tornado']['_exact_match'] = exact_match_dict
-        output['data']['tornado']['_gas_price'] = gas_price_dict
+        # output['data']['tornado']['_exact_match'] = exact_match_dict
+        # output['data']['tornado']['_gas_price'] = gas_price_dict
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
