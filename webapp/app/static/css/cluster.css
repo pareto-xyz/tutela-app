@@ -146,7 +146,15 @@ RESULTS
     width: 100%;
 }
 
+/* tornado info ------------------ */
 
+.tornado-info {
+    background-color: var(--fadedgrey);
+    border-radius: 5px;
+    margin-left: 30px;
+    padding: 15px;
+    width: 100%; 
+}
 
 /* results list ------------------ */
 

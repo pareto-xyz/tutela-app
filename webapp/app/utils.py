@@ -150,10 +150,13 @@ def default_response() -> Dict[str, Any]:
             'query': {
                 'address': '', 
                 'metadata': {}, 
-                'tornado': {
-                    'exact_match': {},
-                    'gas_price': {},
-                }
+            },
+            'tornado': {
+                'summary': {
+                    'num_deposit': 0,
+                    'num_withdraw': 0,
+                    'num_compromised': 0,
+                },
             },
             'cluster': [],
             'metadata': {

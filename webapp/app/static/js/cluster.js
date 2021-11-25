@@ -22,6 +22,7 @@ $(function () {
     const spinner = $('#spinner');
     const resultIdentifier = $('.result-identifier');
     const queryTable = $('#query-detail-table');
+    const tornadoTable = $('#tornado-detail-table');
     const rightSide = $('.right-side');
 
     let pageResults = []; //stores the results
@@ -278,7 +279,7 @@ $(function () {
             const row = $(document.createElement('tr')).addClass('detail-row');
 
             const og_value = obj[attribute];
-            const value = og_value ? og_value : "";
+            const value = (og_value != null) ? og_value : "";
             row.append(`<td>${attribute}</td`);
             row.append(`<td>
                 ${value}
@@ -297,6 +298,11 @@ $(function () {
         const {address, metadata} = query;
         const combined = {...query, ...metadata};
         populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score']));
+    }
+
+    function setTornadoInfo(query) {
+        const {summary} = query;
+        populateTable(tornadoTable, summary);
     }
 
     /**
@@ -324,12 +330,13 @@ $(function () {
             .then(function (response) {
                 spinner.removeClass('shown');
                 const { success, data } = response.data;
-                const { cluster, metadata, query } = data;
+                const { cluster, metadata, query, tornado } = data;
                 anonScoreGroup.addClass('shown');
                 const { schema, sort_default } = metadata;
                 setPagination(query.address, metadata);
                 if (firstTime) {
                     setQueryInfo(query);
+                    setTornadoInfo(tornado);
                     setSearchOptions(schema, sort_default);
                 }
                 pageResults = []; //clear 

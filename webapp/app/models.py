@@ -60,3 +60,38 @@ class GasPrice(db.Model):
 
     def __repr__(self) -> str:
         return f'<GasPrice {self.address}>'
+
+
+class TornadoDeposit(db.Model):
+    __tablename__: str = 'tornado_deposit'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    hash: db.Column = db.Column(db.String(128), index = True, nullable = False)
+    transaction_index  = db.Column(db.Integer, nullable = False)
+    from_address = db.Column(db.String(128), nullable = False)
+    to_address = db.Column(db.String(128), nullable = False)
+    gas = db.Column(db.Float)
+    gas_price = db.Column(db.Float)
+    block_number = db.Column(db.Integer, nullable = False)
+    block_hash = db.Column(db.String(128), index = True, nullable = False)
+    tornado_cash_address = db.Column(db.String(128), index = True, nullable = False)
+
+    def __repr__(self) -> str:
+        return f'<TornadoDeposit {self.hash}>'
+
+
+class TornadoWithdraw(db.Model):
+    __tablename__: str = 'tornado_withdraw'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    hash: db.Column = db.Column(db.String(128), index = True, nullable = False)
+    transaction_index  = db.Column(db.Integer, nullable = False)
+    from_address = db.Column(db.String(128), nullable = False)
+    to_address = db.Column(db.String(128), nullable = False)
+    gas = db.Column(db.Float)
+    gas_price = db.Column(db.Float)
+    block_number = db.Column(db.Integer, nullable = False)
+    block_hash = db.Column(db.String(128), index = True, nullable = False)
+    tornado_cash_address = db.Column(db.String(128), index = True, nullable = False)
+    recipient_address = db.Column(db.String(128), index = True, nullable = False)
+
+    def __repr__(self) -> str:
+        return f'<TornadoWithdraw {self.hash}>'
