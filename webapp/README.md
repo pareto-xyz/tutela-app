@@ -22,6 +22,14 @@ flask-migrate
 flask
 ```
 
+Redis installations
+
+```
+sudo apt install redis-server
+sudo apt install redis-cli
+sudo apt install redis-tools
+```
+
 ## Helpful Commands
 
 ```
