@@ -63,7 +63,7 @@ class GasPrice(db.Model):
 
 
 class TornadoDeposit(db.Model):
-    __tablename__: str = 'h'
+    __tablename__: str = 'tornado_deposit'
     id: db.Column = db.Column(db.Integer, primary_key = True)
     hash: db.Column = db.Column(db.String(128), index = True, nullable = False)
     transaction_index  = db.Column(db.Integer, nullable = False)
