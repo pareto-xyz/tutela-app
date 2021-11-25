@@ -399,9 +399,12 @@ def search():
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
         address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
-        cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
         output['data']['tornado']['summary'].update(address_tornado_dict)
-        output['data']['tornado']['summary'].update(cluster_tornado_dict)
+
+        if addr.entity == entity_to_int(EOA):
+            # only add cluster information if current address is an EOA.
+            cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
+            output['data']['tornado']['summary'].update(cluster_tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
