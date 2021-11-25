@@ -153,9 +153,9 @@ def default_response() -> Dict[str, Any]:
             },
             'tornado': {
                 'summary': {
-                    'num_deposit': 0,
-                    'num_withdraw': 0,
-                    'num_compromised': 0,
+                    'address_num_deposit': 0,
+                    'address_num_withdraw': 0,
+                    'address_num_compromised': 0,
                 },
             },
             'cluster': [],
