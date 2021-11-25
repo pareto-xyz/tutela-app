@@ -1,7 +1,11 @@
 const webpack = require('webpack');
 const config = {
 <<<<<<< HEAD
+<<<<<<< HEAD
     entry: __dirname + '/js/index.js',
+=======
+    entry:  __dirname + '/js/index.js',
+>>>>>>> b4ef37e (add react (unfinished))
 =======
     entry:  __dirname + '/js/index.js',
 >>>>>>> b4ef37e (add react (unfinished))
@@ -12,6 +16,7 @@ const config = {
     resolve: {
         extensions: ['.js', '.jsx', '.css']
     },
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     module: {
@@ -31,6 +36,8 @@ const config = {
             }
         ],
 =======
+=======
+>>>>>>> b4ef37e (add react (unfinished))
   
     module: {
         rules: [
@@ -44,6 +51,9 @@ const config = {
 				use: 'file-loader'
 			}			
 		]
+<<<<<<< HEAD
+>>>>>>> b4ef37e (add react (unfinished))
+=======
 >>>>>>> b4ef37e (add react (unfinished))
     }
 };
