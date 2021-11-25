@@ -299,6 +299,11 @@ $(function () {
         populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score']));
     }
 
+    function setTornadoInfo(query) {
+        const {summary} = query;
+        populateTable(tornadoTable, summary);
+    }
+
     /**
      * replaces existing page with new updated page of results. 
      * @param {object} query - a dict mapping from query to val. address must be a query key.

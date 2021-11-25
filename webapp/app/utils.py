@@ -157,8 +157,8 @@ def default_response() -> Dict[str, Any]:
                     'num_withdraw': 0,
                     'num_compromised': 0,
                 },
-                '_exact_match': {},
-                '_gas_price': {},
+                # '_exact_match': {},
+                # '_gas_price': {},
             },
             'cluster': [],
             'metadata': {
