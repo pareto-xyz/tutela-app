@@ -28,20 +28,10 @@
         gtag('js', new Date());
         gtag('config', 'G-0HKGXPMPCH');
     </script>
-    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
 </head>
 
 
-<body class="container">
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
-    
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
-    <!-- <script src="/static/js/index.js"></script> -->
-
+<body id="root">
 </body>
+<script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
 </html>

@@ -13,4 +13,7 @@ webapp/migrations
 notebooks/
 **.wsgi
 webapp/app/static/node_modules/
+<<<<<<< HEAD
 webapp/app/migrations/
+=======
+>>>>>>> b4ef37e (add react (unfinished))
