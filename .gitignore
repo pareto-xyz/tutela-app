@@ -13,5 +13,8 @@ webapp/migrations
 notebooks/
 **.wsgi
 webapp/app/static/node_modules/
+<<<<<<< HEAD
 webapp/app/migrations/
 dump.rdb
+=======
+>>>>>>> b4ef37e (add react (unfinished))
