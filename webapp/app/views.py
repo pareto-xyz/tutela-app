@@ -141,8 +141,7 @@ def search():
                 cluster: List[str] = [member.transaction for member in cluster]
                 cluster_txs.extend(cluster)
 
-        cluster_txs: List[str] = set(cluster_txs)
-        return cluster_txs
+        return set(cluster_txs)  # no duplicates
 
     def query_gas_price_heuristic(address: str) -> Set[str]:
         """
@@ -162,8 +161,23 @@ def search():
                 cluster: List[str] = [member.transaction for member in cluster]
                 cluster_txs.extend(cluster)
 
-        cluster_txs: List[str] = set(cluster_txs)
-        return cluster_txs
+        return set(cluster_txs)  # no duplicates
+
+    def query_deposit_reuse_heuristic(address: str) -> Set[str]:
+        """
+        For the given address, find all other EOA addresses in the DAR cluster.
+        Then for each address in the cluster, find all txs in the TCash deposit
+        pool. Add all these txs to the reveal set.
+        """
+        cluster_txs: List[str] = []
+
+        addr: Address = Address.query.filter_by(address = address).first()
+        if addr is not None:
+            cluster: List[Address] = Address.query.filter_by(
+                user_cluster = addr.user_cluster, 
+                entity = entity_to_int(EOA),
+            ).all()
+            cluster: Set[str] = set([c.address for c in cluster]) - set([address])
 
     def query_tornado_stats(address: str, reveal_txs: Set[str] = set()) -> Dict[str, int]:
         """
