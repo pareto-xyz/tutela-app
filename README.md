@@ -14,7 +14,7 @@ Tornado cash users have multiple addresses and use Tornado Cash to hide this fac
 
 ### Tutela, an Anonymity Detection Tool
 
-In response, our initial MVP has focused on informing users which of their Ethereum addresses are "affiliated" (a non-blockchain analogy would be [haveibeenpwned.com](https://haveibeenpwned.com)). This involves using a clustering algorithm and three heuristics (i.e. reveals) so far, the [Ethereum deposit address reuse heuristic](https://link.springer.com/chapter/10.1007/978-3-030-51280-4_33), the [Tornado Cash unique gas price heuristic](https://arxiv.org/abs/2005.14051) and the Tornadoc Cash Synchronous transaction heuristic. We plan to refine and add additional heuristics over time.
+In response, our initial MVP has focused on informing users which of their Ethereum addresses are "affiliated" (a non-blockchain analogy would be [haveibeenpwned.com](https://haveibeenpwned.com)). This involves using a clustering algorithm and three heuristics (i.e. reveals) so far, the [Ethereum deposit address reuse heuristic](https://link.springer.com/chapter/10.1007/978-3-030-51280-4_33), the [Tornado Cash unique gas price heuristic](https://arxiv.org/abs/2005.14051) and the Tornado Cash Synchronous transaction heuristic. We plan to refine and add additional heuristics over time.
 
 ### Current Heuristics
 
