@@ -14,7 +14,7 @@ Tornado cash users have multiple addresses and use Tornado Cash to hide this fac
 
 ### Tutela, an Anonymity Detection Tool
 
-In response, our initial MVP has focused on informing users which of their Ethereum addresses are "affiliated" (a non-blockchain analogy would be [haveibeenpwned.com](https://haveibeenpwned.com)). This involves using a clustering algorithm and two heuristics (i.e. reveals) so far, the [Ethereum deposit address reuse heuristic](https://link.springer.com/chapter/10.1007/978-3-030-51280-4_33) and the [Tornado Cash unique gas price heuristic](https://arxiv.org/abs/2005.14051). We plan to refine and add additional heuristics over time.
+In response, our initial MVP has focused on informing users which of their Ethereum addresses are "affiliated" (a non-blockchain analogy would be [haveibeenpwned.com](https://haveibeenpwned.com)). This involves using a clustering algorithm and three heuristics (i.e. reveals) so far, the [Ethereum deposit address reuse heuristic](https://link.springer.com/chapter/10.1007/978-3-030-51280-4_33), the [Tornado Cash unique gas price heuristic](https://arxiv.org/abs/2005.14051) and the Tornadoc Cash Synchronous transaction heuristic. We plan to refine and add additional heuristics over time.
 
 ### Current Heuristics
 
@@ -28,7 +28,7 @@ Pre EIP-1559 Ethereum transactions contained a gas price. Users can set their wa
 
 #### Tornado Cash Pools Synchronous Tx Heuristic
 
-If a deposit transaction and a withdrawal transaction to a specific Tornado Cash pool share the same wallet address, then this address is now compromised, and should not add to the anonymity of future Tornado Cash transactions for that pool.
+If a deposit transaction and a withdrawal transaction to a specific Tornado Cash pool share the same wallet address, then we assume the address is compromised (e.g. they may be a yield miner who does not care about anonymity), and should not add to the anonymity of future Tornado Cash transactions for that pool.
 
 ### We Need Your Help!
 
@@ -43,11 +43,10 @@ Our plan for the next two months is to refine and develop Tutela v1 by:
 3. Adding anonymity set scoring for Tornado Cash pools
 4. Providing transaction by transaction reveal data (studying anonymity over time)
 5. Identifying, testing and implementing Tornado Cash Specific Heuristics:
-    1. **Transactions between deposit and withdrawal addresses** from a specific TC pool
-    2. **Linking equal value deposits and withdrawals to specific deposit and withdrawal addresses** - if there are multiple (say 12) deposit transactions coming from a deposit address and later there are 12 withdraw transactions to the same withdraw address, then we could link all these deposit transactions to the withdraw transactions
-    3. **Careless TC anonymity mining** - anonymity mining is a clever way to incentivize users to participate in mixing. However, if users carelessly claim their Anonymity Points (AP) or Tornado tokens, then they can reduce their anonymity set. For instance, if a user withdraws their earned AP tokens to a deposit address, then we can approximate the maximum time a user has left their funds in the mixing pool. This is because users can only claim AP and TORN tokens after deposit transactions that were already withdrawn.
-    4. **Profiling deposit and withdrawal addresses** - collect and analyze the behaviour of all addresses that have interacted with Tornado cash pools
-    5. **Wallet fingerprinting** - different wallets work in different ways. We have several ideas on how we can distinguish between them. It will allow us to further fragment the anonymity sets of withdraw transactions.
+    1. **Linking equal value deposits and withdrawals to specific deposit and withdrawal addresses** - if there are multiple (say 12) deposit transactions coming from a deposit address and later there are 12 withdraw transactions to the same withdraw address, then we could link all these deposit transactions to the withdraw transactions
+    2. **Careless TC anonymity mining** - anonymity mining is a clever way to incentivize users to participate in mixing. However, if users carelessly claim their Anonymity Points (AP) or Tornado tokens, then they can reduce their anonymity set. For instance, if a user withdraws their earned AP tokens to a deposit address, then we can approximate the maximum time a user has left their funds in the mixing pool. This is because users can only claim AP and TORN tokens after deposit transactions that were already withdrawn.
+    3. **Profiling deposit and withdrawal addresses** - collect and analyze the behaviour of all addresses that have interacted with Tornado cash pools
+    4. **Wallet fingerprinting** - different wallets work in different ways. We have several ideas on how we can distinguish between them. It will allow us to further fragment the anonymity sets of withdraw transactions.
 
 ### Technical Summary
 
@@ -58,7 +57,7 @@ Ethereum and Tornado Cash transactions are downloaded using BigQuery. The deposi
 We aim to provide consistent updates over time as we improve Tutela. 
 
 - **(11/17)** We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
-- **(11/23)** We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of CEXs for clustering from 171 to 332, and added a list of common addresses that we omit from consideration when classifying deposits. Improvements were made to the gas price and synchronous TCash reveals: searching by address will now return TCash specific information in the backend. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters.
+- **(11/23)** We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of Centralized Exchange Addresses used in clustering from 171 to 332, and added a list of well-known addresses that we omit from consideration when classifying deposits. Improvements were made to the Tcash gas price heuristic and we have added the Tcash synchronous Tx reveal: searching by address will now return TCash specific information for all addresses. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters.
 
 ## Contributors
 
