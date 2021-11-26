@@ -1,23 +1,25 @@
 """
-Lambda Class's Same-Number-Deposits Heuristic.
+Lambda Class's "Same # of Transactions" Heuristic.
 """
 import os
 import pandas as pd
 from tqdm import tqdm
 import networkx as nx
 from typing import Any, Tuple, List, Set, Dict
-from src.utils.utils import to_json
+from src.utils.utils import from_json, to_json
 
 
 def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
-    clusters, tx2addr = get_same_num_deposits_clusters(
-        deposit_df, withdraw_df, tornado_df)
+    clusters, tx2addr = get_same_num_transactions_clusters(
+        deposit_df, withdraw_df, tornado_df, args.data_dir)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    clusters_file: str = os.path.join(args.save_dir, f'num_deposits_clusters.json')
-    tx2addr_file: str = os.path.join(args.save_dir, f'num_deposits_tx2addr.json')
+    clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
+    tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
+    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_clusters.json')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(address_clusters, address_file)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -42,13 +44,14 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return withdraw_df, deposit_df, tornado_df
 
 
-def get_same_num_deposits_clusters(
+def get_same_num_transactions_clusters(
     deposit_df: pd.DataFrame, 
     withdraw_df: pd.DataFrame, 
     tornado_df: pd.DataFrame,
+    data_dir: str,
 ) -> Tuple[List[Set[str]], Dict[str, str]]:
     """
-    Same Number of Deposits Heuristic.
+    Same Number of Transactions Heuristic.
 
     If there are multiple (say 12) deposit transactions coming from 
     a deposit address and later there are 12 withdraw transactions 
@@ -58,15 +61,20 @@ def get_same_num_deposits_clusters(
     tornado_addresses: Dict[str, int] = \
         dict(zip(tornado_df.address, tornado_df.tags))
 
-    addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
+    cached_addr2deposit: str =  os.path.join(data_dir, 'same_num_txs_addr2deposit.json')
+    if os.path.isfile(cached_addr2deposit):
+        addr2deposit: Dict[str, Dict[str, List[str]]] = from_json(cached_addr2deposit)
+    else:
+        addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
+        to_json(addr2deposit, cached_addr2deposit)
 
     # initialize an empty dictionary
     tx2addr: Dict[str, str] = {}
     graph: nx.DiGraph = nx.DiGraph()
 
     for withdraw_row in withdraw_df.itertuples():
-        results: Tuple[bool, List[str]] = same_number_of_deposits_heuristic(
-            withdraw_row, withdraw_df, deposit_df, addr2deposit, tornado_addresses)
+        results: Tuple[bool, List[str]] = same_num_of_transactions_heuristic(
+            withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
         if results[0]:
             deposit_rows: List[str] = results[1]
@@ -85,7 +93,7 @@ def get_same_num_deposits_clusters(
     return clusters, tx2addr
 
 
-def same_number_of_deposits_heuristic(
+def same_num_of_transactions_heuristic(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
     addr2deposit: Dict[str, str], 
@@ -93,15 +101,18 @@ def same_number_of_deposits_heuristic(
 ) -> List[str]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
-    withdraw_counts, withdraw_set = get_number_of_withdraws(
+    withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
 
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
-    addresses: List[str] = get_same_or_more_number_of_deposits(
+    addresses: List[str] = get_same_or_more_num_of_deposits(
         withdraw_counts, addr2deposit)
 
-    [addr2deposit[address] for address in addresses]
+    breakpoint()
+
+    for address in addresses:
+        tx_dict: Dict[str, List[str]] = addr2deposit[address]
 
     if len(addresses) > 0:
         return (True, None)  # , withdraw_set, deposit_set)
@@ -109,18 +120,18 @@ def same_number_of_deposits_heuristic(
     return (False, None)
 
 
-def get_same_or_more_number_of_deposits(
+def get_same_or_more_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
     addr2deposit: Dict[str, Dict[str, List[str]]], 
 ) -> List[str]:
     result: Dict[str, Any] = dict(
-        filter( lambda elem: compare_transactions(withdraw_counts, len(elem[1])), 
+        filter( lambda elem: compare_transactions(withdraw_counts, elem[1]), 
                 addr2deposit.items()))
     return list(result.keys())
 
 
 def compare_transactions(
-    withdraw_dict: pd.DataFrame, 
+    withdraw_counts_dict: pd.DataFrame, 
     deposit_dict: pd.DataFrame,
 ) -> bool:
     """
@@ -131,19 +142,19 @@ def compare_transactions(
     greater than each of the corresponding values of the withdraw 
     dicionary. If this is the case, returns True, if not, False.
     """
-    if set(withdraw_dict.keys()) != set(deposit_dict.keys()):
+    if set(withdraw_counts_dict.keys()) != set(deposit_dict.keys()):
         return False
-    for currency in withdraw_dict.keys():
-        if not (deposit_dict[currency] >= withdraw_dict[currency]):
+    for currency in withdraw_counts_dict.keys():
+        if not (len(deposit_dict[currency]) >= withdraw_counts_dict[currency]):
             return False
     return True
 
 
-def get_number_of_withdraws(
+def get_num_of_withdraws(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
     tornado_addresses: Dict[str, str],
-) -> Tuple[Dict[str, int], Set[str]]:
+) -> Tuple[Dict[str, int], Dict[str, List[str]]]:
     """
     Given a particular withdraw transaction and the withdraw transactions 
     DataFrame, gets the total withdraws the address made in each pool. It 
@@ -152,7 +163,8 @@ def get_number_of_withdraws(
     """
     withdraw_count: Dict[str, int] = {
         tornado_addresses[withdraw_tx.tornado_cash_address]: 1}
-    withdraw_txs: List[str] = [withdraw_tx.hash]
+    withdraw_txs: Dict[str, List[str]] = {
+        tornado_addresses[withdraw_tx.tornado_cash_address]: [withdraw_tx.hash]}
 
     for withdraw_row in withdraw_df.itertuples():
         if ((withdraw_row.recipient_address == withdraw_tx.recipient_address) and 
@@ -163,13 +175,17 @@ def get_number_of_withdraws(
                 withdraw_row.tornado_cash_address] in withdraw_count.keys():
                 withdraw_count[
                     tornado_addresses[withdraw_row.tornado_cash_address]] += 1
+                withdraw_txs[
+                    tornado_addresses[withdraw_row.tornado_cash_address]]\
+                        .append(withdraw_row.hash)
             else:
                 withdraw_count[
                     tornado_addresses[withdraw_row.tornado_cash_address]] = 1
+                withdraw_txs[
+                    tornado_addresses[withdraw_row.tornado_cash_address]] = \
+                        [withdraw_row.hash]
 
-            withdraw_txs.append(withdraw_row.hash)
-
-    return withdraw_count, set(withdraw_txs)
+    return withdraw_count, withdraw_txs
 
 
 def get_address_deposits(
