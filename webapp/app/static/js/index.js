@@ -2,17 +2,10 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import App from "../jsx/App";
+import RevealsPage from "../jsx/reveals";
 
-$(function () {
-
-    var form = $('#address-form');
-    form.submit(e => {
-        e.preventDefault();
-        console.log('awefwef');
-        const a = $( "#input-address" ).first().val()
-        window.location.href = "/cluster?address=" + a;
-    })
-});
-
-ReactDOM.render(<App />, document.getElementById('root'));
+let url = window.location.href.toLowerCase();
+console.log(url);
+if (url.includes("/reveals")) {
+    ReactDOM.render(<RevealsPage />, document.getElementById("root"));
+}
