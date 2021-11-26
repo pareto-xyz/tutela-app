@@ -2,16 +2,17 @@
 Lambda Class's "Same # of Transactions" Heuristic.
 """
 import os
+import itertools
 import pandas as pd
 from tqdm import tqdm
 import networkx as nx
-from typing import Any, Tuple, List, Set, Dict
+from typing import Any, Tuple, List, Set, Dict, Optional
 from src.utils.utils import from_json, to_json
 
 
 def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
-    clusters, tx2addr = get_same_num_transactions_clusters(
+    clusters, address_clusters, tx2addr = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
@@ -70,27 +71,45 @@ def get_same_num_transactions_clusters(
 
     # initialize an empty dictionary
     tx2addr: Dict[str, str] = {}
-    graph: nx.DiGraph = nx.DiGraph()
+    tx_graph: nx.DiGraph = nx.DiGraph()
+    addr_graph: nx.DiGraph = nx.DiGraph()
 
     for withdraw_row in withdraw_df.itertuples():
-        results: Tuple[bool, List[str]] = same_num_of_transactions_heuristic(
+        results = same_num_of_transactions_heuristic(
             withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
-    #     if results[0]:
-    #         deposit_rows: List[str] = results[1]
-    #         for deposit_row in deposit_rows:
-    #             graph.add_node(withdraw_row.hash)
-    #             graph.add_node(deposit_row.hash)
-    #             graph.add_edge(withdraw_row.hash, deposit_row.hash)
+        if results[0]:
+            _, response_dict = results
 
-    #             # save transaction -> address map
-    #             tx2addr[withdraw_row.hash] = withdraw_row.from_address
-    #             tx2addr[deposit_row.hash] = deposit_row.from_address
+            withdraw_txs: List[str] = list(response_dict['withdraw_txs'])
+            deposit_txs: List[str] = list(response_dict['deposit_txs'])
+            withdraw_addr: str = response_dict['withdraw_addr']
+            deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
+            withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
+            deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
 
-    # clusters: List[Set[str]] = [  # ignore singletons
-    #     c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+            tx_graph.add_nodes_from(withdraw_txs)
+            tx_graph.add_nodes_from(deposit_txs)
+            edge_txs: List[Tuple(str, str)] = \
+                list(itertools.product(withdraw_txs, deposit_txs))
+            tx_graph.add_edges_from(edge_txs)
 
-    return clusters, tx2addr
+            addr_graph.add_node(withdraw_addr)
+            addr_graph.add_nodes_from(deposit_addrs)
+            for deposit_addr in deposit_addrs:
+                addr_graph.add_edge(withdraw_addr, deposit_addr)
+
+            # upload to tx2addr
+            tx2addr.update(withdraw_tx2addr)
+            tx2addr.update(deposit_tx2addr)
+
+    tx_clusters: List[Set[str]] = [
+        c for c in nx.weakly_connected_components(tx_graph) if len(c) > 1]
+
+    addr_clusters: List[Set[str]] = [
+        c for c in nx.weakly_connected_components(addr_graph) if len(c) > 1]
+
+    return tx_clusters, addr_clusters, tx2addr
 
 
 def same_num_of_transactions_heuristic(
@@ -98,25 +117,50 @@ def same_num_of_transactions_heuristic(
     withdraw_df: pd.DataFrame, 
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
-) -> List[str]:
+) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
 
+    withdraw_addr: str = withdraw_tx.from_address
+
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
     addresses: List[str] = get_same_or_more_num_of_deposits(
         withdraw_counts, addr2deposit)
+    deposit_addrs: Set[str] = set(addresses)
 
-    if len(withdraw_set) > 1:
-        breakpoint()
+    withdraw_txs: Set[str] = set()
+    deposit_txs: Set[str] = set()
+    withdraw_tx2addr: Dict[str, str] = {}
+    deposit_tx2addr: Dict[str, str] = {}
 
     for address in addresses:
         deposit_set: Dict[str, List[str]] = addr2deposit[address]
+        assert list(withdraw_set.keys()) == list(deposit_set.keys()), \
+            "Set of keys do not match."
+
+        for pool in deposit_set.keys():
+            withdraw_txs: Set[str] = withdraw_txs.union(set(withdraw_set[pool]))
+            deposit_txs: Set[str] = deposit_txs.union(set(deposit_set[pool]))
+
+            for withdraw_tx in withdraw_txs:
+                withdraw_tx2addr[withdraw_tx] = withdraw_addr
+
+            for deposit_tx in deposit_tx2addr:
+                deposit_tx2addr[deposit_tx] = deposit_tx
 
     if len(addresses) > 0:
-        return (True, None)  # , withdraw_set, deposit_set)
+        response_dict: Dict[str, Any] = dict(
+            withdraw_txs = withdraw_txs,
+            deposit_txs = deposit_txs,
+            withdraw_addr = withdraw_addr,
+            deposit_addrs = deposit_addrs,
+            withdraw_tx2addr = withdraw_tx2addr,
+            deposit_tx2addr = deposit_tx2addr,
+        )
+        return (True, response_dict)
 
     return (False, None)
 
