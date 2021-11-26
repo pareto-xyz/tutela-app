@@ -14,7 +14,7 @@ def main(args: Any):
     withdraw_df, deposit_df = load_data(args.data_dir)
     clusters, tx2addr = \
         get_same_gas_price_clusters(deposit_df, withdraw_df, by_pool=args.by_pool)
-    address_clusters: List[Set[str]] = get_address_clusters(clusters, tx2addr)
+    address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     appendix: str = '_by_pool' if args.by_pool else ''
     clusters_file: str = os.path.join(
@@ -22,10 +22,10 @@ def main(args: Any):
     tx2addr_file: str = os.path.join(
         args.save_dir, f'gas_price_tx2addr{appendix}.json')
     address_file: str = os.path.join(
-        args.save_dir, f'gas_price_address_clusters{appendix}.json')
+        args.save_dir, f'gas_price_address_set{appendix}.json')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
-    to_json(address_clusters, address_file)
+    to_json(address_sets, address_file)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -96,10 +96,13 @@ def get_same_gas_price_clusters(
     return clusters, tx2addr
 
 
-def get_address_clusters(
+def get_address_sets(
     clusters: List[Set[str]],
     tx2addr: Dict[str, str],
 ) -> List[Set[str]]:
+    """
+    Stores pairs of addresses that are related to each other.
+    """
     address_clusters: List[Set[str]] = []
 
     for cluster in clusters:

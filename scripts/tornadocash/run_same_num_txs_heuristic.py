@@ -14,15 +14,15 @@ pd.options.mode.chained_assignment = None
 
 def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
-    clusters, address_clusters, tx2addr = get_same_num_transactions_clusters(
+    clusters, address_sets, tx2addr = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
-    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_clusters.json')
+    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
-    to_json(address_clusters, address_file)
+    to_json(address_sets, address_file)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -52,7 +52,7 @@ def get_same_num_transactions_clusters(
     withdraw_df: pd.DataFrame, 
     tornado_df: pd.DataFrame,
     data_dir: str,
-) -> Tuple[List[Set[str]], Dict[str, str]]:
+) -> Tuple[List[Set[str]], List[Set[str]], Dict[str, str]]:
     """
     Same Number of Transactions Heuristic.
 
@@ -75,7 +75,7 @@ def get_same_num_transactions_clusters(
     # initialize an empty dictionary
     tx2addr: Dict[str, str] = {}
     tx_graph: nx.DiGraph = nx.DiGraph()
-    addr_graph: nx.DiGraph = nx.DiGraph()
+    address_sets: List[Set[str]] = []
 
     print('Processing withdraws')
     pbar = tqdm(total=len(withdraw_df))
@@ -86,10 +86,9 @@ def get_same_num_transactions_clusters(
         if results[0]:
             _, response_dict = results
 
+            # populate graph with known transactions
             withdraw_txs: List[str] = list(response_dict['withdraw_txs'])
             deposit_txs: List[str] = list(response_dict['deposit_txs'])
-            withdraw_addr: str = response_dict['withdraw_addr']
-            deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
             withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
             deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
 
@@ -99,10 +98,11 @@ def get_same_num_transactions_clusters(
                 list(itertools.product(withdraw_txs, deposit_txs))
             tx_graph.add_edges_from(edge_txs)
 
-            addr_graph.add_node(withdraw_addr)
-            addr_graph.add_nodes_from(deposit_addrs)
-            for deposit_addr in deposit_addrs:
-                addr_graph.add_edge(withdraw_addr, deposit_addr)
+            # store related addresses
+            withdraw_addr: str = response_dict['withdraw_addr']
+            deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
+            address_set: Set[str] = set([withdraw_addr] + deposit_addrs)
+            address_sets.append(address_set)
 
             # upload to tx2addr
             tx2addr.update(withdraw_tx2addr)
@@ -114,10 +114,7 @@ def get_same_num_transactions_clusters(
     tx_clusters: List[Set[str]] = [
         c for c in nx.weakly_connected_components(tx_graph) if len(c) > 1]
 
-    addr_clusters: List[Set[str]] = [
-        c for c in nx.weakly_connected_components(addr_graph) if len(c) > 1]
-
-    return tx_clusters, addr_clusters, tx2addr
+    return tx_clusters, address_sets, tx2addr
 
 
 def same_num_of_transactions_heuristic(
