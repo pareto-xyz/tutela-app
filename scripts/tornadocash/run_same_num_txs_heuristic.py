@@ -83,30 +83,30 @@ def get_same_num_transactions_clusters(
         results = same_num_of_transactions_heuristic(
             withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
-        # if results[0]:
-        #     _, response_dict = results
+        if results[0]:
+            _, response_dict = results
 
-        #     withdraw_txs: List[str] = list(response_dict['withdraw_txs'])
-        #     deposit_txs: List[str] = list(response_dict['deposit_txs'])
-        #     withdraw_addr: str = response_dict['withdraw_addr']
-        #     deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
-        #     withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
-        #     deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
+            withdraw_txs: List[str] = list(response_dict['withdraw_txs'])
+            deposit_txs: List[str] = list(response_dict['deposit_txs'])
+            withdraw_addr: str = response_dict['withdraw_addr']
+            deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
+            withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
+            deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
 
-        #     tx_graph.add_nodes_from(withdraw_txs)
-        #     tx_graph.add_nodes_from(deposit_txs)
-        #     edge_txs: List[Tuple(str, str)] = \
-        #         list(itertools.product(withdraw_txs, deposit_txs))
-        #     tx_graph.add_edges_from(edge_txs)
+            tx_graph.add_nodes_from(withdraw_txs)
+            tx_graph.add_nodes_from(deposit_txs)
+            edge_txs: List[Tuple(str, str)] = \
+                list(itertools.product(withdraw_txs, deposit_txs))
+            tx_graph.add_edges_from(edge_txs)
 
-        #     addr_graph.add_node(withdraw_addr)
-        #     addr_graph.add_nodes_from(deposit_addrs)
-        #     for deposit_addr in deposit_addrs:
-        #         addr_graph.add_edge(withdraw_addr, deposit_addr)
+            addr_graph.add_node(withdraw_addr)
+            addr_graph.add_nodes_from(deposit_addrs)
+            for deposit_addr in deposit_addrs:
+                addr_graph.add_edge(withdraw_addr, deposit_addr)
 
-        #     # upload to tx2addr
-        #     tx2addr.update(withdraw_tx2addr)
-        #     tx2addr.update(deposit_tx2addr)
+            # upload to tx2addr
+            tx2addr.update(withdraw_tx2addr)
+            tx2addr.update(deposit_tx2addr)
 
         pbar.update()
     pbar.close()
@@ -154,8 +154,10 @@ def same_num_of_transactions_heuristic(
         cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
 
         # dictionary from transaction to address
-        cur_withdraw_tx2addr = dict(zip(cur_withdraw_txs, [withdraw_addr for _ in len()]))
-        cur_deposit_tx2addr = dict(zip(cur_deposit_txs, [address for _ in len()]))
+        cur_withdraw_tx2addr = dict(zip(cur_withdraw_txs, 
+            [withdraw_addr for _ in range(len(cur_withdraw_txs))]))
+        cur_deposit_tx2addr = dict(zip(cur_deposit_txs, 
+            [address for _ in range(len(cur_deposit_txs))]))
 
         withdraw_txs: Set[str] = withdraw_txs.union(set(cur_withdraw_txs))
         deposit_txs: Set[str] = deposit_txs.union(set(cur_deposit_txs))
