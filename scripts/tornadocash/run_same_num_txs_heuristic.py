@@ -84,11 +84,11 @@ def get_same_num_transactions_clusters(
             withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
         if results[0]:
-            _, response_dict = results
+            response_dict = results[1]
 
             # populate graph with known transactions
-            withdraw_txs: List[str] = list(response_dict['withdraw_txs'])
-            deposit_txs: List[str] = list(response_dict['deposit_txs'])
+            withdraw_txs: List[str] = response_dict['withdraw_txs']
+            deposit_txs: List[str] = response_dict['deposit_txs']
             withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
             deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
 
@@ -100,7 +100,7 @@ def get_same_num_transactions_clusters(
 
             # store related addresses
             withdraw_addr: str = response_dict['withdraw_addr']
-            deposit_addrs: List[str] = list(response_dict['deposit_addrs'])
+            deposit_addrs: List[str] = response_dict['deposit_addrs']
             address_set: Set[str] = set([withdraw_addr] + deposit_addrs)
             address_sets.append(address_set)
 
@@ -129,6 +129,9 @@ def same_num_of_transactions_heuristic(
         withdraw_tx, withdraw_df, tornado_addresses)
 
     withdraw_addr: str = withdraw_tx.from_address
+    withdraw_txs: List[str] = list(itertools.chain(*list(withdraw_set.values())))
+    withdraw_tx2addr = dict(zip(withdraw_txs, 
+        [withdraw_addr for _ in range(len(withdraw_txs))]))
 
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
@@ -136,8 +139,8 @@ def same_num_of_transactions_heuristic(
         withdraw_counts, addr2deposit)
     deposit_addrs: Set[str] = set(addresses)
 
-    withdraw_txs: Set[str] = set()
-    deposit_txs: Set[str] = set()
+    withdraw_txs: Set[str] = list()
+    deposit_txs: Set[str] = list()
     withdraw_tx2addr: Dict[str, str] = {}
     deposit_tx2addr: Dict[str, str] = {}
 
@@ -147,19 +150,12 @@ def same_num_of_transactions_heuristic(
             "Set of keys do not match."
 
         # list of all txs for withdraws and deposits regardless of pool
-        cur_withdraw_txs: List[str] = list(itertools.chain(*list(withdraw_set.values())))
         cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
 
         # dictionary from transaction to address
-        cur_withdraw_tx2addr = dict(zip(cur_withdraw_txs, 
-            [withdraw_addr for _ in range(len(cur_withdraw_txs))]))
         cur_deposit_tx2addr = dict(zip(cur_deposit_txs, 
             [address for _ in range(len(cur_deposit_txs))]))
-
-        withdraw_txs: Set[str] = withdraw_txs.union(set(cur_withdraw_txs))
-        deposit_txs: Set[str] = deposit_txs.union(set(cur_deposit_txs))
-
-        withdraw_tx2addr.update(cur_withdraw_tx2addr)
+        deposit_txs.extend(cur_deposit_txs)
         deposit_tx2addr.update(cur_deposit_tx2addr)
 
     if len(addresses) > 0:
