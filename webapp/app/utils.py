@@ -10,6 +10,7 @@ ADDRESS_COL: str = 'address'
 ENTITY_COL: str = 'entity'
 CONF_COL: str = 'confidence'
 NAME_COL: str = 'name'
+# --
 EOA: str = 'eoa'
 DEPOSIT: str = 'deposit'
 EXCHANGE: str = 'exchange'
@@ -18,6 +19,11 @@ DEFI: str = 'defi'
 ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
+# --
+GAS_PRICE_HEUR: str = 'same_gas_price'
+DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
+SAME_NUM_TX_HEUR: str = 'same_num_transactions'
+SAME_ADDR_HEUR: str = 'same_address'
 
 
 def safe_int(x, default=0):
@@ -120,6 +126,32 @@ def entity_to_int(s: str) -> int:
         return 6
     elif s == TORNADO:
         return 7
+    else:
+        raise Exception(f'Fatal error: {s}')
+
+
+def heuristic_to_str(s: int) -> str:
+    if s == 0:
+        return DEPO_REUSE_HEUR
+    elif s == 1:
+        return SAME_ADDR_HEUR
+    elif s == 2:
+        return GAS_PRICE_HEUR
+    elif s == 3:
+        return SAME_NUM_TX_HEUR
+    else:
+        raise Exception(f'Fatal error: {s}')
+
+
+def heuristic_to_int(s: str) -> int:
+    if s == DEPO_REUSE_HEUR:
+        return 0
+    elif s == SAME_ADDR_HEUR: 
+        return 1
+    elif s == GAS_PRICE_HEUR:
+        return 2
+    elif s == SAME_NUM_TX_HEUR:
+        return 3
     else:
         raise Exception(f'Fatal error: {s}')
 

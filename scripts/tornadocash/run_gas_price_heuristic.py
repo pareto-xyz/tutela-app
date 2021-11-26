@@ -66,7 +66,8 @@ def get_same_gas_price_clusters(
         # apply heuristic for the given withdraw transaction.
         heuristic_fn = same_gas_price_heuristic_by_pool \
             if by_pool else same_gas_price_heuristic
-        results = heuristic_fn(withdraw_row, unique_gas_deposit_df)
+        results: Tuple[bool, pd.Series] = \
+            heuristic_fn(withdraw_row, unique_gas_deposit_df)
 
         # when a deposit transaction matching the withdraw transaction gas price is found, add
         # the linked transactions to the dictionary.

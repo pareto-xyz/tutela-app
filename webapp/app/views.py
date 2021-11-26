@@ -11,6 +11,7 @@ from app.models import \
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
+    heuristic_to_int, heuristic_to_str, \
     RequestChecker, default_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
 from app.lib.w3 import query_web3
@@ -290,7 +291,10 @@ def search():
             query_data: Dict[str, Any] = output['data']['query']
             output['data']['query'] = {
                 **query_data, 
-                **to_dict(addr, table_cols, to_transform=[('entity', entity_to_str)])
+                **to_dict(addr, table_cols, to_transform=[
+                    ('entity', entity_to_str),
+                    ('heuristic', heuristic_to_str),
+                ])
             }
 
             if entity == EOA:
@@ -313,7 +317,10 @@ def search():
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ],
                             ) 
                             for c in cluster_
                         ]
@@ -343,7 +350,10 @@ def search():
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ],
                             )
                             for c in cluster_
                         ]
@@ -371,7 +381,10 @@ def search():
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)]
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ]
                             ) 
                             for c in cluster_
                         ]

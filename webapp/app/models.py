@@ -17,6 +17,7 @@ class Address(db.Model):
     user_cluster: db.Column = db.Column(db.Integer)
     exchange_cluster: db.Column = db.Column(db.Integer)
     conf: db.Column = db.Column(db.Float)
+    heuristic: db.Column = db.Column(db.Integer)
 
     def __repr__(self) -> str:
         return f'<Address {self.address}>'

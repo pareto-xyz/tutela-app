@@ -55,7 +55,8 @@ def get_exact_matches(
     graph: nx.DiGraph = nx.DiGraph()
 
     for withdraw_row in tqdm(withdraw_df.itertuples(), total=withdraw_df.shape[0]):
-        results = exact_match_heuristic(deposit_df, withdraw_row)
+        results: Tuple[bool, List[pd.Series]] = \
+            exact_match_heuristic(deposit_df, withdraw_row)
 
         if results[0]:
             deposit_rows: List[pd.Series] = results[1]
