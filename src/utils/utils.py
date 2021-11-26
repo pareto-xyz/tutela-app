@@ -14,6 +14,13 @@ class Entity(Enum):
     TORNADO = 7
 
 
+class Heuristic(Enum):
+    DEPO_REUSE = 0
+    SAME_ADDR = 1
+    GAS_PRICE = 2
+    SAME_NUM_TX = 3
+
+
 class JSONSetEncoder(json.JSONEncoder):
 
     def default(self, obj):
