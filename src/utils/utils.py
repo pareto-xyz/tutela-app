@@ -11,6 +11,7 @@ class Entity(Enum):
     DEFI = 4
     ICO_WALLETS = 5
     MINING = 6
+    TORNADO = 7
 
 
 class JSONSetEncoder(json.JSONEncoder):

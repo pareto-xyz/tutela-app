@@ -6,17 +6,18 @@ from app.models import Address
 from sqlalchemy import or_
 
 # CONSTS for schema
-ADDRESS_COL = 'address'
-ENTITY_COL = 'entity'
-CONF_COL = 'confidence'
-NAME_COL = 'name'
-EOA = 'eoa'
-DEPOSIT = 'deposit'
-EXCHANGE = 'exchange'
-DEX = 'dex'
-DEFI = 'defi'
-ICO_WALLET = 'ico wallet'
-MINING = 'mining'
+ADDRESS_COL: str = 'address'
+ENTITY_COL: str = 'entity'
+CONF_COL: str = 'confidence'
+NAME_COL: str = 'name'
+EOA: str = 'eoa'
+DEPOSIT: str = 'deposit'
+EXCHANGE: str = 'exchange'
+DEX: str = 'dex'
+DEFI: str = 'defi'
+ICO_WALLET: str = 'ico wallet'
+MINING: str = 'mining'
+TORNADO: str = 'tornado'
 
 
 def safe_int(x, default=0):
@@ -81,7 +82,7 @@ def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, An
     return result
 
 
-def entity_to_str(i):
+def entity_to_str(i: int) -> str:
     if i == 0:
         return EOA
     elif i == 1:
@@ -96,11 +97,13 @@ def entity_to_str(i):
         return ICO_WALLET
     elif i == 6:
         return MINING
+    elif i == 7:
+        return TORNADO
     else:
         raise Exception(f'Fatal error: {i}')
 
 
-def entity_to_int(s):
+def entity_to_int(s: str) -> int:
     if s == EOA:
         return 0
     elif s == DEPOSIT:
@@ -115,6 +118,8 @@ def entity_to_int(s):
         return 5
     elif s == MINING:
         return 6
+    elif s == TORNADO:
+        return 7
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -181,7 +186,15 @@ def default_response() -> Dict[str, Any]:
                     ENTITY_COL: {
                         'type': 'category',
                         'values': [
-                            EOA, DEPOSIT, EXCHANGE, DEX, DEFI, ICO_WALLET, MINING],
+                            EOA, 
+                            DEPOSIT, 
+                            EXCHANGE, 
+                            DEX, 
+                            DEFI, 
+                            ICO_WALLET, 
+                            MINING,
+                            TORNADO,
+                        ],
                     },
                     NAME_COL: {
                         'type': 'string',
