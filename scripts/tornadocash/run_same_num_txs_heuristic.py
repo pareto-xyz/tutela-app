@@ -100,8 +100,8 @@ def get_same_num_transactions_clusters(
 
             # store related addresses
             withdraw_addr: str = response_dict['withdraw_addr']
-            deposit_addrs: List[str] = response_dict['deposit_addrs']
-            address_set: Set[str] = set([withdraw_addr] + deposit_addrs)
+            deposit_addrs: Set[str] = response_dict['deposit_addrs']
+            address_set: Set[str] = deposit_addrs.add(withdraw_addr)
             address_sets.append(address_set)
 
             # upload to tx2addr
@@ -139,8 +139,8 @@ def same_num_of_transactions_heuristic(
         withdraw_counts, addr2deposit)
     deposit_addrs: Set[str] = set(addresses)
 
-    withdraw_txs: Set[str] = list()
-    deposit_txs: Set[str] = list()
+    withdraw_txs: List[str] = list()
+    deposit_txs: List[str] = list()
     withdraw_tx2addr: Dict[str, str] = {}
     deposit_tx2addr: Dict[str, str] = {}
 
