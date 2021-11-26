@@ -3,7 +3,7 @@ address,name,account_type,type,legitimacy,tags
 0xfd8610d20aa15b7b2e3be39b396a1bc3516c7144,Tornado Cash Pool 1000 DAI,contract,tornado,1,1000 DAI
 0x07687e702b410fa43f4cb4af7fa097918ffd2730,Tornado Cash Pool 10000 DAI,contract,tornado,1,10000 DAI
 0x23773e65ed146a459791799d01336db287f25334,Tornado Cash Pool 100000 DAI,contract,tornado,1,100000 DAI
-0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc,Tornado Cash Pool 0.1 ETH,contract,tornado,1,0.1
+0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc,Tornado Cash Pool 0.1 ETH,contract,tornado,1,0.1 ETH
 0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936,Tornado Cash Pool 1 ETH,contract,tornado,1,1 ETH
 0x910cbd523d972eb0a6f4cae4618ad62622b39dbf,Tornado Cash Pool 10 ETH,contract,tornado,1,10 ETH
 0xa160cdab225685da1d56aa342ad8841c3b53f291,Tornado Cash Pool 100 ETH,contract,tornado,1,100 ETH
@@ -11,7 +11,7 @@ address,name,account_type,type,legitimacy,tags
 0x4736dcf1b7a3d580672cce6e7c65cd5cc9cfba9d,Tornado Cash Pool 1000 USDC,contract,tornado,1,1000 USDC
 0x169ad27a470d064dede56a2d3ff727986b15d52b,Tornado Cash Pool 100 USDT,contract,tornado,1,100 USDT
 0x0836222f2b2b24a3f36f98668ed8f0b38d1a872f,Tornado Cash Pool 1000 USDT,contract,tornado,1,1000 USDT
-0x178169b423a011fff22b9e3f3abea13414ddd0f1,Tornado Cash Pool 0.1 WBTC,contract,tornado,1,0.1
+0x178169b423a011fff22b9e3f3abea13414ddd0f1,Tornado Cash Pool 0.1 WBTC,contract,tornado,1,0.1 WBTC
 0x610b717796ad172b316836ac95a2ffad065ceab4,Tornado Cash Pool 1 WBTC,contract,tornado,1,1 WBTC
 0xbb93e510bbcd0b7beb5a853875f9ec60275cf498,Tornado Cash Pool 10 WBTC,contract,tornado,1,10 WBTC
 0x22aaa7720ddd5388a3c0a3333430953c68f1849b,Tornado Cash Pool 5000 cDAI,contract,tornado,1,5000 cDAI

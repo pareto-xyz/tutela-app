@@ -76,19 +76,19 @@ def get_same_num_transactions_clusters(
         results: Tuple[bool, List[str]] = same_num_of_transactions_heuristic(
             withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
-        if results[0]:
-            deposit_rows: List[str] = results[1]
-            for deposit_row in deposit_rows:
-                graph.add_node(withdraw_row.hash)
-                graph.add_node(deposit_row.hash)
-                graph.add_edge(withdraw_row.hash, deposit_row.hash)
+    #     if results[0]:
+    #         deposit_rows: List[str] = results[1]
+    #         for deposit_row in deposit_rows:
+    #             graph.add_node(withdraw_row.hash)
+    #             graph.add_node(deposit_row.hash)
+    #             graph.add_edge(withdraw_row.hash, deposit_row.hash)
 
-                # save transaction -> address map
-                tx2addr[withdraw_row.hash] = withdraw_row.from_address
-                tx2addr[deposit_row.hash] = deposit_row.from_address
+    #             # save transaction -> address map
+    #             tx2addr[withdraw_row.hash] = withdraw_row.from_address
+    #             tx2addr[deposit_row.hash] = deposit_row.from_address
 
-    clusters: List[Set[str]] = [  # ignore singletons
-        c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+    # clusters: List[Set[str]] = [  # ignore singletons
+    #     c for c in nx.weakly_connected_components(graph) if len(c) > 1]
 
     return clusters, tx2addr
 
@@ -109,10 +109,11 @@ def same_num_of_transactions_heuristic(
     addresses: List[str] = get_same_or_more_num_of_deposits(
         withdraw_counts, addr2deposit)
 
-    breakpoint()
+    if len(withdraw_set) > 1:
+        breakpoint()
 
     for address in addresses:
-        tx_dict: Dict[str, List[str]] = addr2deposit[address]
+        deposit_set: Dict[str, List[str]] = addr2deposit[address]
 
     if len(addresses) > 0:
         return (True, None)  # , withdraw_set, deposit_set)
