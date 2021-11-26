@@ -35,7 +35,6 @@ def index():
 def cluster():
     return render_template('cluster.html')
 
-
 @app.route('/utils/aliases', methods=['GET'])
 def alias():
     response: str = json.dumps(get_display_aliases())
@@ -44,7 +43,6 @@ def alias():
 @app.route('/transaction', methods=['GET'])
 def transaction():
     return render_template('transaction.html')
-
 
 @app.route('/search', methods=['GET'])
 def search():
