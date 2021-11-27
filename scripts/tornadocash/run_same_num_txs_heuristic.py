@@ -311,6 +311,7 @@ def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
     meta_data: List[str] = []
     cluster_type: List[int] = []
 
+    pbar = tqdm(total=len(address_sets))
     for cluster in address_sets:
         for member in cluster:
             address.append(member)
@@ -318,6 +319,8 @@ def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
             conf.append(1)
             meta_data.append(json.dumps({}))
             cluster_type.append(Heuristic.SAME_NUM_TX.value)
+        pbar.update()
+    pbar.close()
 
     response: Dict[str, List[Any]] = dict(
         address = address,
