@@ -25,11 +25,11 @@ def main(args: Any):
     address_file: str = os.path.join(
         args.save_dir, f'gas_price_address_set{appendix}.json')
     metadata_file: str = os.path.join(
-        args.save_dir, f'gas_price_address_metadata{appendix}.json')
+        args.save_dir, f'gas_price_metadata{appendix}.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
     to_json(address_sets, address_file)
-    to_json(address_metadata, metadata_file)
+    address_metadata.to_csv(metadata_file, index=False)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:

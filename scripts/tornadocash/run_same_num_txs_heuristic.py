@@ -1,13 +1,13 @@
 """
 Lambda Class's "Same # of Transactions" Heuristic.
 """
-import os
+import os, json
 import itertools
 import pandas as pd
 from tqdm import tqdm
 import networkx as nx
 from typing import Any, Tuple, List, Set, Dict, Optional
-from src.utils.utils import from_json, to_json
+from src.utils.utils import from_json, to_json, Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
 
@@ -16,13 +16,16 @@ def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
+    address_metadata = get_metadata(address_sets)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
+    metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
     to_json(address_sets, address_file)
+    address_metadata.to_csv(metadata_file, index=False)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -296,6 +299,35 @@ def get_address_deposits(
     pbar.close()
 
     return addr2deposit
+
+
+def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
+    """
+    Stores metadata about addresses to add to db. 
+    """
+    address: List[str] = []
+    entity: List[int] = [] 
+    conf: List[float] = []
+    meta_data: List[str] = []
+    cluster_type: List[int] = []
+
+    for cluster in address_sets:
+        for member in cluster:
+            address.append(member)
+            entity.append(Entity.EOA.value)
+            conf.append(1)
+            meta_data.append(json.dumps({}))
+            cluster_type.append(Heuristic.SAME_NUM_TX.value)
+
+    response: Dict[str, List[Any]] = dict(
+        address = address,
+        entity = entity,
+        conf = conf,
+        meta_data = meta_data,
+        cluster_type = cluster_type,
+    )
+    response: pd.DataFrame = pd.DataFrame.from_dict(response)
+    return response
 
 
 if __name__ == "__main__":
