@@ -142,9 +142,7 @@ def same_num_of_transactions_heuristic(
         withdraw_counts, addr2deposit)
     deposit_addrs: Set[str] = set(addresses)
 
-    withdraw_txs: List[str] = list()
     deposit_txs: List[str] = list()
-    withdraw_tx2addr: Dict[str, str] = {}
     deposit_tx2addr: Dict[str, str] = {}
 
     for address in addresses:
