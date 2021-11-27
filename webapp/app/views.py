@@ -6,7 +6,7 @@ from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, known_addresses, rds
 from app.models import \
-    Address, ExactMatch, GasPrice, \
+    Address, ExactMatch, GasPrice, MultiDenom, \
     TornadoDeposit, TornadoWithdraw
 from app.utils import \
     get_anonymity_score, get_order_command, \
@@ -132,8 +132,7 @@ def search():
     def query_exact_match_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs
-        appear in a exact match heuristic. Returns a list of all 
-        transactions with the same cluster as this address.
+        appear in a exact match heuristic. 
         """
         rows: Optional[List[ExactMatch]] = \
             ExactMatch.query.filter_by(address = address).all()
@@ -153,7 +152,7 @@ def search():
     def query_gas_price_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs 
-        appears in a same gas price reveal. We will return the tx info too?
+        appears in a same gas price reveal. 
         """
         rows: Optional[List[GasPrice]] = \
             GasPrice.query.filter_by(address = address).all()
@@ -162,13 +161,31 @@ def search():
 
         if len(rows) > 0:
             for row in rows:
-                # find cluster for this tx
                 cluster: List[GasPrice] = GasPrice.query.filter_by(
                     cluster = row.cluster).all()
                 cluster: List[str] = [member.transaction for member in cluster]
                 cluster_txs.extend(cluster)
 
-        return set(cluster_txs)  # no duplicates
+        return set(cluster_txs)
+
+    def query_multi_denom_heuristic(address: str) -> Set[str]:
+        """
+        Given an address, find out how many times this address' txs 
+        appears in a same multi-denomination reveal.
+        """
+        rows: Optional[List[MultiDenom]] = \
+            MultiDenom.query.filter_by(address = address).all()
+
+        cluster_txs: List[str] = []
+
+        if len(rows) > 0:
+            for row in rows:
+                cluster: List[MultiDenom] = MultiDenom.query.filter_by(
+                    cluster = row.cluster).all()
+                cluster: List[str] = [member.transaction for member in cluster]
+                cluster_txs.extend(cluster)
+
+        return set(cluster_txs)
 
     def query_deposit_reuse_heuristic(
         address: str, limit: int = HARD_MAX) -> Set[str]:
@@ -200,7 +217,10 @@ def search():
         """
         exact_match_txs: Set[str] = query_exact_match_heuristic(address)
         gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+        multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
+
         reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+        reveal_txs: Set[str] = reveal_txs.union(multi_denom_txs)
 
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
@@ -214,13 +234,13 @@ def search():
         num_withdraw: int = len(set([w.hash for w in withdraws]))
 
         # compute number of txs compromised by TCash heuristics
-        num_remain: int = len(deposit_txs - reveal_txs)
-        num_compromised: int = num_deposit - num_remain
-
         stats: Dict[str, int] = dict(
-            address_num_deposit = num_deposit,
-            address_num_withdraw = num_withdraw,
-            address_num_compromised = num_compromised,
+            num_deposit = num_deposit,
+            num_withdraw = num_withdraw,
+            num_compromised_synchro_tx = num_deposit - len(deposit_txs - exact_match_txs),
+            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
+            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            num_compromised_total = num_deposit - len(deposit_txs - reveal_txs),
         )
         return stats
 
@@ -231,20 +251,20 @@ def search():
         """
         # find EOA addresses in the same cluster as address
         cluster: Set[str] = query_deposit_reuse_heuristic(address)
-        cluster_stats: Dict[str, int] = dict(
-            cluster_num_deposit = 0,
-            cluster_num_withdraw = 0,
-            cluster_num_compromised = 0,
-        )
         reveal_txs: Set[str] = set()
         deposit_txs: Set[str] = set()
+        reveal_exact_match_txs: Set[str] = set()
+        reveal_gas_price_txs: Set[str] = set()
+        reveal_multi_denom_txs: Set[str] = set()
         num_deposit: int = 0
         num_withdraw: int = 0
 
         for address in cluster:
             exact_match_txs: Set[str] = query_exact_match_heuristic(address)
             gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+            multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
             cur_reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+            cur_reveal_txs: Set[str] = cur_reveal_txs.union(multi_denom_txs)
 
             deposits: Optional[List[TornadoDeposit]] = \
                 TornadoDeposit.query.filter_by(from_address = address).all()
@@ -261,13 +281,23 @@ def search():
             num_deposit += cur_num_deposit
             num_withdraw += cur_num_withdraw
 
+            reveal_exact_match_txs: Set[str] = reveal_exact_match_txs.union(exact_match_txs)
+            reveal_gas_price_txs: Set[str] = reveal_gas_price_txs.union(gas_price_txs)
+            reveal_multi_denom_txs: Set[str] = reveal_multi_denom_txs.union(multi_denom_txs)
+
         num_remain: int = len(deposit_txs - reveal_txs)
         num_compromised: int = num_deposit - num_remain
 
         stats: Dict[str, int] = dict(
             cluster_num_deposit = num_deposit,
             cluster_num_withdraw = num_withdraw,
-            cluster_num_compromised = num_compromised,
+            cluster_num_compromised_synchro_tx = \
+                num_deposit - len(deposit_txs - reveal_exact_match_txs),
+            cluster_num_compromised_gas_price = \
+                num_deposit - len(deposit_txs - reveal_gas_price_txs),
+            cluster_num_compromised_multi_denom = \
+                num_deposit - len(deposit_txs - reveal_multi_denom_txs),
+            cluster_num_compromised_total = num_compromised,
         )
         return stats
 

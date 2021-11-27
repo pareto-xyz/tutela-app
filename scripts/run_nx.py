@@ -54,12 +54,11 @@ def main(args: Any):
 
 def add_to_user_graph(graph: nx.DiGraph, clusters: List[Set[str]]):
     for cluster in clusters:
-        nodes: List[str] = list(cluster)
-        edges: List[Tuple[str, str]] = itertools.product(nodes, nodes)
-
-        graph.add_nodes_from(nodes)
-        graph.add_edges_from(edges)
-
+        assert len(cluster) == 2, "Only supports edges iwth two nodes."
+        node_a, node_b = cluster
+        graph.add_node(node_a)
+        graph.add_node(node_b)
+        graph.add_edge(node_a, node_b)
     return graph
 
 
