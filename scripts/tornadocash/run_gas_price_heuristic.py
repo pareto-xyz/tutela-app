@@ -15,7 +15,7 @@ def main(args: Any):
     clusters, tx2addr = \
         get_same_gas_price_clusters(deposit_df, withdraw_df, by_pool=args.by_pool)
     address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
-    address_metadata: List[Dict[str, Any]] = get_metadata(clusters, tx2addr)
+    address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     appendix: str = '_by_pool' if args.by_pool else ''
     clusters_file: str = os.path.join(
