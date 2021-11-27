@@ -74,7 +74,7 @@ TOP
     color: var(--lightgrey);
 }
 
-#instructions, #invalid-input, #spinner {
+#instructions, #invalid-input, #spinner, #anonymous-none-found {
     display: none;
     margin: 10px 0px;
 }
@@ -89,6 +89,10 @@ TOP
 
 #spinner {
     padding: 30px;
+}
+
+#anonymous-none-found {
+    flex-direction: column;
 }
 
 /**
@@ -231,6 +235,11 @@ RESULTS
 
 .button-group {
     margin-right: 10px;
+}
+
+.dropdown-lever {
+    padding-top: 5px;
+    border-top: dashed 1px darkgrey;
 }
 
 #specific-result {

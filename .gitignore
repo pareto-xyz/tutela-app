@@ -13,3 +13,4 @@ webapp/migrations
 notebooks/
 **.wsgi
 webapp/app/static/node_modules/
+webapp/app/migrations/

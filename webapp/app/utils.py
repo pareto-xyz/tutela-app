@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Dict, Any, List, Tuple, Optional, Union
 from sqlalchemy import desc, cast, Float
 from app.models import Address
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 # CONSTS for schema
 ADDRESS_COL = 'address'
@@ -310,20 +310,21 @@ class RequestChecker:
 
         filter_by: List[Any] = []
 
-        if ((filter_min_conf >= 0 and filter_min_conf <= 1) and
-            (filter_max_conf >= 0 and filter_max_conf <= 1) and
-            (filter_min_conf <= filter_max_conf)):
-            filter_by.append(Address.conf >= filter_min_conf)
-            filter_by.append(Address.conf <= filter_max_conf)
-        if filter_entity != '*':
-            filter_by.append(Address.entity == entity_to_int(filter_entity))
-        if filter_name != '*': # search either
-            filter_by.append(
-                or_(
-                    Address.name.ilike('%'+filter_name.lower()+'%'), 
-                    Address.address.ilike(filter_name.lower()),
-                ),
-            )
+        if Address.query.filter_by(address = self._params['address']).first(): # the below will fail if address doesn't exist in table
+            if ((filter_min_conf >= 0 and filter_min_conf <= 1) and
+                (filter_max_conf >= 0 and filter_max_conf <= 1) and
+                (filter_min_conf <= filter_max_conf)):
+                filter_by.append(Address.conf >= filter_min_conf)
+                filter_by.append(Address.conf <= filter_max_conf)
+            if filter_entity != '*':
+                filter_by.append(Address.entity == entity_to_int(filter_entity))
+            if filter_name != '*': # search either
+                filter_by.append(
+                    or_(
+                        Address.name.ilike('%'+filter_name.lower()+'%'), 
+                        Address.address.ilike(filter_name.lower()),
+                    ),
+                )
 
         self._params['filter_by'] = filter_by
         self._params['filter_min_conf'] = filter_min_conf
