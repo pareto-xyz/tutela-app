@@ -34,15 +34,12 @@
 
 
 <body class="container">
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> cd12d85 (half react)
+
     <header class="container fixed">
         <a class="header-logo" href="https://tornado.cash/"><img width="50" src="/static/img/tornado_logo.svg"
                 alt="logo"></a>
         <div class="nav">
-            <a class="nav-link" href="/cluster">cluster</a>
+            <a class="nav-link" href="/cluster">address</a>
             <a class="nav-link" href="#about">about</a>
             <a class="nav-link" href="#reveals">reveals</a>
         </div>
@@ -186,7 +183,6 @@
         </footer>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<<<<<<< HEAD
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
@@ -200,31 +196,7 @@
             })
         });
     </script>
-=======
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
-    
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
-    <!-- <script src="/static/js/index.js"></script> -->
->>>>>>> b4ef37e (add react (unfinished))
-=======
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-        $(function () {
 
-            var form = $('#address-form');
-            form.submit(e => {
-                e.preventDefault();
-                const a = $("#input-address").first().val()
-                window.location.href = "/cluster?address=" + a;
-            })
-        });
-    </script>
->>>>>>> cd12d85 (half react)
 
 </body>
 

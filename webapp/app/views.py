@@ -40,6 +40,10 @@ def cluster():
 def alias():
     response: str = json.dumps(get_display_aliases())
     return Response(response=response)
+    
+@app.route('/transaction', methods=['GET'])
+def transaction():
+    return render_template('transaction.html')
 
 
 @app.route('/search', methods=['GET'])
