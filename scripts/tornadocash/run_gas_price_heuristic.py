@@ -97,7 +97,7 @@ def get_same_gas_price_clusters(
 
 
 def get_address_sets(
-    clusters: List[Set[str]],
+    tx_clusters: List[Set[str]],
     tx2addr: Dict[str, str],
 ) -> List[Set[str]]:
     """
@@ -105,7 +105,7 @@ def get_address_sets(
     """
     address_clusters: List[Set[str]] = []
 
-    for cluster in clusters:
+    for cluster in tx_clusters:
         addr_cluster: Set[str] = set([tx2addr[tx] for tx in cluster])
         addr_cluster: List[str] = list(addr_cluster)
 

@@ -101,8 +101,8 @@ def get_same_num_transactions_clusters(
             # store related addresses
             withdraw_addr: str = response_dict['withdraw_addr']
             deposit_addrs: Set[str] = response_dict['deposit_addrs']
-            address_set: Set[str] = deposit_addrs.add(withdraw_addr)
-            address_sets.append(address_set)
+            address_sets.extend([
+                {withdraw_addr, deposit_addr} for deposit_addr in deposit_addrs])
 
             # upload to tx2addr
             tx2addr.update(withdraw_tx2addr)

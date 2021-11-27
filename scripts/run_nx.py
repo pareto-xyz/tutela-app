@@ -5,18 +5,25 @@ is to isolate the high memory parts to a single file.
 """
 
 import os
+import itertools
 import numpy as np
 import pandas as pd
 import networkx as nx
-from src.utils.utils import to_json
+from src.utils.utils import to_json, from_json
 from typing import Any, List, Set, Tuple
 
 
 def main(args: Any):
     data: pd.DataFrame = pd.read_csv(args.data_file)
 
+    gas_price_sets: List[Set[str]] = from_json(args.gas_price_file)
+    multi_denom_sets: List[Set[str]] = from_json(args.multi_denom_file)
+
     print('making user graph...',  end = '', flush=True)
     user_graph: nx.DiGraph = make_graph(data.user, data.deposit)
+    user_graph: nx.DiGraph = add_to_user_graph(user_graph, gas_price_sets)
+    user_graph: nx.DiGraph = add_to_user_graph(user_graph, multi_denom_sets)
+
     print('making exchange graph...',  end = '', flush=True)
     exchange_graph: nx.DiGraph = make_graph(data.deposit, data.exchange)
 
@@ -43,6 +50,17 @@ def main(args: Any):
     print('writing to disk...',  end = '', flush=True)
     to_json(user_wccs, os.path.join(args.save_dir, 'user_clusters.json'))
     to_json(exchange_wccs, os.path.join(args.save_dir, 'exchange_clusters.json'))
+
+
+def add_to_user_graph(graph: nx.DiGraph, clusters: List[Set[str]]):
+    for cluster in clusters:
+        nodes: List[str] = list(cluster)
+        edges: List[Tuple[str, str]] = itertools.product(nodes, nodes)
+
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+
+    return graph
 
 
 def get_wcc(graph: nx.DiGraph) -> List[Set[str]]:
@@ -92,6 +110,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', type=str, help='path to cached out of deposit.py')
+    parser.add_argument('gas_price_file', type=str, help='path to gas price address sets')
+    parser.add_argument('multi_denom_file', type=str, help='path to gas price address sets')
     parser.add_argument('save_dir', type=str, help='where to save files.')
     args: Any = parser.parse_args()
 
