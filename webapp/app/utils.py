@@ -83,8 +83,9 @@ def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, An
     result: pd.Series = result.iloc[0]
     result: Dict[str, Any] = result.to_dict()
     del result['address']
-    result['legitimacy'] = result['label']
-    del result['label']
+    if 'label' in result and 'legitimacy' not in result:
+        result['legitimacy'] = result['label']
+        del result['label']
     return result
 
 
