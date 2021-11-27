@@ -63,6 +63,7 @@ def search():
     filter_by: List[Any] = checker.get('filter_by')
 
     if rds.exists(address):  # check if this exists in our cache
+        print(f'Found {address} stored in redis.')
         response: str = bz2.decompress(rds.get(address)).decode('utf-8')
         return Response(response=response)
 
