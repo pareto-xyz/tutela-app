@@ -371,6 +371,7 @@ $(function () {
         spinner.addClass('shown');
         results.html('');
         resultIdentifier.removeClass('shown');
+
         clearDetails();
 
         axios.get('/search' + queryString)
@@ -437,6 +438,9 @@ $(function () {
             resultIdentifier.removeClass('shown');
             anonScoreGroup.removeClass('shown');
             const a = addrInput.first().val()
+            anonGuy.removeClass('shown');
+            noClusterMsg.removeClass('shown');
+
             instructions.removeClass('shown');
             if (!isValid(a)) {
                 invalidInput.addClass('shown');
