@@ -2,12 +2,12 @@
 Lambda Class's Same Gas Price Heuristic.
 """
 
-import os
+import os, json
 from tqdm import tqdm
 import pandas as pd
 import networkx as nx
-from typing import Any, Tuple, Optional, Dict, List, Set
-from src.utils.utils import to_json
+from typing import Any, Tuple, Optional, Dict, List, Set, Any
+from src.utils.utils import to_json, Entity, Heuristic
 
 
 def main(args: Any):
@@ -15,6 +15,7 @@ def main(args: Any):
     clusters, tx2addr = \
         get_same_gas_price_clusters(deposit_df, withdraw_df, by_pool=args.by_pool)
     address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
+    address_metadata: List[Dict[str, Any]] = get_metadata(clusters, tx2addr)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     appendix: str = '_by_pool' if args.by_pool else ''
     clusters_file: str = os.path.join(
@@ -23,9 +24,12 @@ def main(args: Any):
         args.save_dir, f'gas_price_tx2addr{appendix}.json')
     address_file: str = os.path.join(
         args.save_dir, f'gas_price_address_set{appendix}.json')
+    metadata_file: str = os.path.join(
+        args.save_dir, f'gas_price_address_metadata{appendix}.json')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
     to_json(address_sets, address_file)
+    to_json(address_metadata, metadata_file)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -113,6 +117,35 @@ def get_address_sets(
             address_clusters.append(addr_cluster)
 
     return address_clusters
+
+
+def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
+    """
+    Stores metadata about addresses to add to db. 
+    """
+    address: List[str] = []
+    entity: List[int] = [] 
+    conf: List[float] = []
+    meta_data: List[str] = []
+    cluster_type: List[int] = []
+
+    for cluster in address_sets:
+        for member in cluster:
+            address.append(member)
+            entity.append(Entity.EOA.value)
+            conf.append(1)
+            meta_data.append(json.dumps({}))
+            cluster_type.append(Heuristic.GAS_PRICE.value)
+
+    response: Dict[str, List[Any]] = dict(
+        address = address,
+        entity = entity,
+        conf = conf,
+        meta_data = meta_data,
+        cluster_type = cluster_type,
+    )
+    response: pd.DataFrame = pd.DataFrame.from_dict(response)
+    return response
 
 
 def filter_by_unique_gas_price(transactions_df: pd.DataFrame) -> pd.DataFrame:
