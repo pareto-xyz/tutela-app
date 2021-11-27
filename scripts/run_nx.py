@@ -54,7 +54,7 @@ def main(args: Any):
 
 def add_to_user_graph(graph: nx.DiGraph, clusters: List[Set[str]]):
     for cluster in clusters:
-        assert len(cluster) == 2, "Only supports edges iwth two nodes."
+        assert len(cluster) == 2, "Only supports edges with two nodes."
         node_a, node_b = cluster
         graph.add_node(node_a)
         graph.add_node(node_b)
