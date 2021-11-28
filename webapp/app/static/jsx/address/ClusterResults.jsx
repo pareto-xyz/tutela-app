@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SortAndFilters from '../components/SortAndFilters';
 import Pagination from '../components/Pagination';
+import { Accordion } from 'react-bootstrap';
+import AgnosticTable from '../components/AgnosticTable';
 
 function NoClusters() {
     return (
@@ -16,52 +18,54 @@ function NoClusters() {
     )
 }
 
+
 export default function ClusterResults(props) {
-<<<<<<< HEAD
-    const { results, loading } = props;
-=======
-    const { results} = props;
->>>>>>> dbdef9f (support address in the param)
+    const { results, loading, refineData, getNewResults, aliases } = props;
     const noResults = results.length == 0;
+
+    function Row({ result, idx }) {
+        const { address } = result;
+        const [selected, setSelected] = useState(false);
+        return (
+            <Accordion.Item eventKey={idx} className={selected && 'selected-result'} key={idx}>
+                <Accordion.Header className="accordion-header" onClick={() => setSelected(!selected)}>
+                    <div>{address}</div>
+                    <div className="squashed-row">
+                        <div className="accordion-badge">{result.entity}</div>
+                        <div className="expand-symbol">{selected ? '-' : '+'}</div>
+                    </div>
+                </Accordion.Header>
+                <Accordion.Body className="accordion-body">
+                    <div className="panel-sub">linked address #{idx + 1}</div>
+                    <AgnosticTable keyValues={Object.entries(result)} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
+                </Accordion.Body>
+            </Accordion.Item>
+        );
+    }
 
     return (
         <div >
-            <SortAndFilters />
-           {!noResults && <Pagination />} 
+            <div className="results">
+                <div className="panel-title">
+                    LINKED ADDRESSES
+                </div>
+            </div>
+            <SortAndFilters refineData={refineData} getNewResults={getNewResults} />
+            {!noResults && <Pagination />}
 
+            <div >
+                {(loading || noResults) && <div className="results">
 
-            <div className="results-section">
-                <div className="results">
-                    <div className="panel-title spaced">
-                        LINKED ADDRESSES
-                    </div>
-<<<<<<< HEAD
                     {loading ? <div id="spinner" className="justify-content-center">
                         <div className="spinner-border" role="status">
                             <span className="sr-only">Loading...</span>
                         </div>
-                    </div> : (noResults ? <NoClusters /> : <table id="results-table">
-                    </table>)
-
+                    </div> : (noResults && <NoClusters />)
                     }
-=======
-                    {noResults && <div>No clusters found. </div>}
-                    <table id="results-table">
-                    </table>
->>>>>>> dbdef9f (support address in the param)
-
-                </div>
-                {/* <div className="detail-page">
-                    <div className="result-identifier panel-sub">
-                        result&nbsp;<span id="result-number">0</span>&nbsp;out of&nbsp;<span
-                            className="total-results"></span>
-                    </div>
-                    <div id="detail-address" className="panel-title">
-                        SELECTED LINKED ADDRESS
-                    </div>
-                    <div id="detail-table">
-                    </div>
-                </div> */}
+                </div>}
+                <Accordion className="overall-accordion" >
+                    {results.map((result, idx) => <Row result={result} idx={idx}></Row>)}
+                </Accordion>
             </div>
         </div>
     )

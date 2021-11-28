@@ -5,10 +5,8 @@
 function isValid(addr) {
     const re = /[0-9A-Fa-f]{40}/g;
     addr = addr.trim();
-    console.log(addr);
     const ans = ((addr.substr(0, 2) === '0x' && re.test(addr.substr(2))) //with the 0x
         || (re.test(addr))); //without the 0x
-    console.log(ans);
     return ans;
 }
 

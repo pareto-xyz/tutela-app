@@ -33,6 +33,23 @@ html {
     align-items: center;
 }
 
+.tooltip > .tooltip-inner {
+    text-align: left;
+}
+
+.squashed-row {
+    display: flex;
+    align-items: center;
+}
+
+.accordion-badge {
+    margin: 0px 20px 0px 10px;
+    border-radius: 5px;
+    background-color: var(--fadedgreen);
+    padding: 10px;
+    font-size: 0.9em;
+}
+
 /**
 TOP
 */
@@ -150,6 +167,7 @@ RESULTS
 
 .two-tables {
     display: flex;
+    margin-top: 10px;
 }
 
 .table-title {
@@ -196,7 +214,8 @@ RESULTS
     flex: 1;
     border-radius: 5px;
     padding: 15px;
-
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 #results-table {
@@ -242,10 +261,6 @@ RESULTS
     flex-wrap: wrap;
 }
 
-.sort-group {
-    display: flex; 
-}
-
 .button-group {
     margin-right: 10px;
 }
@@ -272,6 +287,10 @@ RESULTS
     color: white;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     padding: .375rem 0.75rem;
+}
+
+.selected-dropdown {
+    background-color: var(--tcashgreen);
 }
 
 ul.dropdown-menu { 
@@ -314,6 +333,36 @@ ul.dropdown-menu {
     margin-left: 30px;
     flex: 1;
     padding: 15px;
+}
+
+
+.accordion-header {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.selected-result > .accordion-header > button {
+    background-color: var(--fadedgrey);
+}
+
+.accordion-header > button {
+    padding: 10px;
+    width: 100%;
+    background-color: #4C4C4C;
+    border: transparent;
+    display: flex;
+    align-items: center;
+    color: white;
+    justify-content: space-between;
+}
+
+.accordion-body {
+    background-color: var(--fadedgrey);
+    padding: 20px;
+}
+
+.expand-symbol {
+    font-size: 1.3em;
 }
 
 .result-identifier {

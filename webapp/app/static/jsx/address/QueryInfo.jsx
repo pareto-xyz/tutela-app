@@ -1,5 +1,6 @@
 import React from 'react';
 import AgnosticTable from '../components/AgnosticTable';
+import { Tooltip, OverlayTrigger } from 'react-bootstrap';
 
 const TO_IGNORE = new Set(['metadata', 'address', 'id', 'anonymity_score']);
 
@@ -9,6 +10,14 @@ export default function QueryInfo({ data, loading, aliases }) {
         anonymity_score = 1;
     }
     const combined = { ...data, ...metadata };
+
+    const renderHelpTooltip = props => {
+        return (
+            <Tooltip {...props} className="tooltip">
+                The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this.
+            </Tooltip>
+        );
+    }
 
     return (
         <div className="query-info ">
@@ -20,16 +29,20 @@ export default function QueryInfo({ data, loading, aliases }) {
 
             {anonymity_score >= 0 && <div className="anon-score-group">
                 anonymity score: &nbsp;{anonymity_score * 100} &nbsp;/ 100
-                <div data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="hover"
-                    data-content="The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this."
-                    className="help-circle">?</div>
+                <OverlayTrigger
+                    placement="right"
+                    delay={{ show: 250, hide: 400 }}
+                    overlay={renderHelpTooltip}
+                >
+                    <div className="help-circle">?</div>
+                </OverlayTrigger>
             </div>}
             {loading && <div id="spinner" className="justify-content-center">
                 <div className="spinner-border" role="status">
                     <span className="sr-only">Loading...</span>
                 </div>
             </div>}
-            <AgnosticTable toIgnore={TO_IGNORE} keyValues={Object.entries(combined)} />
+            <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={Object.entries(combined)} />
         </div>
     );
 }
