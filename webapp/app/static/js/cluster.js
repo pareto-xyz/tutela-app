@@ -22,12 +22,15 @@ $(function () {
     const spinner = $('#spinner');
     const resultIdentifier = $('.result-identifier');
     const queryTable = $('#query-detail-table');
-    const tornadoTable = $('#tornado-detail-table');
+    const tornadoTable = $('#tornado-detail-table-address');
+    const tornadoTableCluster = $('#tornado-detail-table-cluster');
     const rightSide = $('.right-side');
     const anonGuy = $('#anonymous-none-found');
+    const tornadoDataCluster = $('#tornado-data-cluster');
 
     let pageResults = []; //stores the results for easy access of results
     let firstInRange = 1;
+    let aliases = {};
 
     //this queryObj allows us to store queries. filters start with 'filter_' before the attribute name. 
     let queryObj = {};
@@ -301,7 +304,8 @@ $(function () {
 
     function displayDetails(item) {
         detailAddr.html(item.address);
-        populateTable(detailTable, item, new Set(['id', 'address']));
+
+        populateTable(detailTable, convertAttributes(item), new Set(['id', 'address']));
     }
 
     function populateTable(domElem, obj, ignore=new Set()) {
@@ -333,13 +337,27 @@ $(function () {
         detailTable.html('');
     }
 
+    function convertAttributes(obj) {
+        const entries = Object.entries(obj);
+        let newObj = {};
+        for (const [key, value] of entries) {
+            if (aliases[key]) {
+                newObj[aliases[key]] = value;
+            } else {
+                newObj[key] = value;
+            }
+        }
+        return newObj;
+    }
+
     /**
      * sets the displayed info for the address that was queried
      * @param {obj} query 
      */
     function setQueryInfo(query) {
         const {metadata} = query;
-        const combined = {...query, ...metadata};
+        let combined = {...query, ...metadata};
+        combined = convertAttributes(combined);
         populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score']));
     }
 
@@ -349,7 +367,11 @@ $(function () {
      */
     function setTornadoInfo(query) {
         const {summary} = query;
-        populateTable(tornadoTable, summary);
+        populateTable(tornadoTable, convertAttributes(summary.address));
+        if (summary.cluster) {
+            tornadoDataCluster.addClass('shown');
+            populateTable(tornadoTableCluster, convertAttributes(summary.cluster));
+        }
     }
 
     /**
@@ -428,6 +450,11 @@ $(function () {
         const addr = urlParams.get('address');
         queryObj.address = addr;
 
+        axios.get('/utils/aliases').then(response => {
+            aliases = response.data;
+        }).catch(error => {
+            console.log(error);
+        });
         //when someone inputs an address and enters
         form.submit(e => {
 

@@ -19,7 +19,7 @@ from flask import request, Response
 from flask import render_template
 from sqlalchemy import or_
 
-from app.utils import get_known_attrs
+from app.utils import get_known_attrs, get_display_aliases
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
@@ -34,6 +34,11 @@ def index():
 @app.route('/cluster', methods=['GET'])
 def cluster():
     return render_template('cluster.html')
+
+@app.route('/utils/aliases', methods=['GET'])
+def alias():
+    response: str = json.dumps(get_display_aliases())
+    return Response(response=response)
 
 
 @app.route('/search', methods=['GET'])
@@ -216,9 +221,9 @@ def search():
         num_compromised: int = num_deposit - num_remain
 
         stats: Dict[str, int] = dict(
-            address_num_deposit = num_deposit,
-            address_num_withdraw = num_withdraw,
-            address_num_compromised = num_compromised,
+            num_deposit = num_deposit,
+            num_withdraw = num_withdraw,
+            num_compromised = num_compromised,
         )
         return stats
 
@@ -262,11 +267,13 @@ def search():
         num_remain: int = len(deposit_txs - reveal_txs)
         num_compromised: int = num_deposit - num_remain
 
-        stats: Dict[str, int] = dict(
-            cluster_num_deposit = num_deposit,
-            cluster_num_withdraw = num_withdraw,
-            cluster_num_compromised = num_compromised,
-        )
+        stats: Dict[str, int] = {
+            'cluster': {
+                'num_deposit': num_deposit,
+                'num_withdraw': num_withdraw,
+                'num_compromised': num_compromised,
+            }
+        }
         return stats
 
 
@@ -404,7 +411,7 @@ def search():
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
         address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
-        output['data']['tornado']['summary'].update(address_tornado_dict)
+        output['data']['tornado']['summary']['address'].update(address_tornado_dict)
 
         if addr is not None:  # nothing to do if address doesn't exist in DAR
             if addr.entity == entity_to_int(EOA):

@@ -65,6 +65,17 @@ def get_anonymity_score(
     """
     return 1 - np.tanh(slope * np.dot(cluster_confs, cluster_sizes))
 
+def get_display_aliases() -> Dict[str, str]:
+    return {
+        'num_deposit': 'deposits',
+        'num_withdraw': 'withdraws',
+        'num_compromised': 'compromised',
+        'conf': 'confidence score',
+        'entity': 'address type',
+        'balance': 'ETH balance',
+        'ens_name': 'ENS'
+    }
+
 
 def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, Any]:
     """
@@ -153,9 +164,11 @@ def default_response() -> Dict[str, Any]:
             },
             'tornado': {
                 'summary': {
-                    'address_num_deposit': 0,
-                    'address_num_withdraw': 0,
-                    'address_num_compromised': 0,
+                    'address': {
+                        'num_deposit': 0,
+                        'num_withdraw': 0,
+                        'num_compromised': 0
+                    }, 
                 },
             },
             'cluster': [],
