@@ -95,3 +95,17 @@ class TornadoWithdraw(db.Model):
 
     def __repr__(self) -> str:
         return f'<TornadoWithdraw {self.hash}>'
+
+
+class TornadoPool(db.Model):
+    """
+    Stores an address and transaction that deposits into a tornado pool.
+    """
+    __table__: str = 'tornado_pool'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(db.String(128), index = True, nullable = False)
+    transaction: db.Column = db.Column(db.String(128), index = True, nullable = False)
+    pool: db.Column = db.Column(db.String(128), index = True, nullable = False)
+
+    def __repr__(self) -> str:
+        return f'<TornadoPool {self.id}>'
