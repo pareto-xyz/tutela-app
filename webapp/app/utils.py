@@ -6,17 +6,21 @@ from app.models import Address
 from sqlalchemy import or_, and_
 
 # CONSTS for schema
-ADDRESS_COL = 'address'
-ENTITY_COL = 'entity'
-CONF_COL = 'confidence'
-NAME_COL = 'name'
-EOA = 'eoa'
-DEPOSIT = 'deposit'
-EXCHANGE = 'exchange'
-DEX = 'dex'
-DEFI = 'defi'
-ICO_WALLET = 'ico wallet'
-MINING = 'mining'
+ADDRESS_COL: str = 'address'
+ENTITY_COL: str = 'entity'
+CONF_COL: str = 'confidence'
+NAME_COL: str = 'name'
+EOA: str = 'eoa'
+DEPOSIT: str = 'deposit'
+EXCHANGE: str = 'exchange'
+DEX: str = 'dex'
+DEFI: str = 'defi'
+ICO_WALLET: str = 'ico wallet'
+MINING: str = 'mining'
+DEPO_REUSE: int = 0
+SAME_ADDR: int = 1
+GAS_PRICE: int = 2
+SAME_NUM_TX: int = 3
 
 
 def safe_int(x, default=0):
@@ -160,7 +164,7 @@ def to_dict(
     return output
 
 
-def default_response() -> Dict[str, Any]:
+def default_address_response() -> Dict[str, Any]:
     output: Dict[str, Any] = {
         'data': {
             'query': {
@@ -212,6 +216,43 @@ def default_response() -> Dict[str, Any]:
             }
         },
         'success': 0,
+    }
+    return output
+
+
+def default_tornado_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'data': {
+            'query': {
+                'address': '', 
+                'metadata': {}, 
+            },
+            'cmmpromise': [],
+        },
+        'metadata': {
+                'cluster_size': 0,
+                'num_pages': 0,
+                'page': 0,
+                'limit': 50,
+                'filter_by': {
+                    'min_conf': 0,
+                    'max_conf': 1,
+                    'entity': '*',
+                    'name': '*',
+                },
+                'schema': {
+                    HEURISTIC_COL: {
+                        'type': 'string',
+                        'values': [
+                            DEPO_REUSE, SAME_ADDR, GAS_PRICE, SAME_NUM_TX],
+                    }
+                },
+                'sort_default': {
+                    'attribute': ENTITY_COL,
+                    'descending': False
+                }
+            }
+        'success': 0
     }
     return output
 

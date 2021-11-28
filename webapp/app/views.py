@@ -11,7 +11,7 @@ from app.models import \
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
-    RequestChecker, default_response, \
+    RequestChecker, default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
 from app.lib.w3 import query_web3
 
@@ -54,7 +54,7 @@ def search():
         default_limit = PAGE_LIMIT,
     )
     is_valid_request: bool = checker.check()
-    output: Dict[str, Any] = default_response()
+    output: Dict[str, Any] = default_address_response()
 
     if not is_valid_request: 
         return Response(output)
@@ -285,8 +285,20 @@ def search():
         output['is_tornado'] = int(is_tornado)  # save as 1 or 0
 
         if is_tornado:
-            pass
+            # ---------------------------------------------------------
+            # MODE #1
+            # This is a TCash pool, so we can show specific information
+            # about compromised addresses via our heuristics.
+            # ---------------------------------------------------------
+            rows: List[TornadoPool] = TornadoPool.query.filter_by(pool = address).all()
+            if len(rows) > 0:
+                pass
         else:
+            # ---------------------------------------------------------
+            # MODE #2
+            # This is a regular address, so we can search our dataset
+            # for its cluster and complimentary information.
+            # ---------------------------------------------------------
 
             # --- search for address ---
             addr: Optional[Address] = Address.query.filter_by(address = address).first()
