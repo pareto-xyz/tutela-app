@@ -18,7 +18,6 @@ def main(args: Any):
     transactions_file: str = os.path.join(args.save_dir, 'same_num_txs_transactions.csv')
     tx2addr_file: str = os.path.join(args.save_dir, 'same_num_txs_tx2addr.csv')
     address_file: str = os.path.join(args.save_dir, 'same_num_txs_address_sets.csv')
-    # metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
 
     get_same_num_transactions_clusters(
         deposit_df = deposit_df, 
@@ -163,7 +162,7 @@ def same_num_of_transactions_heuristic(
     deposit_txs: List[str] = list()
     deposit_tx2addr: Dict[str, str] = {}
 
-    for address in addresses:
+    for address in deposit_addrs:
         deposit_set: Dict[str, List[str]] = addr2deposit[address]
         assert set(withdraw_set.keys()) == set(deposit_set.keys()), \
             "Set of keys do not match."
@@ -177,7 +176,8 @@ def same_num_of_transactions_heuristic(
         deposit_txs.extend(cur_deposit_txs)
         deposit_tx2addr.update(cur_deposit_tx2addr)
 
-    if len(addresses) > 0:
+    if len(deposit_addrs) > 0:
+        privacy_score: float = 1. - 1. / len(deposit_addrs)
         response_dict: Dict[str, Any] = dict(
             withdraw_txs = withdraw_txs,
             deposit_txs = deposit_txs,
@@ -185,6 +185,7 @@ def same_num_of_transactions_heuristic(
             deposit_addrs = deposit_addrs,
             withdraw_tx2addr = withdraw_tx2addr,
             deposit_tx2addr = deposit_tx2addr,
+            privacy_score = privacy_score,
         )
         return (True, response_dict)
 
