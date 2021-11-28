@@ -73,7 +73,12 @@ def get_display_aliases() -> Dict[str, str]:
         'conf': 'confidence score',
         'entity': 'address type',
         'balance': 'ETH balance',
-        'ens_name': 'ENS'
+        'ens_name': 'ENS',
+        'exchange_address': 'exchange address',
+        'exchange_name': 'associated exchange',
+        'account_type': 'category',
+        'label': 'legitimacy',
+        'tags': 'other',
     }
 
 
