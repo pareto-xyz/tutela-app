@@ -152,12 +152,29 @@ RESULTS
 
 /* tornado info ------------------ */
 
+.two-tables {
+    display: flex;
+}
+
+.table-title {
+    font-size: 0.9em;
+    color: var(--tcashgreen);
+}
+
+.two-tables > * {
+    flex: 1;
+}
+
 .tornado-info {
     background-color: var(--fadedgrey);
     border-radius: 5px;
     margin-left: 30px;
     padding: 15px;
     width: 100%; 
+}
+
+#tornado-data-cluster {
+    display: none;
 }
 
 /* results list ------------------ */
