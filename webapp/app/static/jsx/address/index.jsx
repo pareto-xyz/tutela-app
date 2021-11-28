@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from '../components/Header';
 import { Form, FormControl, InputGroup } from 'react-bootstrap';
 import { isValid, buildQueryString } from '../components/utils';
@@ -7,7 +7,10 @@ import example from '../../data/example'
 
 import ClusterResults from './ClusterResults';
 
-function ClusterPage() {
+function ClusterPage(props) {
+    const {params} = props;
+    const inputEl = useRef(null);
+
     const [queryObj, setQuery] = useState({});
     const [inputAddress, setInputAddress] = useState('');
     const [pageResults, setPageResults] = useState([]);
@@ -16,6 +19,18 @@ function ClusterPage() {
     const [firstView, setFirstView] = useState(true);
     const [showResultsSection, setShowResultsSection] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    // initializing
+    useEffect(() => {
+        const addr = params.get('address');
+        if (addr !== null) {
+            console.log(inputEl.current);
+            inputEl.current.value = addr;
+            // inputEl.current.submit();
+            setInputAddress(addr);
+            submitInputAddress(addr);
+        }
+    }, [])
 
     const getNewResults = _ => {
         setShowResultsSection(true);
@@ -59,9 +74,13 @@ function ClusterPage() {
             });
     }
 
-    const submitInputAddress = e => {
-        e.preventDefault();
-        if (!isValid(inputAddress)) {
+    const submitInputAddress = addr => {
+        //param is optional. otherwise, use the inputAddress var
+        if (!addr) {
+            addr = inputAddress;
+            setInputAddress(addr);
+        }
+        if (!isValid(addr)) {
             setInvalid(true);
             return;
         }
@@ -89,15 +108,16 @@ function ClusterPage() {
                         based on public data on previous transactions.
                     </div>}
                     <InputGroup onSubmit={submitInputAddress} className="mb-3 " hasValidation>
-                        <FormControl onKeyPress={(e) => e.key === 'Enter' && submitInputAddress(e)}
+                        <FormControl onKeyPress={(e) => e.key === 'Enter' && e.preventDefault() && submitInputAddress()}
                             onChange={onChangeInputAddress}
                             placeholder='eg. 0x000000000000000..........'
                             className="search-bar"
                             isInvalid={invalid}
+                            ref={inputEl}
                         >
                         </FormControl>
 
-                        <InputGroup.Text className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
+                        <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
                         <Form.Control.Feedback type="invalid">
                             Please enter a valid ethereum address.
                         </Form.Control.Feedback>

@@ -18,11 +18,6 @@ html {
     text-overflow: ellipsis;
 }
 
-.panel-title.spaced {
-    margin-left: 15px;
-    margin-top: 15px;
-}
-
 .panel-sub {
     color: var(--lightgrey);
     font-size: 0.8em;
@@ -197,6 +192,7 @@ RESULTS
     overflow: scroll;
     flex: 1;
     border-radius: 5px;
+    padding: 15px;
 
 }
 

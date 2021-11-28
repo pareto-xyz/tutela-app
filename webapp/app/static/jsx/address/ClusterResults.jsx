@@ -3,7 +3,8 @@ import SortAndFilters from '../components/SortAndFilters';
 import Pagination from '../components/Pagination';
 
 export default function ClusterResults(props) {
-    const {cluster } = props;
+    const { results} = props;
+    const noResults = results.length == 0;
 
     return (
         <div >
@@ -16,7 +17,7 @@ export default function ClusterResults(props) {
                     <div className="panel-title spaced">
                         LINKED ADDRESSES
                     </div>
-                    
+                    {noResults && <div>No clusters found. </div>}
                     <table id="results-table">
                     </table>
 
