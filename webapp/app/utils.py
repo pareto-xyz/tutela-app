@@ -365,3 +365,17 @@ class AddressRequestChecker:
 
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
+
+
+class PoolRequestChecker:
+
+    def __init__(
+        self,
+        request: Any,
+        table_cols: List[str],
+        conf_key: str = 'confidence',
+        name_key: str = 'name',
+        default_page: int = 0,
+        default_limit: int = 50,
+    ):
+        pass
