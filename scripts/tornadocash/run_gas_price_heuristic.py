@@ -105,7 +105,9 @@ def get_address_sets(
     tx2addr: Dict[str, str],
 ) -> List[Set[str]]:
     """
-    Stores pairs of addresses that are related to each other.
+    Stores pairs of addresses that are related to each other. Don't 
+    apply graphs on this because we are going to join this into the 
+    other clusters.
     """
     address_clusters: List[Set[str]] = []
 
@@ -123,26 +125,27 @@ def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
     """
     Stores metadata about addresses to add to db. 
     """
+    unique_addresses: Set[str] = set().union(*address_sets)
+
     address: List[str] = []
     entity: List[int] = [] 
     conf: List[float] = []
     meta_data: List[str] = []
-    cluster_type: List[int] = []
+    heuristic: List[int] = []
 
-    for cluster in address_sets:
-        for member in cluster:
-            address.append(member)
-            entity.append(Entity.EOA.value)
-            conf.append(1)
-            meta_data.append(json.dumps({}))
-            cluster_type.append(Heuristic.GAS_PRICE.value)
+    for member in unique_addresses:
+        address.append(member)
+        entity.append(Entity.EOA.value)
+        conf.append(1)
+        meta_data.append(json.dumps({}))
+        heuristic.append(Heuristic.GAS_PRICE.value)
 
     response: Dict[str, List[Any]] = dict(
         address = address,
         entity = entity,
         conf = conf,
         meta_data = meta_data,
-        cluster_type = cluster_type,
+        heuristic = heuristic,
     )
     response: pd.DataFrame = pd.DataFrame.from_dict(response)
     return response

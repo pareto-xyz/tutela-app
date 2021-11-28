@@ -10,6 +10,8 @@ from typing import Any
 
 def main(args: Any):
     dar_metadata: pd.DataFrame = pd.read_csv(args.metadata_pruned)
+    if 'cluster_type' in dar_metadata.columns:
+        dar_metadata.rename(columns={'cluster_type': 'heuristic'}, inplace=True)
     gas_metadata: pd.DataFrame = pd.read_csv(args.gas_price_metadata)
     same_metadata: pd.DataFrame = pd.read_csv(args.same_num_tx_metadata)
 
