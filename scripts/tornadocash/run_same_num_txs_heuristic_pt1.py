@@ -15,9 +15,9 @@ pd.options.mode.chained_assignment = None
 def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     
-    transactions_file: str = os.path.join(args.save_dir, f'same_num_txs_transactions.csv')
-    tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.csv')
-    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.csv')
+    transactions_file: str = os.path.join(args.save_dir, 'same_num_txs_transactions.csv')
+    tx2addr_file: str = os.path.join(args.save_dir, 'same_num_txs_tx2addr.csv')
+    address_file: str = os.path.join(args.save_dir, 'same_num_txs_address_sets.csv')
     # metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
 
     get_same_num_transactions_clusters(
@@ -315,38 +315,6 @@ def get_address_deposits(
     pbar.close()
 
     return addr2deposit
-
-
-def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
-    """
-    Stores metadata about addresses to add to db. 
-    """
-    address: List[str] = []
-    entity: List[int] = [] 
-    conf: List[float] = []
-    meta_data: List[str] = []
-    cluster_type: List[int] = []
-
-    pbar = tqdm(total=len(address_sets))
-    for cluster in address_sets:
-        for member in cluster:
-            address.append(member)
-            entity.append(Entity.EOA.value)
-            conf.append(1)
-            meta_data.append(json.dumps({}))
-            cluster_type.append(Heuristic.SAME_NUM_TX.value)
-        pbar.update()
-    pbar.close()
-
-    response: Dict[str, List[Any]] = dict(
-        address = address,
-        entity = entity,
-        conf = conf,
-        meta_data = meta_data,
-        cluster_type = cluster_type,
-    )
-    response: pd.DataFrame = pd.DataFrame.from_dict(response)
-    return response
 
 
 if __name__ == "__main__":

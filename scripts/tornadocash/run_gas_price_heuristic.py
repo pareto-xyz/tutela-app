@@ -109,16 +109,16 @@ def get_address_sets(
     apply graphs on this because we are going to join this into the 
     other clusters.
     """
-    address_clusters: List[Set[str]] = []
+    address_sets: List[Set[str]] = []
 
     for cluster in tx_clusters:
-        addr_cluster: Set[str] = set([tx2addr[tx] for tx in cluster])
-        addr_cluster: List[str] = list(addr_cluster)
+        addr_set: Set[str] = set([tx2addr[tx] for tx in cluster])
+        addr_set: List[str] = list(addr_set)
 
-        if len(addr_cluster) > 1:  # make sure not singleton
-            address_clusters.append(addr_cluster)
+        if len(addr_set) > 1:  # make sure not singleton
+            address_sets.append(addr_set)
 
-    return address_clusters
+    return address_sets
 
 
 def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
