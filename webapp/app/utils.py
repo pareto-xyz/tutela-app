@@ -216,48 +216,28 @@ def default_address_response() -> Dict[str, Any]:
             }
         },
         'success': 0,
+        'is_tornado': 0,
     }
     return output
 
 
-def default_tornado_response() -> Dict[str, Any]:
-    output: Dict[str, Any] = {
-        'data': {
-            'query': {
-                'address': '', 
-                'metadata': {}, 
-            },
-            'cmmpromise': [],
-        },
-        'metadata': {
-                'cluster_size': 0,
-                'num_pages': 0,
-                'page': 0,
-                'limit': 50,
-                'filter_by': {
-                    'min_conf': 0,
-                    'max_conf': 1,
-                    'entity': '*',
-                    'name': '*',
-                },
-                'schema': {
-                    HEURISTIC_COL: {
-                        'type': 'string',
-                        'values': [
-                            DEPO_REUSE, SAME_ADDR, GAS_PRICE, SAME_NUM_TX],
-                    }
-                },
-                'sort_default': {
-                    'attribute': ENTITY_COL,
-                    'descending': False
-                }
-            }
-        'success': 0
-    }
-    return output
+def is_valid_address(address: str) -> bool:
+    address: str = address.lower().strip()
+
+    if len(address) != 42:
+        return False
+
+    if len(address) > 2:
+        if address[:2] != '0x':
+            return False
+
+    if len(address.split()) != 1:
+        return False
+
+    return True
 
 
-class RequestChecker:
+class AddressRequestChecker:
     """
     Given a request object with its args, make sure that it is 
     providing valid arguments.
@@ -296,20 +276,10 @@ class RequestChecker:
         is 42 chars long. Check that there are no spaces.
         """
         address: str = self._request.args.get('address', '')
-        address: str = address.lower().strip()
-
-        if len(address) != 42:
-            return False
-
-        if len(address) > 2:
-            if address[:2] != '0x':
-                return False
-
-        if len(address.split()) != 1:
-            return False
-
-        self._params['address'] = address
-        return True
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
 
     def _check_page(self) -> bool:
         # intentionally only returns True as we don't want to block a user
@@ -369,7 +339,8 @@ class RequestChecker:
 
         filter_by: List[Any] = []
 
-        if Address.query.filter_by(address = self._params['address']).first(): # the below will fail if address doesn't exist in table
+        # the below will fail if address doesn't exist in table
+        if Address.query.filter_by(address = self._params['address']).first():
             if ((filter_min_conf >= 0 and filter_min_conf <= 1) and
                 (filter_max_conf >= 0 and filter_max_conf <= 1) and
                 (filter_min_conf <= filter_max_conf)):
