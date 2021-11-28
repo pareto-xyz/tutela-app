@@ -27,6 +27,12 @@ html {
     display: none;
 }
 
+.center-inside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 /**
 TOP
 */
@@ -48,7 +54,7 @@ TOP
 }
 
 .anon-score-group {
-    display: none;
+    display: flex;
     width: 100%;
     align-items: center;;
     font-family: 'Ubuntu';
@@ -104,20 +110,17 @@ RESULTS
 }
 
 .all-pagination {
-    display: none;
+    display: flex;
     margin: 10px 0px;
     font-size: 0.8em;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .shown {
     display: flex !important;
     visibility: visible !important;
-}
-
-.all-pagination.shown {
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
 }
 
 .pagination {
@@ -323,6 +326,7 @@ ul.dropdown-menu {
     margin-left: -5px;
     width: 100%;
     font-size: 0.9em;
+    border-color: transparent;
 }
 
 .detail-row > td{
@@ -331,6 +335,8 @@ ul.dropdown-menu {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: white;
+    border-top: transparent;
 }
 
 .detail-row > td:last-child {

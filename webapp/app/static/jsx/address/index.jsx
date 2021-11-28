@@ -3,7 +3,9 @@ import Header from '../components/Header';
 import { Form, FormControl, InputGroup } from 'react-bootstrap';
 import { isValid, buildQueryString } from '../components/utils';
 import axios from 'axios';
-import example from '../../data/example'
+import example from '../../data/example';
+import QueryInfo from './QueryInfo';
+import TornadoInfo from './TornadoInfo';
 
 import ClusterResults from './ClusterResults';
 
@@ -11,14 +13,15 @@ function ClusterPage(props) {
     const {params} = props;
     const inputEl = useRef(null);
 
-    const [queryObj, setQuery] = useState({});
+    let [queryObj, setQuery] = useState({});
     const [inputAddress, setInputAddress] = useState('');
     const [pageResults, setPageResults] = useState([]);
-    const [firstInRange, setFirstInRange] = useState(1);
     const [invalid, setInvalid] = useState(false);
     const [firstView, setFirstView] = useState(true);
     const [showResultsSection, setShowResultsSection] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [queryInfo, setQueryInfo] = useState({});
+    const [tornado, setTornado] = useState({});
 
     // initializing
     useEffect(() => {
@@ -39,38 +42,30 @@ function ClusterPage(props) {
 
         axios.get('/search' + queryString)
             .then(function (response) {
-                console.log(response.data);
+                response = example;
+
                 setLoading(false);
-                const { success, data } = response.data;
+                const { success, data } = response;
                 const { cluster, metadata, query, tornado } = data;
                 const { schema, sort_default } = metadata;
-                setPagination(query.address, metadata);
-                if (firstTime) {
-                    setQueryInfo(query);
-                    setTornadoInfo(tornado);
-                    setSearchOptions(schema, sort_default);
-                }
-                setPageResults(cluster);
+                setQueryInfo(query);
+                console.log(query);
+                setTornado(tornado);
+
                 if (success === 1 && cluster.length > 0) {
-                    noClusterMsg.removeClass('shown');
-                    resultIdentifier.addClass('shown');
-
-                    if (firstTime) {
-                        setAnonScore(query.anonymity_score);
-                    }
-
-
+                    setPageResults(cluster);
+                    
                 } else {
-                    clearDetails();
-                    noClusterMsg.addClass('shown');
-                    setAnonScore(1);
-
                 }
             })
             .catch(function (error) {
                 setPageResults([]);
                 setLoading(false);
                 console.log(error);
+            }).finally(() => {
+                if (firstView) {
+                    setFirstView(false);
+                }
             });
     }
 
@@ -84,10 +79,9 @@ function ClusterPage(props) {
             setInvalid(true);
             return;
         }
-        if (firstView) {
-            setFirstView(false);
-        }
         setInvalid(false);
+        queryObj.address = addr;
+        setQuery(queryObj);
         getNewResults();
 
     }
@@ -108,7 +102,11 @@ function ClusterPage(props) {
                         based on public data on previous transactions.
                     </div>}
                     <InputGroup onSubmit={submitInputAddress} className="mb-3 " hasValidation>
-                        <FormControl onKeyPress={(e) => e.key === 'Enter' && e.preventDefault() && submitInputAddress()}
+                        <FormControl onKeyPress={(e) => {
+                            if (e.key !== 'Enter') return; 
+                            e.preventDefault();
+                            submitInputAddress();
+                        }}
                             onChange={onChangeInputAddress}
                             placeholder='eg. 0x000000000000000..........'
                             className="search-bar"
@@ -136,45 +134,13 @@ function ClusterPage(props) {
                     </div>} */}
                     {showResultsSection && <div className="results-section">
 
-                        <div className="query-info ">
-                            <div className="panel-sub">about your input</div>
-                            <div className="panel-title">
-                                OVERALL INFO
-                            </div>
+                        <QueryInfo data={queryInfo} loading={loading} />
 
-
-                            <div className="anon-score-group">
-                                anonymity score: &nbsp;<span id="anon-score"></span> &nbsp;/ 100
-                                <div data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="hover"
-                                    data-content="The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this."
-                                    className="help-circle">?</div>
-                            </div>
-                            {loading && <div id="spinner" className="justify-content-center">
-                                <div className="spinner-border" role="status">
-                                    <span className="sr-only">Loading...</span>
-                                </div>
-                            </div>}
-                            <div id="query-detail-table" className="detail-table">
-                            </div>
-
-                        </div>
-
-                        <div className="tornado-info ">
-                            <div className="panel-sub">tornado cash statistics</div>
-                            <div className="panel-title">
-                                TORNADO CASH INFO
-                            </div>
-                            <div className="panel-sub">
-                                Compromised addresses are deposit addresses that are deemed revealing of identity through Tutela heuristics.
-                            </div>
-                            <div id="tornado-detail-table" className="detail-table">
-                            </div>
-                        </div>
-
+                        <TornadoInfo data={tornado} />
 
                     </div>}
                     {showResultsSection &&
-                        <ClusterResults results={pageResults} />}
+                        <ClusterResults results={pageResults} loading={loading}/>}
                 </div >
             </div>
         </div>

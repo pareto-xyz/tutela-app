@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Pagination(props) {
     return (
-        <div className="all-pagination">
+        <div className='all-pagination'>
             <div>
                 results <span id="results-window"></span> out of <span className="total-results"></span>
             </div>
