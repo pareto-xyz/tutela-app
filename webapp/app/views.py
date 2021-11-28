@@ -7,7 +7,7 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, known_addresses, rds
 from app.models import \
     Address, ExactMatch, GasPrice, \
-    TornadoDeposit, TornadoWithdraw
+    TornadoDeposit, TornadoWithdraw, TornadoPool
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
@@ -234,11 +234,7 @@ def search():
         """
         # find EOA addresses in the same cluster as address
         cluster: Set[str] = query_deposit_reuse_heuristic(address)
-        cluster_stats: Dict[str, int] = dict(
-            cluster_num_deposit = 0,
-            cluster_num_withdraw = 0,
-            cluster_num_compromised = 0,
-        )
+
         reveal_txs: Set[str] = set()
         deposit_txs: Set[str] = set()
         num_deposit: int = 0
@@ -276,148 +272,160 @@ def search():
         }
         return stats
 
+    def is_tornado_address(address: str) -> bool:
+        return TornadoPool.query.filter_by(pool = address).exists()
+
 
     if len(address) > 0:
         offset: int = page * size
 
-        # --- search for address ---
-        addr: Optional[Address] = Address.query.filter_by(address = address).first()
+        # --- check if this is a tornado entry or not ---
 
-        if addr is not None:  # make sure address exists
-            entity: str = entity_to_str(addr.entity)
-            addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
-            output['data']['query']['metadata'] = addr_metadata
+        is_tornado: bool = is_tornado_address(address)
+        output['is_tornado'] = int(is_tornado)  # save as 1 or 0
 
-            # store the clusters in here
-            cluster: List[Address] = []
-            # stores cluster size with filters. This is necessary to reflect changes
-            # in # of elements with new filters.
-            cluster_size: int = 0
+        if is_tornado:
+            pass
+        else:
 
-            query_data: Dict[str, Any] = output['data']['query']
-            output['data']['query'] = {
-                **query_data, 
-                **to_dict(addr, table_cols, to_transform=[('entity', entity_to_str)])
-            }
+            # --- search for address ---
+            addr: Optional[Address] = Address.query.filter_by(address = address).first()
 
-            if entity == EOA:
-                # --- compute clusters if you are an EOA ---
-                if addr.user_cluster is not None:
-                    order_command: Any = get_order_command(sort_by, desc_sort)
+            if addr is not None:  # make sure address exists
+                entity: str = entity_to_str(addr.entity)
+                addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
+                output['data']['query']['metadata'] = addr_metadata
 
-                    # find all deposit/eoa addresses in the same cluster & filtering attrs
-                    query_: Any = Address.query.filter(
-                        Address.user_cluster == addr.user_cluster,
-                        *filter_by
-                    )
-                    cluster_: Optional[List[Address]] = query_\
-                        .order_by(order_command)\
-                        .offset(offset).limit(size).all()
+                # store the clusters in here
+                cluster: List[Address] = []
+                # stores cluster size with filters. This is necessary to reflect changes
+                # in # of elements with new filters.
+                cluster_size: int = 0
 
-                    if cluster_ is not None:
-                        cluster_: List[Dict[str, Any]] = [
-                            to_dict(
-                                c,
-                                table_cols,
-                                to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
-                            ) 
-                            for c in cluster_
-                        ]
-                        cluster += cluster_
-                        # get total number of elements in query
-                        cluster_size_: int = query_.limit(HARD_MAX).count()
-                        cluster_size += cluster_size_
+                query_data: Dict[str, Any] = output['data']['query']
+                output['data']['query'] = {
+                    **query_data, 
+                    **to_dict(addr, table_cols, to_transform=[('entity', entity_to_str)])
+                }
 
-            elif entity == DEPOSIT:
-                # --- compute clusters if you are a deposit ---
-                # for deposits, we can both look up all relevant eoa's and 
-                # all relevant exchanges. These are in two different clusters
-                if addr.user_cluster is not None:
-                    order_command: Any = get_order_command(sort_by, desc_sort)
+                if entity == EOA:
+                    # --- compute clusters if you are an EOA ---
+                    if addr.user_cluster is not None:
+                        order_command: Any = get_order_command(sort_by, desc_sort)
 
-                    query_: Any = Address.query.filter(
-                        Address.user_cluster == addr.user_cluster,
-                        *filter_by
-                    )
-                    cluster_: Optional[List[Address]] = query_\
-                        .order_by(order_command)\
-                        .offset(offset).limit(size).all()
-                   
-                    if cluster_ is not None:
-                        cluster_: Dict[str, Any] = [
-                            to_dict(
-                                c,
-                                table_cols,
-                                to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
-                            )
-                            for c in cluster_
-                        ]
-                        cluster += cluster_
-                        cluster_size_: int = query_.limit(HARD_MAX).count()
-                        cluster_size += cluster_size_
+                        # find all deposit/eoa addresses in the same cluster & filtering attrs
+                        query_: Any = Address.query.filter(
+                            Address.user_cluster == addr.user_cluster,
+                            *filter_by
+                        )
+                        cluster_: Optional[List[Address]] = query_\
+                            .order_by(order_command)\
+                            .offset(offset).limit(size).all()
 
-            elif entity == EXCHANGE:
-                # --- compute clusters if you are an exchange ---
-                # find all deposit/exchange addresses in the same cluster
-                if addr.exchange_cluster is not None:
-                    order_command: Any = get_order_command(sort_by, desc_sort)
+                        if cluster_ is not None:
+                            cluster_: List[Dict[str, Any]] = [
+                                to_dict(
+                                    c,
+                                    table_cols,
+                                    to_remove=['id'],
+                                    to_transform=[('entity', entity_to_str)],
+                                ) 
+                                for c in cluster_
+                            ]
+                            cluster += cluster_
+                            # get total number of elements in query
+                            cluster_size_: int = query_.limit(HARD_MAX).count()
+                            cluster_size += cluster_size_
 
-                    query_: Any = Address.query.filter(
-                        Address.exchange_cluster == addr.exchange_cluster,
-                        *filter_by
-                    )
-                    cluster_: Optional[List[Address]] = query_\
-                        .order_by(order_command)\
-                        .offset(offset).limit(size).all()
+                elif entity == DEPOSIT:
+                    # --- compute clusters if you are a deposit ---
+                    # for deposits, we can both look up all relevant eoa's and 
+                    # all relevant exchanges. These are in two different clusters
+                    if addr.user_cluster is not None:
+                        order_command: Any = get_order_command(sort_by, desc_sort)
 
-                    if cluster_ is not None: 
-                        cluster_: Dict[str, Any] = [
-                            to_dict(
-                                c,
-                                table_cols,
-                                to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)]
-                            ) 
-                            for c in cluster_
-                        ]
-                        cluster += cluster_
-                        cluster_size_: int = query_.limit(HARD_MAX).count()
-                        cluster_size += cluster_size_
-            else:
-                raise Exception(f'Entity {entity} not supported.')
+                        query_: Any = Address.query.filter(
+                            Address.user_cluster == addr.user_cluster,
+                            *filter_by
+                        )
+                        cluster_: Optional[List[Address]] = query_\
+                            .order_by(order_command)\
+                            .offset(offset).limit(size).all()
+                    
+                        if cluster_ is not None:
+                            cluster_: Dict[str, Any] = [
+                                to_dict(
+                                    c,
+                                    table_cols,
+                                    to_remove=['id'],
+                                    to_transform=[('entity', entity_to_str)],
+                                )
+                                for c in cluster_
+                            ]
+                            cluster += cluster_
+                            cluster_size_: int = query_.limit(HARD_MAX).count()
+                            cluster_size += cluster_size_
 
-            output['data']['cluster'] = cluster
-            output['data']['metadata']['cluster_size'] = cluster_size
-            output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
+                elif entity == EXCHANGE:
+                    # --- compute clusters if you are an exchange ---
+                    # find all deposit/exchange addresses in the same cluster
+                    if addr.exchange_cluster is not None:
+                        order_command: Any = get_order_command(sort_by, desc_sort)
 
-            # --- compute anonymity score using hyperbolic fn ---
-            anon_score = compute_anonymity_score(addr)
-            anon_score: float = round(anon_score, 3)  # brevity is a virtue
-            output['data']['query']['anonymity_score'] = anon_score
+                        query_: Any = Address.query.filter(
+                            Address.exchange_cluster == addr.exchange_cluster,
+                            *filter_by
+                        )
+                        cluster_: Optional[List[Address]] = query_\
+                            .order_by(order_command)\
+                            .offset(offset).limit(size).all()
 
-            # --- query web3 to get current information about this address ---
-            web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
-            query_metadata: Dict[str, Any] = output['data']['query']['metadata']
-            output['data']['query']['metadata'] = {**query_metadata, **web3_resp}
+                        if cluster_ is not None: 
+                            cluster_: Dict[str, Any] = [
+                                to_dict(
+                                    c,
+                                    table_cols,
+                                    to_remove=['id'],
+                                    to_transform=[('entity', entity_to_str)]
+                                ) 
+                                for c in cluster_
+                            ]
+                            cluster += cluster_
+                            cluster_size_: int = query_.limit(HARD_MAX).count()
+                            cluster_size += cluster_size_
+                else:
+                    raise Exception(f'Entity {entity} not supported.')
 
-            # --- check if we know existing information about this address ---
-            known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
-            if len(known_lookup) > 0:
+                output['data']['cluster'] = cluster
+                output['data']['metadata']['cluster_size'] = cluster_size
+                output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
+
+                # --- compute anonymity score using hyperbolic fn ---
+                anon_score = compute_anonymity_score(addr)
+                anon_score: float = round(anon_score, 3)  # brevity is a virtue
+                output['data']['query']['anonymity_score'] = anon_score
+
+                # --- query web3 to get current information about this address ---
+                web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
                 query_metadata: Dict[str, Any] = output['data']['query']['metadata']
-                output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
+                output['data']['query']['metadata'] = {**query_metadata, **web3_resp}
 
-        # --- check tornado queries ---
-        # Note that this is out of the `Address` existence check
-        address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
-        output['data']['tornado']['summary']['address'].update(address_tornado_dict)
+                # --- check if we know existing information about this address ---
+                known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
+                if len(known_lookup) > 0:
+                    query_metadata: Dict[str, Any] = output['data']['query']['metadata']
+                    output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
 
-        if addr is not None:  # nothing to do if address doesn't exist in DAR
-            if addr.entity == entity_to_int(EOA):
-                # only add cluster information if current address is an EOA.
-                cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
-                output['data']['tornado']['summary'].update(cluster_tornado_dict)
+            # --- check tornado queries ---
+            # Note that this is out of the `Address` existence check
+            address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
+            output['data']['tornado']['summary']['address'].update(address_tornado_dict)
+
+            if addr is not None:  # nothing to do if address doesn't exist in DAR
+                if addr.entity == entity_to_int(EOA):
+                    # only add cluster information if current address is an EOA.
+                    cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
+                    output['data']['tornado']['summary'].update(cluster_tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
