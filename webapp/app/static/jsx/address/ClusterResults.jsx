@@ -17,7 +17,11 @@ function NoClusters() {
 }
 
 export default function ClusterResults(props) {
+<<<<<<< HEAD
     const { results, loading } = props;
+=======
+    const { results} = props;
+>>>>>>> dbdef9f (support address in the param)
     const noResults = results.length == 0;
 
     return (
@@ -31,6 +35,7 @@ export default function ClusterResults(props) {
                     <div className="panel-title spaced">
                         LINKED ADDRESSES
                     </div>
+<<<<<<< HEAD
                     {loading ? <div id="spinner" className="justify-content-center">
                         <div className="spinner-border" role="status">
                             <span className="sr-only">Loading...</span>
@@ -39,6 +44,11 @@ export default function ClusterResults(props) {
                     </table>)
 
                     }
+=======
+                    {noResults && <div>No clusters found. </div>}
+                    <table id="results-table">
+                    </table>
+>>>>>>> dbdef9f (support address in the param)
 
                 </div>
                 {/* <div className="detail-page">

@@ -13,7 +13,11 @@ function ClusterPage(props) {
     const {params} = props;
     const inputEl = useRef(null);
 
+<<<<<<< HEAD
     let [queryObj, setQuery] = useState({});
+=======
+    const [queryObj, setQuery] = useState({});
+>>>>>>> dbdef9f (support address in the param)
     const [inputAddress, setInputAddress] = useState('');
     const [pageResults, setPageResults] = useState([]);
     const [invalid, setInvalid] = useState(false);
@@ -22,6 +26,18 @@ function ClusterPage(props) {
     const [loading, setLoading] = useState(false);
     const [queryInfo, setQueryInfo] = useState({});
     const [tornado, setTornado] = useState({});
+
+    // initializing
+    useEffect(() => {
+        const addr = params.get('address');
+        if (addr !== null) {
+            console.log(inputEl.current);
+            inputEl.current.value = addr;
+            // inputEl.current.submit();
+            setInputAddress(addr);
+            submitInputAddress(addr);
+        }
+    }, [])
 
     // initializing
     useEffect(() => {
@@ -102,11 +118,15 @@ function ClusterPage(props) {
                         based on public data on previous transactions.
                     </div>}
                     <InputGroup onSubmit={submitInputAddress} className="mb-3 " hasValidation>
+<<<<<<< HEAD
                         <FormControl onKeyPress={(e) => {
                             if (e.key !== 'Enter') return; 
                             e.preventDefault();
                             submitInputAddress();
                         }}
+=======
+                        <FormControl onKeyPress={(e) => e.key === 'Enter' && e.preventDefault() && submitInputAddress()}
+>>>>>>> dbdef9f (support address in the param)
                             onChange={onChangeInputAddress}
                             placeholder='eg. 0x000000000000000..........'
                             className="search-bar"
