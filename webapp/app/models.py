@@ -17,6 +17,7 @@ class Address(db.Model):
     user_cluster: db.Column = db.Column(db.Integer)
     exchange_cluster: db.Column = db.Column(db.Integer)
     conf: db.Column = db.Column(db.Float)
+    heuristic: db.Column = db.Column(db.Integer)
 
     def __repr__(self) -> str:
         return f'<Address {self.address}>'
@@ -60,6 +61,28 @@ class GasPrice(db.Model):
 
     def __repr__(self) -> str:
         return f'<GasPrice {self.address}>'
+
+
+class MultiDenom(db.Model):
+    __tablename__: str = 'multi_denom'
+
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(
+        db.String(128),
+        index = True,
+        nullable = False,
+    )
+    transaction: db.Column = db.Column(
+        db.String(256),
+        index = True,
+        nullable = False,
+    )
+    privacy: db.Column = db.Column(db.Float)
+    meta_data: db.Column = db.Column(db.String(256))
+    cluster: db.Column = db.Column(db.Integer)
+
+    def __repr__(self) -> str:
+        return f'<MultiDenom {self.address}>'
 
 
 class TornadoDeposit(db.Model):

@@ -13,6 +13,7 @@ def main(args: Any):
     withdraw_df, deposit_df = load_data(args.data_dir)
     clusters, tx2addr = get_exact_matches(deposit_df, withdraw_df)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
+    # NOTE: we do not make a `db_file` here b/c we are guaranteed singleton clusters.
     clusters_file: str = os.path.join(args.save_dir, f'exact_match_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'exact_match_tx2addr.json')
     to_json(clusters, clusters_file)
@@ -41,7 +42,7 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
 def get_exact_matches(
     deposit_df: pd.DataFrame, 
     withdraw_df: pd.DataFrame, 
-) -> Tuple[List[Set[str]], Dict[str, str]]:
+) -> Tuple[List[Set[str]], Dict[str, str], Dict[str, Any]]:
     """
     Iterate over the withdraw transactions and apply heuristic one. For each 
     withdraw with matching deposit transactions, a new element is added to 
@@ -55,7 +56,8 @@ def get_exact_matches(
     graph: nx.DiGraph = nx.DiGraph()
 
     for withdraw_row in tqdm(withdraw_df.itertuples(), total=withdraw_df.shape[0]):
-        results = exact_match_heuristic(deposit_df, withdraw_row)
+        results: Tuple[bool, List[pd.Series]] = \
+            exact_match_heuristic(deposit_df, withdraw_row)
 
         if results[0]:
             deposit_rows: List[pd.Series] = results[1]
