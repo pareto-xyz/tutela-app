@@ -1,5 +1,7 @@
+import json
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from typing import Dict, Any, List, Tuple, Optional, Union
 from sqlalchemy import desc, cast, Float
 from app.models import Address
@@ -328,7 +330,8 @@ class RequestChecker:
 
         filter_by: List[Any] = []
 
-        if Address.query.filter_by(address = self._params['address']).first(): # the below will fail if address doesn't exist in table
+        # the below will fail if address doesn't exist in table
+        if Address.query.filter_by(address = self._params['address']).first():
             if ((filter_min_conf >= 0 and filter_min_conf <= 1) and
                 (filter_max_conf >= 0 and filter_max_conf <= 1) and
                 (filter_min_conf <= filter_max_conf)):
@@ -353,3 +356,8 @@ class RequestChecker:
 
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = deepcopy(self._params)
+        del _repr['filter_by']
+        return json.dumps(_repr, sort_keys=True)
