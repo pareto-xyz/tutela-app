@@ -116,7 +116,10 @@ def get_address_sets(
         addr_set: List[str] = list(addr_set)
 
         if len(addr_set) > 1:  # make sure not singleton
-            address_sets.append(addr_set)
+            for addr1 in addr_set:
+                for addr2 in addr_set:
+                    if addr1 != addr2:
+                        address_sets.append({addr1, addr2})
 
     return address_sets
 
