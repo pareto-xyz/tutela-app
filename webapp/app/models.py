@@ -77,7 +77,6 @@ class MultiDenom(db.Model):
         index = True,
         nullable = False,
     )
-    privacy: db.Column = db.Column(db.Float)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 

@@ -14,7 +14,7 @@ def main(args: Any):
     cursor = conn.cursor()
 
     cursor.execute(
-        f"COPY multi_denom(address, transaction, meta_data, cluster, privacy) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
+        f"COPY multi_denom(address, transaction, meta_data, cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
     )
     conn.commit()
 
