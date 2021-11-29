@@ -1,14 +1,12 @@
 """
 Lambda Class's "Same # of Transactions" Heuristic.
 """
-import os, json
-import jsonlines
+import os
 import itertools
 import pandas as pd
 from tqdm import tqdm
-from collections import defaultdict
 from typing import Any, Tuple, List, Set, Dict, Optional
-from src.utils.utils import from_json, to_json, Entity, Heuristic
+from src.utils.utils import from_json, to_json
 
 pd.options.mode.chained_assignment = None
 
@@ -50,7 +48,6 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # Load Tornado data
     tornado_df: pd.DataFrame = pd.read_csv(args.tornado_csv)
 
-    # Remove withdraw and deposit transactions with only 1 or 2 transactions
     withdraw_counts: Dict[str, int] = \
         withdraw_df.recipient_address.value_counts().to_dict()
     deposit_counts: Dict[str, int] = \
@@ -64,6 +61,7 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     withdraw_df['tx_counts'] = withdraw_counts
     deposit_df['tx_counts'] = deposit_counts
 
+    # Remove withdraw and deposit transactions with only 1 or 2 transactions
     withdraw_df: pd.DataFrame = withdraw_df[withdraw_df.tx_counts > 2]
     deposit_df: pd.DataFrame = deposit_df[deposit_df.tx_counts > 2]
 
@@ -171,7 +169,9 @@ def same_num_of_transactions_heuristic(
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
 
-    if len(withdraw_counts) == 1:  # only gives to one pool
+    # remove entries that only give to one pool, we are taking 
+    # multi-denominational deposits only
+    if len(withdraw_counts) == 1:
         return (False, None)
 
     withdraw_addr: str = withdraw_tx.from_address
@@ -220,7 +220,6 @@ def same_num_of_transactions_heuristic(
 
 def get_same_or_more_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
-    deposit_df: pd.DataFrame,
     addr2deposit: Dict[str, Dict[str, List[str]]], 
 ) -> List[str]:
     # result: Dict[str, Any] = dict()
