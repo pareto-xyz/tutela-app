@@ -21,7 +21,7 @@ def main(args: Any):
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
     metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
-    
+   
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
@@ -35,7 +35,7 @@ def main(args: Any):
     """
     address_sets = from_json(address_file)
     addr2conf = from_pickle(addr2conf_file)
-    """
+    """ 
     address_metadata = get_metadata(address_sets, addr2conf)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -188,7 +188,7 @@ def get_metadata(
         heuristic = heuristic,
     )
     response: pd.DataFrame = pd.DataFrame.from_dict(response)
-    response: pd.DataFrame = response.groupby('address').max().reset_index()
+    response: pd.DataFrame = response.groupby('address').max('conf').reset_index()
     return response
 
 

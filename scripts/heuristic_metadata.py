@@ -12,11 +12,14 @@ def main(args: Any):
     dar_metadata: pd.DataFrame = pd.read_csv(args.metadata_pruned)
     if 'cluster_type' in dar_metadata.columns:
         dar_metadata.rename(columns={'cluster_type': 'heuristic'}, inplace=True)
+    dar_metadata['heuristic'] = 0
+    if 'metadata' in dar_metadata.columns:
+        dar_metadata.rename(columns={'metadata': 'meta_data'}, inplace=True)
     gas_metadata: pd.DataFrame = pd.read_csv(args.gas_price_metadata)
     same_metadata: pd.DataFrame = pd.read_csv(args.same_num_tx_metadata)
 
     metadata: pd.DataFrame = pd.concat([dar_metadata, gas_metadata, same_metadata])
-    metadata.to_csv(args.out_csv)
+    metadata.to_csv(args.out_csv, index=False)
 
 
 if __name__ == "__main__":
