@@ -17,6 +17,7 @@ export default function Pagination({ paginationData, getNewResults }) {
             </div>
             <div className="pagination">
                 <button onClick={e => {
+                    e.preventDefault();
                     if (page === 0) return;
                     changePage(page-1);
                 }} 
@@ -29,6 +30,7 @@ export default function Pagination({ paginationData, getNewResults }) {
                 </Form.Select>
                 out of {num_pages}
                 <button onClick={e => {
+                    e.preventDefault();
                     if (page >= num_pages - 1) return;
                     changePage(page + 1);
                  }} 

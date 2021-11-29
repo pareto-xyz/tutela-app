@@ -78,6 +78,7 @@ function ClusterPage(props) {
                 // response = example;
                 const { success, data } = response.data;
                 const { cluster, metadata, query, tornado } = data;
+                console.log(metadata);
                 const { cluster_size, limit, num_pages, page } = metadata;
                 setPaginationData({ cluster_size, limit, num_pages, page });
                 const {sort_default} = metadata;
