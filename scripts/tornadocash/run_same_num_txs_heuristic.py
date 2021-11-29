@@ -15,18 +15,20 @@ MIN_CONF: float = 0.2
 
 
 def main(args: Any):
-    withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
-    clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
-        deposit_df, withdraw_df, tornado_df, args.data_dir)
-    address_metadata = get_metadata(address_sets, addr2conf)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
     metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
+    
+    withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
+    clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
+        deposit_df, withdraw_df, tornado_df, args.data_dir)
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    del clusters, tx2addr, deposit_df, withdraw_df, tornado_df  # free memory
     to_json(address_sets, address_file)
+    address_metadata = get_metadata(address_sets, addr2conf)
     address_metadata.to_csv(metadata_file, index=False)
 
 
@@ -178,7 +180,7 @@ def get_metadata(
         heuristic = heuristic,
     )
     response: pd.DataFrame = pd.DataFrame.from_dict(response)
-    response: pd.DataFrame = response.groupby('address').max().resent_index()
+    response: pd.DataFrame = response.groupby('address').max().reset_index()
     return response
 
 
