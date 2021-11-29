@@ -7,7 +7,7 @@ export default function Pagination({ paginationData, getNewResults }) {
     const lastInRange = Math.min(cluster_size, (page + 1) * limit);
 
     const changePage = desiredPage => { //zero-indexed
-        getNewResults({page: desiredPage});
+        getNewResults(false, {page: desiredPage});
     }
 
     return (
