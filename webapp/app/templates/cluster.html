@@ -111,6 +111,13 @@
                             <span class="sr-only">Loading...</span>
                         </div>
                     </div>
+                    <div id="anonymous-none-found" class="align-items-center">
+                        <br />
+                        <img width="200" src="/static/img/spy.png" />
+                        <br />
+                        <div>you're anonymous, harry!</div>
+
+                    </div>
                     <table id="results-table">
                     </table>
 
@@ -138,15 +145,28 @@
             <div class="tornado-info results-section">
                 <div class="panel-sub">tornado cash statistics</div>
                 <div class="panel-title">
-                    TORNADO CASH INFO
+                    ABOUT YOUR INPUT
                 </div>
                 <div class="panel-sub">
-                    Compromised addresses are deposit addresses that are deemed revealing of identity through Tutela heuristics.
+                    This shows Tornado Cash transactions by your input address and addresses it is clustered with.
                 </div>
-                <div id="tornado-detail-table" class="detail-table">
+                <br/>
+                <div class="two-tables">
+                    <div>
+                        <div class="table-title">by address:</div>
+                        <div id="tornado-detail-table-address" class="detail-table">
+                        </div>
+
+                    </div>
+                    <div id="tornado-data-cluster">
+                        <div class="table-title">by cluster:</div>
+                        <div id="tornado-detail-table-cluster" class="detail-table">
+
+                        </div>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="results-section">
 
                 <div class="detail-page">

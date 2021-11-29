@@ -22,15 +22,22 @@ $(function () {
     const spinner = $('#spinner');
     const resultIdentifier = $('.result-identifier');
     const queryTable = $('#query-detail-table');
-    const tornadoTable = $('#tornado-detail-table');
+    const tornadoTable = $('#tornado-detail-table-address');
+    const tornadoTableCluster = $('#tornado-detail-table-cluster');
     const rightSide = $('.right-side');
+    const anonGuy = $('#anonymous-none-found');
+    const tornadoDataCluster = $('#tornado-data-cluster');
 
-    let pageResults = []; //stores the results
+    let pageResults = []; //stores the results for easy access of results
     let firstInRange = 1;
+    let aliases = {};
+
+    //this queryObj allows us to store queries. filters start with 'filter_' before the attribute name. 
     let queryObj = {};
 
     /**
-     * checks if the addr is a valid ethereum address (hex and 42 char long including the 0x) 
+     * checks if the addr is a valid ethereum address (hex and 42 char long including the 0x) .
+     * the backend will do this check as well, but this is here to allow for a "input invalid" display.
      * @param {string} addr 
      */
     function isValid(addr) {
@@ -41,12 +48,19 @@ $(function () {
             || (re.test(addr))); //without the 0x
     }
 
+    /**
+     * This sets the pagination widget
+     * @param {string} address 
+     * @param {obj} metadata 
+     */
     function setPagination(address, metadata) {
 
         const { num_pages, cluster_size, page, limit } = metadata;
 
+        //If there are no results in the cluster. 
         if (!cluster_size) {
             pagination.removeClass('shown');
+            return;
         } else {
             pagination.addClass('shown');
         }
@@ -58,22 +72,22 @@ $(function () {
         //set total results
         totalResults.text(cluster_size);
 
-        //make selects
-        $('#page-number > option').not(':first').remove(); //clear in case user had searched something else beforehand
+        //make options for page number
+        $('#page-number > option').not(':first').remove(); //clear all options in case user had searched something else beforehand. (reset to page 1)
         for (let p = 2; p <= num_pages; p++) {
             currPage.append('<option value=' + p + '>' + p + '</option>')
         }
 
         //change the actual selected currPage
         currPage.change(function () {
-            queryObj.page = this.value - 1;
+            queryObj.page = this.value - 1; //backend is zero-indexed
             queryObj.address = address;
-            displayNewResults(queryObj); //backend is zero-indexed
+            displayNewResults(queryObj); 
         })
 
         firstInRange = page * limit + 1;
 
-        //set results window
+        //set results window. such as "results 1-50"
         currResultsWindow.text(firstInRange + '-' + Math.min(cluster_size, (page + 1) * limit))
 
         //set prev
@@ -107,6 +121,8 @@ $(function () {
         for (const [key, val] of Object.entries(query)) {
             queryString += key + '=' + val + '&';
         }
+
+        //remove ending '&' if needed. 
         if (queryString[queryString.length - 1] === '&') {
             queryString = queryString.substr(0, queryString.length - 1);
         }
@@ -123,12 +139,15 @@ $(function () {
         }
     }
 
+    /**
+     * to handle filtering by name or specific address among all the results. 
+     */
     function setSpecificResult() {
-        specificResult.change((e) => {
+        specificResult.unbind('change').change((e) => {
             e.preventDefault();
             const query = specificResult.val();
             if (query === '') {
-                delete queryObj.filter_name;
+                delete queryObj.filter_name; //uses the global queryObj so that it can save previous filters
             } else {
                 queryObj.filter_name = query;
             }
@@ -137,6 +156,12 @@ $(function () {
         })
     }
 
+    /**
+     * initializes the sort and filter options. 
+     * this is triggered everytime someone inputs a new address. 
+     * @param {obj} schema 
+     * @param {obj} sort_default 
+     */
     function setSearchOptions(schema, sort_default) {
         const sortDrop = $('#sort-dropdown');
         const filterDrop = $('#filter-dropdown');
@@ -148,31 +173,31 @@ $(function () {
         for (const attribute of attributes) {
             const { type, values } = schema[attribute];
             const checked = attribute === default_attr ? true : false;
-            sortDrop.append(`<li class="form-check">
-            <input type="radio" name="sort-by" value="${attribute}" class="form-check-input" ${checked ? 'checked' : ''} />
-            <label>${attribute}</label>
-            </li>`)
+            sortDrop.append(
+                `<li class="form-check">
+                    <input type="radio" name="sort-by" value="${attribute}" class="form-check-input" ${checked ? 'checked' : ''} />
+                    <label>${attribute}</label>
+                </li>`)
 
 
             if (type === 'float') {
                 const [min, max] = values;
-                filterDrop.append(`
-                <li>
-                ${attribute} range:&nbsp;<input name="filter_min_${attribute}" class="input-num filter-input" value="${min}" type="number" />
-                -
-                <input name="filter_max_${attribute}" class="input-num filter-input" value="${max}" type="number" }/>
-                </li>
-                `)
-                $(`#filter_${attribute}`).slider({
-                    range: true
-                });
+                filterDrop.append(
+                    `<li>
+                        ${attribute} range:&nbsp;<input name="filter_min_${attribute}" class="input-num filter-input" value="${min}" type="number" />
+                        -
+                        <input name="filter_max_${attribute}" class="input-num filter-input" value="${max}" type="number" }/>
+                    </li>`)
+                // $(`#filter_${attribute}`).slider({ //not currently being used 
+                //     range: true
+                // });
                 $('.filter-input').change((e) => {
                     const elem = $(e.currentTarget);
                     const val = elem.val();
                     const name = elem.attr('name');
                     const num_val = Number(val);
                     if (val === '') {
-                        delete queryObj[name]; //delete 
+                        delete queryObj[name]; //clear this filter field in queryObj.
                     } else if (num_val < min || num_val > max) {
                         elem.val(queryObj[name]);
                         return;
@@ -186,7 +211,7 @@ $(function () {
                 const div = $(document.createElement('div'));
                 div.append(`<div>${attribute}:</div>`)
                 const radioSelectName = attribute + '-category';
-                const div2 = $(document.createElement('div')).attr('id', radioSelectName);
+                const div2 = $(document.createElement('div')).attr('id', radioSelectName); //actual options 
                 for (const category of values) {
                     div2.append(`
                     <li class="form-check">
@@ -207,14 +232,18 @@ $(function () {
             }
 
         }
+
+        //to handle descending sort (checkbox at the end) 
         let checked = '';
         if (descending) {
             checked = 'checked';
             queryObj.descending = true;
         }
-        sortDrop.append(`<input id='sort-desc' name='sort-descending' type='checkbox' ${checked}>&nbsp;descending 
-        </input>
+        sortDrop.append(`<li class='dropdown-lever'><input id='sort-desc' name='sort-descending' type='checkbox' ${checked}>&nbsp;descending 
+        </input></li>
         `)
+
+        //when sort value gets changed
         sortDrop.unbind('change').change(e => {
             const val = $('input[name=sort-by]:checked').val()
             if (!queryObj.sort && val === default_attr || val === queryObj.sort) {
@@ -224,12 +253,15 @@ $(function () {
             delete queryObj.page;
             displayNewResults(queryObj);
         })
+
+        //when we switch the descending/ascending nature of the sort.
         $('#sort-desc').unbind('change').change(function () {
             queryObj.descending = this.checked;
             delete queryObj.page;
             displayNewResults(queryObj);
         })
 
+        //add the ability to clear all filters. 
         filterDrop.append(`
         <div class="clear-filters">
         <button id="clear-filters"class="btn">clear all</button>
@@ -249,13 +281,20 @@ $(function () {
 
     }
 
+    /**
+     * when someone clicks on a new result that htey want to see details for. 
+     * @param {event} e 
+     */
     function selectResult(e) {
         e.preventDefault();
         const elem = $(e.currentTarget);
         const i = elem.index();
+
+        //make the new result highlighted
         $('.result-entry').removeClass('selected');
         elem.addClass('selected');
-        const deets = pageResults[i];
+
+        const deets = pageResults[i]; //deets as in 'details'
         const targetAddr = $(elem.children()[0]).text();
 
         console.assert(deets.address === targetAddr, 'address not matching: ' + deets.address + '\n' + targetAddr);
@@ -265,7 +304,8 @@ $(function () {
 
     function displayDetails(item) {
         detailAddr.html(item.address);
-        populateTable(detailTable, item, new Set(['id', 'address']));
+
+        populateTable(detailTable, convertAttributes(item), new Set(['id', 'address']));
     }
 
     function populateTable(domElem, obj, ignore=new Set()) {
@@ -289,20 +329,49 @@ $(function () {
         }
     }
 
+    /**
+     * clearing info in case results don't return anything 
+     */
     function clearDetails() {
         detailAddr.html('SELECTED LINKED ADDRESS');
         detailTable.html('');
     }
 
+    function convertAttributes(obj) {
+        const entries = Object.entries(obj);
+        let newObj = {};
+        for (const [key, value] of entries) {
+            if (aliases[key]) {
+                newObj[aliases[key]] = value;
+            } else {
+                newObj[key] = value;
+            }
+        }
+        return newObj;
+    }
+
+    /**
+     * sets the displayed info for the address that was queried
+     * @param {obj} query 
+     */
     function setQueryInfo(query) {
-        const {address, metadata} = query;
-        const combined = {...query, ...metadata};
+        const {metadata} = query;
+        let combined = {...query, ...metadata};
+        combined = convertAttributes(combined);
         populateTable(queryTable, combined, new Set(['metadata', 'address', 'id', 'anonymity_score']));
     }
 
+    /**
+     * sets tcash info for the address that was queried.
+     * @param {obj} query 
+     */
     function setTornadoInfo(query) {
         const {summary} = query;
-        populateTable(tornadoTable, summary);
+        populateTable(tornadoTable, convertAttributes(summary.address));
+        if (summary.cluster) {
+            tornadoDataCluster.addClass('shown');
+            populateTable(tornadoTableCluster, convertAttributes(summary.cluster));
+        }
     }
 
     /**
@@ -324,6 +393,7 @@ $(function () {
         spinner.addClass('shown');
         results.html('');
         resultIdentifier.removeClass('shown');
+
         clearDetails();
 
         axios.get('/search' + queryString)
@@ -360,12 +430,13 @@ $(function () {
                 } else {
                     clearDetails();
                     noClusterMsg.addClass('shown');
-                    setAnonScore(1);
+                    anonGuy.addClass('shown');
+                    setAnonScore(1); //becuase anonymity is 100% if nothing comes up 
                     
                 }
             })
             .catch(function (error) {
-                results.html('<div>No clusters found.</div>');
+                noClusterMsg.addClass('shown');
                 console.log(error);
             });
     }
@@ -379,6 +450,12 @@ $(function () {
         const addr = urlParams.get('address');
         queryObj.address = addr;
 
+        axios.get('/utils/aliases').then(response => {
+            aliases = response.data;
+        }).catch(error => {
+            console.log(error);
+        });
+        //when someone inputs an address and enters
         form.submit(e => {
 
             e.preventDefault();
@@ -388,6 +465,9 @@ $(function () {
             resultIdentifier.removeClass('shown');
             anonScoreGroup.removeClass('shown');
             const a = addrInput.first().val()
+            anonGuy.removeClass('shown');
+            noClusterMsg.removeClass('shown');
+
             instructions.removeClass('shown');
             if (!isValid(a)) {
                 invalidInput.addClass('shown');
