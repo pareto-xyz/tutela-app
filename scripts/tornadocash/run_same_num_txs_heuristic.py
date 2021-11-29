@@ -1,12 +1,12 @@
 """
 Lambda Class's "Same # of Transactions" Heuristic.
 """
-import os, json
+import os, json, pickle
 import itertools
 import pandas as pd
 from tqdm import tqdm
 from typing import Any, Tuple, List, Set, Dict, Optional
-from src.utils.utils import from_json, to_json
+from src.utils.utils import from_json, to_json, from_pickle, to_pickle
 from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
@@ -21,7 +21,7 @@ def main(args: Any):
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
     metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
-   
+    
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
@@ -29,10 +29,13 @@ def main(args: Any):
     # save some stuff before continuing
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
-    to_json(addr2conf, addr2conf_file)
+    to_pickle(addr2conf, addr2conf_file)
     del clusters, tx2addr, deposit_df, withdraw_df, tornado_df  # free memory
     to_json(address_sets, address_file)
-   
+    """
+    address_sets = from_json(address_file)
+    addr2conf = from_pickle(addr2conf_file)
+    """
     address_metadata = get_metadata(address_sets, addr2conf)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -123,18 +126,18 @@ def get_same_num_transactions_clusters(
             deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
             tx_cluster: Set[str] = set(withdraw_txs + deposit_txs)
 
-            if len(tx_cluster) > 1:
-                withdraw_addr: str = response_dict['withdraw_addr']
-                deposit_addrs: List[str] = response_dict['deposit_addrs']
-                deposit_confs: List[float] = response_dict['deposit_confs']
+            withdraw_addr: str = response_dict['withdraw_addr']
+            deposit_addrs: List[str] = response_dict['deposit_addrs']
+            deposit_confs: List[float] = response_dict['deposit_confs']
 
-                for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
-                    address_sets.append({withdraw_addr, deposit_addr})
+            for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
+                if withdraw_addr != deposit_addr:
+                    address_sets.append([withdraw_addr, deposit_addr])
                     addr2conf[(withdraw_addr, deposit_addr)] = deposit_conf
 
-                tx2addr.update(withdraw_tx2addr)
-                tx2addr.update(deposit_tx2addr)
-                tx_clusters.append(tx_cluster)
+            tx2addr.update(withdraw_tx2addr)
+            tx2addr.update(deposit_tx2addr)
+            tx_clusters.append(tx_cluster)
 
         pbar.update()
     pbar.close()
@@ -158,7 +161,7 @@ def get_metadata(
     pbar = tqdm(total=len(address_sets))
     for cluster in address_sets:
         cluster: List[str] = list(cluster)
-        assert len(cluster) == 2, "Gas price clusters should be 2 elements."
+        assert len(cluster) == 2
         node_a, node_b = cluster
         conf_ab: float = addr2conf[(node_a, node_b)]
         
