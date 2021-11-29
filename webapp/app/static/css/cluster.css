@@ -270,7 +270,7 @@ RESULTS
     border-top: dashed 1px darkgrey;
 }
 
-#specific-result {
+.specific-result, .specific-result:focus {
     padding: 0px 0px 0px 5px;
     font-size: 0.8em;
     font-family: 'Ubuntu';
@@ -280,6 +280,10 @@ RESULTS
     border: transparent;
     color: var(--lightgrey);
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.search-options > .input-group {
+    flex: 1;
 }
 
 .dropdown-toggle {
@@ -306,6 +310,54 @@ ul.dropdown-menu {
     border: transparent;
     border-radius: 5px;
     text-align: center;
+}
+
+.dropdown-accordion > button {
+    background-color: transparent;
+    font-size: 12pt;
+    border: transparent;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    font-family: 'Ubuntu';
+}
+
+.dropdown > .dropdown-menu {
+    padding: 0px;
+}
+
+.dropdown-accordion.accordion-header {
+    margin-top: 10px;
+}
+
+.dropdown-accordion.accordion-header > button > * {
+    color: black;
+}
+
+.dropdown-accordion > *, .dropdown-accordion > a.dropdown-item {
+    color: black;
+}
+
+.dropdown-accordion > a.dropdown-item {
+    font-weight: 300;
+
+}
+
+.dropdown-accordion.accordion-item {
+    border-bottom: solid var(--fadedgrey) 1px;
+}
+
+.my-input > .input-group-text {
+    border-radius: 0;
+}
+
+.dropdown-accordion > .my-input > .invalid-feedback {
+    margin-left: 10px;
+}
+
+.flush-right {
+    text-align: right;
 }
 
 #filter-dropdown > *{
@@ -336,16 +388,16 @@ ul.dropdown-menu {
 }
 
 
-.accordion-header {
+.my-accordion-header {
     font-size: 18px;
     margin-bottom: 2px;
 }
 
-.selected-result > .accordion-header > button {
+.selected-result > .my-accordion-header > button {
     background-color: var(--fadedgrey);
 }
 
-.accordion-header > button {
+.my-accordion-header > button {
     padding: 10px;
     width: 100%;
     background-color: #4C4C4C;
@@ -356,7 +408,7 @@ ul.dropdown-menu {
     justify-content: space-between;
 }
 
-.accordion-body {
+.my-accordion-body {
     background-color: var(--fadedgrey);
     padding: 20px;
 }

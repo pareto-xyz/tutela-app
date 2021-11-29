@@ -24,7 +24,8 @@ function ClusterPage(props) {
     const [queryInfo, setQueryInfo] = useState({});
     const [tornado, setTornado] = useState({});
     const [aliases, setAliases] = useState({});
-    const [refineData, setRefineData] = useState({});
+    const [schema, setSchema] = useState({});
+    const [paginationData, setPaginationData] = useState({});
 
     const getAliases = () => {
         axios.get('/utils/aliases').then(response => {
@@ -42,10 +43,22 @@ function ClusterPage(props) {
             setInputAddress(addr);
             submitInputAddress(addr);
         }
-    }, [])
+    }, []);
+
+    const setSort = attrObj => {
+        getNewResults(false, { page: 0, ...attrObj });
+    }
 
     const getNewResults = (newAddress, newQueries) => {
-        if (newQueries) {
+        if (newQueries === 'clear') {
+            const allQueries = Object.keys(queryObj);
+            for (const key of allQueries) {
+                if (key.startsWith('filter_')) {
+                    delete queryObj[key];
+                }
+            }
+            setQuery(queryObj);
+        } else if (newQueries) { //assume it's an object. 
             for (const [key, value] of Object.entries(newQueries)) {
                 queryObj[key] = value;
             }
@@ -65,8 +78,15 @@ function ClusterPage(props) {
                 response = example;
                 const { success, data } = response;
                 const { cluster, metadata, query, tornado } = data;
+                const { cluster_size, limit, num_pages, page } = metadata;
+                setPaginationData({ cluster_size, limit, num_pages, page });
+                const {sort_default} = metadata;
+                const { attribute, descending } = sort_default;
                 if (newAddress) {
-                    setRefineData(metadata);
+                    queryObj.sort = attribute;
+                    queryObj.descending = descending;
+                    setQuery(queryObj);
+                    setSchema(metadata.schema);
                     setQueryInfo(query);
                     setTornado(tornado);
                 }
@@ -101,6 +121,7 @@ function ClusterPage(props) {
         queryObj.address = addr;
         setQuery(queryObj);
         getNewResults(true);
+        window.history.replaceState(null, null, "?address=" + addr);
 
     }
 
@@ -146,7 +167,10 @@ function ClusterPage(props) {
 
                     </div>}
                     {showResultsSection &&
-                        <ClusterResults refineData={refineData}
+                        <ClusterResults 
+                            paginationData={paginationData}
+                            setSort={setSort}
+                            sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
                             results={pageResults}
                             loading={loadingCluster}
                             getNewResults={getNewResults}
