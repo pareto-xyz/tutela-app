@@ -6,6 +6,7 @@ import jsonlines
 import itertools
 import pandas as pd
 from tqdm import tqdm
+from collections import defaultdict
 from typing import Any, Tuple, List, Set, Dict, Optional
 from src.utils.utils import from_json, to_json, Entity, Heuristic
 
@@ -49,6 +50,23 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # Load Tornado data
     tornado_df: pd.DataFrame = pd.read_csv(args.tornado_csv)
 
+    # Remove withdraw and deposit transactions with only 1 or 2 transactions
+    withdraw_counts: Dict[str, int] = \
+        withdraw_df.recipient_address.value_counts().to_dict()
+    deposit_counts: Dict[str, int] = \
+        deposit_df.from_address.value_counts().to_dict()
+
+    withdraw_counts: pd.Series = \
+        withdraw_df.recipient_address.apply(lambda x: withdraw_counts[x])
+    deposit_counts: pd.Series = \
+        deposit_df.from_address.apply(lambda x: deposit_counts[x])
+    
+    withdraw_df['tx_counts'] = withdraw_counts
+    deposit_df['tx_counts'] = deposit_counts
+
+    withdraw_df: pd.DataFrame = withdraw_df[withdraw_df.tx_counts > 2]
+    deposit_df: pd.DataFrame = deposit_df[deposit_df.tx_counts > 2]
+
     return withdraw_df, deposit_df, tornado_df
 
 
@@ -83,9 +101,10 @@ def get_same_num_transactions_clusters(
     print('Processing withdraws')
     pbar = tqdm(total=len(withdraw_df))
     count: int = 0
+
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
+            withdraw_row, withdraw_df, deposit_df, addr2deposit, tornado_addresses)
 
         if results[0]:
             response_dict = results[1]
@@ -136,10 +155,14 @@ def get_same_num_transactions_clusters(
         pbar.update()
     pbar.close()
 
+    breakpoint()
+    print(2)
+
 
 def same_num_of_transactions_heuristic(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame,
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
@@ -147,6 +170,9 @@ def same_num_of_transactions_heuristic(
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
+
+    if len(withdraw_counts) == 1:  # only gives to one pool
+        return (False, None)
 
     withdraw_addr: str = withdraw_tx.from_address
     withdraw_txs: List[str] = list(itertools.chain(*list(withdraw_set.values())))
@@ -156,7 +182,7 @@ def same_num_of_transactions_heuristic(
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
     addresses: List[str] = get_same_or_more_num_of_deposits(
-        withdraw_counts, addr2deposit)
+        withdraw_counts, deposit_df, addr2deposit)
     deposit_addrs: Set[str] = set(addresses)
 
     deposit_txs: List[str] = list()
@@ -194,8 +220,13 @@ def same_num_of_transactions_heuristic(
 
 def get_same_or_more_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
+    deposit_df: pd.DataFrame,
     addr2deposit: Dict[str, Dict[str, List[str]]], 
 ) -> List[str]:
+    # result: Dict[str, Any] = dict()
+    # for address, deposits in addr2deposit.items():
+    #     if compare_transactions(withdraw_counts, deposits):
+    #         result[address] = deposits
     result: Dict[str, Any] = dict(
         filter( lambda elem: compare_transactions(withdraw_counts, elem[1]), 
                 addr2deposit.items()))
@@ -269,7 +300,8 @@ def get_address_deposits(
 ) -> Dict[str, Dict[str, List[str]]]:
     """
     Given the deposit transactions DataFrame, returns a 
-    dictionary with every address of the deposit
+    dictionary with every address to the transactions they
+    deposited.
 
     Example:
     {
@@ -296,7 +328,7 @@ def get_address_deposits(
     ).rename(columns={0: "count"})
     
     addr2deposit: Dict[str, str] = {}
-    print('building map from address to deposits...')
+    print('building map from address to deposits made by address...')
     pbar = tqdm(total=len(counts_df))
     for row in counts_df.itertuples():
         deposit_set: pd.Series = deposit_df[
