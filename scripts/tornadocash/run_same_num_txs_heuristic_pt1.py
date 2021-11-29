@@ -11,7 +11,7 @@ from src.utils.utils import from_json, to_json
 
 pd.options.mode.chained_assignment = None
 
-MIN_CONF: float = 0.5
+MIN_CONF: float = 0.1
 
 
 def main(args: Any):
@@ -196,7 +196,7 @@ def same_num_of_transactions_heuristic(
 
         address_conf: float = conf_map[address]
 
-        if address_conf > MIN_CONF:  # must be bigger than 1/2 sure
+        if address_conf >= MIN_CONF:  # must be bigger than 1/2 sure
             # list of all txs for withdraws and deposits regardless of pool
             cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
 
@@ -233,7 +233,7 @@ def get_same_or_more_num_of_deposits(
             if num_diff == 0:
                 conf: float = 1.0
             else:
-                conf: float = 1 - 1. / num_diff
+                conf: float = 1. / num_diff
             conf_mapping[address] = conf
 
     addresses: List[str] = list(conf_mapping.keys())
