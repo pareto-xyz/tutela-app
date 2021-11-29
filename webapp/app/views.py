@@ -35,6 +35,7 @@ def index():
 def cluster():
     return render_template('cluster.html')
 
+
 @app.route('/utils/aliases', methods=['GET'])
 def alias():
     response: str = json.dumps(get_display_aliases())
@@ -66,8 +67,10 @@ def search():
     desc_sort: str = checker.get('desc_sort')
     filter_by: List[Any] = checker.get('filter_by')
 
-    if rds.exists(address):  # check if this exists in our cache
-        response: str = bz2.decompress(rds.get(address)).decode('utf-8')
+    repr: str = checker.to_str()
+
+    if rds.exists(repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(repr)).decode('utf-8')
         return Response(response=response)
 
     # --- fill out some of the known response fields ---
@@ -423,6 +426,6 @@ def search():
         output['success'] = 1
 
     response: str = json.dumps(output)
-    rds.set(address, bz2.compress(response.encode('utf-8')))  # add to cache
+    rds.set(repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
