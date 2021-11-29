@@ -5,7 +5,6 @@ import os, json
 import itertools
 import pandas as pd
 from tqdm import tqdm
-import networkx as nx
 from typing import Any, Tuple, List, Set, Dict, Optional
 from src.utils.utils import from_json, to_json
 from src.utils.utils import Entity, Heuristic
@@ -95,8 +94,8 @@ def get_same_num_transactions_clusters(
         addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
         to_json(addr2deposit, cached_addr2deposit)
 
+    tx_clusters: List[Set[str]] = []
     tx2addr: Dict[str, str] = {}
-    tx_graph: nx.DiGraph = nx.DiGraph()
     address_sets: List[Set[str]] = []
     addr2conf: Dict[Tuple[str, str], float] = {}
 
@@ -115,29 +114,23 @@ def get_same_num_transactions_clusters(
             deposit_txs: List[str] = response_dict['deposit_txs']
             withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
             deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
+            tx_cluster: Set[str] = set(withdraw_txs + deposit_txs)
 
-            tx_graph.add_nodes_from(withdraw_txs)
-            tx_graph.add_nodes_from(deposit_txs)
-            edge_txs: List[Tuple(str, str)] = \
-                list(itertools.product(withdraw_txs, deposit_txs))
-            tx_graph.add_edges_from(edge_txs)
+            if len(tx_cluster) > 1:
+                withdraw_addr: str = response_dict['withdraw_addr']
+                deposit_addrs: List[str] = response_dict['deposit_addrs']
+                deposit_confs: List[float] = response_dict['deposit_confs']
 
-            withdraw_addr: str = response_dict['withdraw_addr']
-            deposit_addrs: List[str] = response_dict['deposit_addrs']
-            deposit_confs: List[float] = response_dict['deposit_confs']
+                for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
+                    address_sets.append({withdraw_addr, deposit_addr})
+                    addr2conf[(withdraw_addr, deposit_addr)] = deposit_conf
 
-            for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
-                address_sets.append({withdraw_addr, deposit_addr})
-                addr2conf[(withdraw_addr, deposit_addr)] = deposit_conf
-
-            tx2addr.update(withdraw_tx2addr)
-            tx2addr.update(deposit_tx2addr)
+                tx2addr.update(withdraw_tx2addr)
+                tx2addr.update(deposit_tx2addr)
+                tx_clusters.append(tx_cluster)
 
         pbar.update()
     pbar.close()
-
-    tx_clusters: List[Set[str]] = [
-        c for c in nx.weakly_connected_components(tx_graph) if len(c) > 1]
 
     return tx_clusters, address_sets, tx2addr, addr2conf
 
