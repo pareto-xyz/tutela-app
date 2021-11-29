@@ -4,11 +4,14 @@ Lambda Class's "Same # of Transactions" Heuristic.
 import os
 import itertools
 import pandas as pd
+from pandas.core.algorithms import diff
 from tqdm import tqdm
 from typing import Any, Tuple, List, Set, Dict, Optional
 from src.utils.utils import from_json, to_json
 
 pd.options.mode.chained_assignment = None
+
+MIN_CONF: float = 0.5
 
 
 def main(args: Any):
@@ -102,7 +105,7 @@ def get_same_num_transactions_clusters(
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, deposit_df, addr2deposit, tornado_addresses)
+            withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
 
         if results[0]:
             response_dict = results[1]
@@ -160,7 +163,6 @@ def get_same_num_transactions_clusters(
 def same_num_of_transactions_heuristic(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
-    deposit_df: pd.DataFrame,
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
@@ -181,8 +183,7 @@ def same_num_of_transactions_heuristic(
 
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
-    addresses: List[str] = get_same_or_more_num_of_deposits(
-        withdraw_counts, deposit_df, addr2deposit)
+    addresses, conf_map = get_same_or_more_num_of_deposits(withdraw_counts, addr2deposit)
     deposit_addrs: Set[str] = set(addresses)
 
     deposit_txs: List[str] = list()
@@ -193,14 +194,17 @@ def same_num_of_transactions_heuristic(
         assert set(withdraw_set.keys()) == set(deposit_set.keys()), \
             "Set of keys do not match."
 
-        # list of all txs for withdraws and deposits regardless of pool
-        cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
+        address_conf: float = conf_map[address]
 
-        # dictionary from transaction to address
-        cur_deposit_tx2addr = dict(zip(cur_deposit_txs, 
-            [address for _ in range(len(cur_deposit_txs))]))
-        deposit_txs.extend(cur_deposit_txs)
-        deposit_tx2addr.update(cur_deposit_tx2addr)
+        if address_conf > MIN_CONF:  # must be bigger than 1/2 sure
+            # list of all txs for withdraws and deposits regardless of pool
+            cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
+
+            # dictionary from transaction to address
+            cur_deposit_tx2addr = dict(zip(cur_deposit_txs, 
+                [address for _ in range(len(cur_deposit_txs))]))
+            deposit_txs.extend(cur_deposit_txs)
+            deposit_tx2addr.update(cur_deposit_tx2addr)
 
     if len(deposit_addrs) > 0:
         privacy_score: float = 1. - 1. / len(deposit_addrs)
@@ -221,15 +225,33 @@ def same_num_of_transactions_heuristic(
 def get_same_or_more_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
     addr2deposit: Dict[str, Dict[str, List[str]]], 
-) -> List[str]:
-    # result: Dict[str, Any] = dict()
-    # for address, deposits in addr2deposit.items():
-    #     if compare_transactions(withdraw_counts, deposits):
-    #         result[address] = deposits
-    result: Dict[str, Any] = dict(
-        filter( lambda elem: compare_transactions(withdraw_counts, elem[1]), 
-                addr2deposit.items()))
-    return list(result.keys())
+) -> Tuple[List[str], Dict[str, float]]:
+    conf_mapping: Dict[str, float] = dict()
+    for address, deposits in addr2deposit.items():
+        if compare_transactions(withdraw_counts, deposits):
+            num_diff: int = diff_transactions(withdraw_counts, deposits)
+            if num_diff == 0:
+                conf: float = 1.0
+            else:
+                conf: float = 1 - 1. / num_diff
+            conf_mapping[address] = conf
+
+    addresses: List[str] = list(conf_mapping.keys())
+    return addresses, conf_mapping
+    # result: Dict[str, Any] = dict(
+    #     filter( lambda elem: compare_transactions(withdraw_counts, elem[1]), 
+    #             addr2deposit.items()))
+    # return list(result.keys())
+
+
+def diff_transactions(
+    withdraw_counts_dict: pd.DataFrame, 
+    deposit_dict: pd.DataFrame,
+) -> int:
+    num_diff: int = 0
+    for currency in withdraw_counts_dict.keys():
+        num_diff += abs(len(deposit_dict[currency]) - withdraw_counts_dict[currency])
+    return num_diff
 
 
 def compare_transactions(
