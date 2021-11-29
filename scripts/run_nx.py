@@ -21,7 +21,11 @@ def main(args: Any):
 
     print('making user graph...',  end = '', flush=True)
     user_graph: nx.DiGraph = make_graph(data.user, data.deposit)
+
+    print('adding gas price nodes...', end = '', flush=True)
     user_graph: nx.DiGraph = add_to_user_graph(user_graph, gas_price_sets)
+
+    print('adding multi denom nodes...', end = '', flush=True)
     user_graph: nx.DiGraph = add_to_user_graph(user_graph, multi_denom_sets)
 
     print('making exchange graph...',  end = '', flush=True)
@@ -47,7 +51,7 @@ def main(args: Any):
     if not os.path.isdir(args.save_dir):
         os.makedirs(args.save_dir)
 
-    print('writing to disk...',  end = '', flush=True)
+    print('writing to disk...\n',  end = '', flush=True)
     to_json(user_wccs, os.path.join(args.save_dir, 'user_clusters.json'))
     to_json(exchange_wccs, os.path.join(args.save_dir, 'exchange_clusters.json'))
 
