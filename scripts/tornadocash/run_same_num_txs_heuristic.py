@@ -18,16 +18,21 @@ def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
+    addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
     metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
-    
+   
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.data_dir)
+    
+    # save some stuff before continuing
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(addr2conf, addr2conf_file)
     del clusters, tx2addr, deposit_df, withdraw_df, tornado_df  # free memory
     to_json(address_sets, address_file)
+   
     address_metadata = get_metadata(address_sets, addr2conf)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -152,9 +157,9 @@ def get_metadata(
 
     pbar = tqdm(total=len(address_sets))
     for cluster in address_sets:
-        assert len(cluster) == 2
-        node_a: str = cluster[0]
-        node_b: str = cluster[0]
+        cluster: List[str] = list(cluster)
+        assert len(cluster) == 2, "Gas price clusters should be 2 elements."
+        node_a, node_b = cluster
         conf_ab: float = addr2conf[(node_a, node_b)]
         
         address.append(node_a)
