@@ -1,35 +1,34 @@
 """
 Lambda Class's "Same # of Transactions" Heuristic.
 """
-import os
+import os, json
 import itertools
 import pandas as pd
-from pandas.core.algorithms import diff
 from tqdm import tqdm
+import networkx as nx
 from typing import Any, Tuple, List, Set, Dict, Optional
 from src.utils.utils import from_json, to_json
+from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
 
-MIN_CONF: float = 0.1
+MIN_CONF: float = 0.2
 
 
 def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
-    
-    transactions_file: str = os.path.join(args.save_dir, 'same_num_txs_transactions.csv')
-    tx2addr_file: str = os.path.join(args.save_dir, 'same_num_txs_tx2addr.csv')
-    address_file: str = os.path.join(args.save_dir, 'same_num_txs_address_sets.csv')
-
-    get_same_num_transactions_clusters(
-        deposit_df = deposit_df, 
-        withdraw_df = withdraw_df, 
-        tornado_df = tornado_df, 
-        data_dir = args.data_dir,
-        transactions_file = transactions_file, 
-        tx2addr_file = tx2addr_file,
-        address_file = address_file, 
-    )
+    clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
+        deposit_df, withdraw_df, tornado_df, args.data_dir)
+    address_metadata = get_metadata(address_sets, addr2conf)
+    if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
+    clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
+    tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
+    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
+    metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
+    to_json(clusters, clusters_file)
+    to_json(tx2addr, tx2addr_file)
+    to_json(address_sets, address_file)
+    address_metadata.to_csv(metadata_file, index=False)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -76,9 +75,6 @@ def get_same_num_transactions_clusters(
     withdraw_df: pd.DataFrame, 
     tornado_df: pd.DataFrame,
     data_dir: str,
-    transactions_file: str,
-    tx2addr_file: str,
-    address_file: str,
 ):
     """
     Same Number of Transactions Heuristic.
@@ -99,9 +95,13 @@ def get_same_num_transactions_clusters(
         addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
         to_json(addr2deposit, cached_addr2deposit)
 
+    tx2addr: Dict[str, str] = {}
+    tx_graph: nx.DiGraph = nx.DiGraph()
+    address_sets: List[Set[str]] = []
+    addr2conf: Dict[Tuple[str, str], float] = {}
+
     print('Processing withdraws')
     pbar = tqdm(total=len(withdraw_df))
-    count: int = 0
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
@@ -113,51 +113,80 @@ def get_same_num_transactions_clusters(
             # populate graph with known transactions
             withdraw_txs: List[str] = response_dict['withdraw_txs']
             deposit_txs: List[str] = response_dict['deposit_txs']
-
-            transaction_sets: List[Tuple[str, str]] = \
-                list(itertools.product(withdraw_txs, deposit_txs))
-            transaction_dict: Dict[str, List[str]] = {
-                'withdraw_tx': [row[0] for row in transaction_sets],
-                'deposit_tx': [row[1] for row in transaction_sets],
-            }
-            transaction_df: pd.DataFrame = pd.DataFrame.from_dict(transaction_dict)
-
             withdraw_tx2addr: Dict[str, str] = response_dict['withdraw_tx2addr']
             deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
-            tx2addr = {**withdraw_tx2addr, **deposit_tx2addr}
-            tx2addr_dict: Dict[str, List[str]] = {
-                'transaction': list(tx2addr.keys()),
-                'address': list(tx2addr.values()),
-            }
-            tx2addr_df: pd.DataFrame = pd.DataFrame.from_dict(tx2addr_dict)
 
-            # store related addresses
+            tx_graph.add_nodes_from(withdraw_txs)
+            tx_graph.add_nodes_from(deposit_txs)
+            edge_txs: List[Tuple(str, str)] = \
+                list(itertools.product(withdraw_txs, deposit_txs))
+            tx_graph.add_edges_from(edge_txs)
+
             withdraw_addr: str = response_dict['withdraw_addr']
-            deposit_addrs: Set[str] = response_dict['deposit_addrs']
-            address_sets: List[List[str]] = [
-                [withdraw_addr, deposit_addr] for deposit_addr in deposit_addrs]
-            address_dict: Dict[str, List[str]] = {
-                'withdraw_addr': [row[0] for row in address_sets],
-                'deposit_addr': [row[1] for row in address_sets],
-            }
-            address_df: pd.Frame = pd.DataFrame.from_dict(address_dict)
+            deposit_addrs: List[str] = response_dict['deposit_addrs']
+            deposit_confs: List[float] = response_dict['deposit_confs']
 
-            if count == 0:
-                transaction_df.to_csv(transactions_file, index=False)
-                tx2addr_df.to_csv(tx2addr_file, index=False)
-                address_df.to_csv(address_file, index=False)
-            else:
-                transaction_df.to_csv(transactions_file, index=False, mode='a', header=False)
-                tx2addr_df.to_csv(tx2addr_file, index=False, mode='a', header=False)
-                address_df.to_csv(address_file, index=False, mode='a', header=False)
+            for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
+                address_sets.append({withdraw_addr, deposit_addr})
+                addr2conf[(withdraw_addr, deposit_addr)] = deposit_conf
 
-            count += 1
+            tx2addr.update(withdraw_tx2addr)
+            tx2addr.update(deposit_tx2addr)
 
         pbar.update()
     pbar.close()
 
-    breakpoint()
-    print(2)
+    tx_clusters: List[Set[str]] = [
+        c for c in nx.weakly_connected_components(tx_graph) if len(c) > 1]
+
+    return tx_clusters, address_sets, tx2addr, addr2conf
+
+
+def get_metadata(
+    address_sets: List[Set[str]],
+    addr2conf: Dict[Tuple[str, str], float],
+) -> pd.DataFrame:
+    """
+    Stores metadata about addresses to add to db. 
+    """
+    address: List[str] = []
+    entity: List[int] = [] 
+    conf: List[float] = []
+    meta_data: List[str] = []
+    heuristic: List[int] = []
+
+    pbar = tqdm(total=len(address_sets))
+    for cluster in address_sets:
+        assert len(cluster) == 2
+        node_a: str = cluster[0]
+        node_b: str = cluster[0]
+        conf_ab: float = addr2conf[(node_a, node_b)]
+        
+        address.append(node_a)
+        entity.append(Entity.EOA.value)
+        conf.append(conf_ab)
+        meta_data.append(json.dumps({}))
+        heuristic.append(Heuristic.SAME_NUM_TX.value)
+
+        address.append(node_b)
+        entity.append(Entity.EOA.value)
+        conf.append(conf_ab)
+        meta_data.append(json.dumps({}))
+        heuristic.append(Heuristic.SAME_NUM_TX.value)
+
+        pbar.update()
+    pbar.close()
+
+    response: Dict[str, List[Any]] = dict(
+        address = address,
+        entity = entity,
+        conf = conf,
+        meta_data = meta_data,
+        heuristic = heuristic,
+    )
+    response: pd.DataFrame = pd.DataFrame.from_dict(response)
+    response: pd.DataFrame = response.groupby('address').max().resent_index()
+    return response
 
 
 def same_num_of_transactions_heuristic(
@@ -184,9 +213,10 @@ def same_num_of_transactions_heuristic(
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
     addresses, conf_map = get_same_or_more_num_of_deposits(withdraw_counts, addr2deposit)
-    deposit_addrs: Set[str] = set(addresses)
+    deposit_addrs: List[str] = list(set(addresses))
+    deposit_confs: List[float] = [conf_map[addr] for addr in deposit_addrs]
 
-    deposit_txs: List[str] = list()
+    deposit_txs: List[str] = []
     deposit_tx2addr: Dict[str, str] = {}
 
     for address in deposit_addrs:
@@ -211,6 +241,7 @@ def same_num_of_transactions_heuristic(
         response_dict: Dict[str, Any] = dict(
             withdraw_txs = withdraw_txs,
             deposit_txs = deposit_txs,
+            deposit_confs = deposit_confs,
             withdraw_addr = withdraw_addr,
             deposit_addrs = deposit_addrs,
             withdraw_tx2addr = withdraw_tx2addr,
