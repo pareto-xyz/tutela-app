@@ -67,10 +67,10 @@ def search():
     desc_sort: str = checker.get('desc_sort')
     filter_by: List[Any] = checker.get('filter_by')
 
-    repr: str = checker.to_str()
+    request_repr: str = checker.to_str()
 
-    if rds.exists(repr):  # check if this exists in our cache
-        response: str = bz2.decompress(rds.get(repr)).decode('utf-8')
+    if rds.exists(request_repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
     # --- fill out some of the known response fields ---
@@ -426,6 +426,6 @@ def search():
         output['success'] = 1
 
     response: str = json.dumps(output)
-    rds.set(repr, bz2.compress(response.encode('utf-8')))  # add to cache
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
