@@ -25,7 +25,7 @@ export default function Pagination({ paginationData, getNewResults }) {
                     <span aria-hidden="true">&laquo;</span>
                 </button>
                 page
-                <Form.Select id="page-number" className="select-page" onChange={e => changePage(e.target.value)}>
+                <Form.Select value={page} id="page-number" className="select-page" onChange={e => changePage(e.target.value)}>
                     {Array(num_pages).fill(0).map((_, i) => <option value={i+1}>{i+1}</option>)}
                 </Form.Select>
                 out of {num_pages}
