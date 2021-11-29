@@ -75,8 +75,8 @@ function ClusterPage(props) {
             .then(function (response) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
-                response = example;
-                const { success, data } = response;
+                // response = example;
+                const { success, data } = response.data;
                 const { cluster, metadata, query, tornado } = data;
                 const { cluster_size, limit, num_pages, page } = metadata;
                 setPaginationData({ cluster_size, limit, num_pages, page });
