@@ -83,11 +83,10 @@ function ClusterPage(props) {
                 const { success, data, is_tornado } = response.data;
                 console.log(response);
                 if (is_tornado === 1) {
-                    const {query} = data;
+                    const { query } = data;
                     setQueryInfo(query);
                     setSearchType('tornadoPool');
                 } else {
-                    setSearchType('other')
                     const { cluster, metadata, query, tornado } = data;
                     const { cluster_size, limit, num_pages, page } = metadata;
                     setPaginationData({ total: cluster_size, limit, num_pages, page });
@@ -101,6 +100,7 @@ function ClusterPage(props) {
                         setQueryInfo(query);
                         setTornado(tornado);
                     }
+                    setSearchType('other')
 
                     if (success === 1 && cluster.length > 0) {
                         setPageResults(cluster);
@@ -184,23 +184,24 @@ function ClusterPage(props) {
 
                             </div>}
                         </>}
-                         {searchType === 'other' && <>{showResultsSection && <div className="results-section">
+                    {searchType === 'other' && <>
+                    {showResultsSection && <div className="results-section">
 
-                            <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
-                            <TornadoInfo data={tornado} aliases={aliases} />
+                        <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                        <TornadoInfo data={tornado} aliases={aliases} />
 
-                        </div>}
-                            {showResultsSection &&
-                                <ClusterResults
-                                    paginationData={paginationData}
-                                    setSort={setSort}
-                                    sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
-                                    results={pageResults}
-                                    loading={loadingCluster}
-                                    getNewResults={getNewResults}
-                                    aliases={aliases}
-                                />}
-                        </>}
+                    </div>}
+                        {showResultsSection &&
+                            <ClusterResults
+                                paginationData={paginationData}
+                                setSort={setSort}
+                                sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
+                                results={pageResults}
+                                loading={loadingCluster}
+                                getNewResults={getNewResults}
+                                aliases={aliases}
+                            />}
+                    </>}
 
                 </div >
             </div>
