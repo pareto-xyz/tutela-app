@@ -10,6 +10,7 @@ from typing import Any, List
 def main(args: Any):
     deposit_csv_path: str = os.path.realpath(args.deposit_csv)
     withdraw_csv_path: str = os.path.realpath(args.withdraw_csv)
+    pool_csv_path: str = os.path.realpath(args.pool_csv)
 
     conn = psycopg2.connect(database = 'tornado', user = 'postgres')
     cursor = conn.cursor()
@@ -33,12 +34,18 @@ def main(args: Any):
     )
     conn.commit()
 
+    # third table
+    cursor.execute(
+        f"COPY tornado_pool(transaction, address, pool) FROM '{pool_csv_path}' DELIMITER ',' CSV HEADER;")
+    conn.commit()
+
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('deposit_csv', type=str)
     parser.add_argument('withdraw_csv', type=str)
+    parser.add_argument('pool_csv', type=str)
     args = parser.parse_args()
 
     main(args)

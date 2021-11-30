@@ -123,11 +123,11 @@ class TornadoPool(db.Model):
     """
     Stores an address and transaction that deposits into a tornado pool.
     """
-    __table__: str = 'tornado_pool'
+    __tablename__: str = 'tornado_pool'
     id: db.Column = db.Column(db.Integer, primary_key = True)
     transaction: db.Column = db.Column(db.String(128), index = True, nullable = False)
     address: db.Column = db.Column(db.String(128), index = True, nullable = False)
     pool: db.Column = db.Column(db.String(128), index = True, nullable = False)
 
     def __repr__(self) -> str:
-        return f'<TornadoPool {self.id}>'
+        return f'<TornadoPool {self.pool}>'
