@@ -8,11 +8,12 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, \
-    TornadoDeposit, TornadoWithdraw, TornadoPool
+    TornadoDeposit, TornadoWithdraw
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
     heuristic_to_str, is_valid_address, \
+    is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
@@ -26,10 +27,6 @@ from app.utils import get_known_attrs, get_display_aliases
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
-
-
-def is_tornado_address(address: str) -> bool:
-    return TornadoPool.query.filter_by(pool = address).count() > 0
 
 
 @app.route('/', methods=['GET'])
@@ -75,7 +72,8 @@ def istornado():
     output['data']['currency'] = currency
     output['success'] = 1
 
-    return Response(output)
+    response: str = json.dumps(output)
+    return Response(response)
 
 
 @app.route('/transaction', methods=['GET'])
@@ -110,6 +108,66 @@ def search():
         response: Response = search_address(request)
 
     return response
+
+
+@app.route('/search/compromised', methods=['GET'])
+def haveibeencompromised():
+    address: str = request.args.get('address', '')
+    pool: str = request.args.get('pool', '')  # tornado pool address
+
+    output: Dict[str, Any] = {
+        'data': {
+            'address': address,
+            'pool': pool,
+            'compromised_size': 0,
+            'compromised': [],
+        },
+        'success': 0,
+    }
+
+    if not is_valid_address(address):
+        return Response(output)
+
+    if not is_valid_address(pool):
+        return Response(output)
+
+    # find all the deposit transactions made by user for this pool
+    deposits: Optional[List[TornadoDeposit]] = \
+        TornadoDeposit.query.filter_by(
+            from_address = address,
+            tornado_cash_address = pool,
+        ).all()
+    deposit_txs: Set[str] = set([d.hash for d in deposits])
+    deposit_txs_list: List[str] = list(deposit_txs)
+
+    # search for these txs in the reveal tables
+    exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
+    gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
+    multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
+
+    def format_compromised(
+        exact_match_reveals: Set[str],
+        gas_price_reveals: Set[str],
+        multi_denom_reveals: Set[str],
+    ) -> List[Dict[str, Any]]:
+        compromised: List[Dict[str, Any]] = []
+        for reveal in exact_match_reveals:
+            compromised.append({'heuristic': heuristic_to_str(1), 'transaction': reveal})
+        for reveal in gas_price_reveals:
+            compromised.append({'heuristic': heuristic_to_str(2), 'transaction': reveal})
+        for reveal in multi_denom_reveals:
+            compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
+        return compromised
+
+    # add compromised sets to response
+    compromised: List[Dict[str, Any]] = format_compromised(
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals)
+    output['data']['compromised'] = compromised
+    output['data']['compromised_size'] = len(compromised)
+    output['success'] = 1
+
+    response: str = json.dumps(output)
+    return Response(response)
 
 
 def search_address(request: Request) -> Response:
@@ -467,36 +525,6 @@ def search_tornado(request: Request) -> Response:
     pool: pd.DataFrame = \
         tornado_pools[tornado_pools.address == address].iloc[0]
 
-    def get_equal_user_deposit_txs(address: str) -> Set[str]:
-        rows: List[TornadoPool] = \
-            TornadoPool.query.filter_by(pool = address).all()
-        txs: List[str] = [row.transaction for row in rows]
-        return set(txs)
-
-    def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
-        rows: List[class_] = \
-            class_.query.filter(class_.transaction.in_(transactions)).all()
-        clusters: List[int] = list(set([row.cluster for row in rows]))
-        rows: List[class_] = \
-            class_.query.filter(class_.cluster.in_(clusters)).all()
-
-        reveals: List[str] = list(set([row.transaction for row in rows]))
-        return set(reveals)
-
-    def format_compromised(
-        exact_match_reveals: Set[str],
-        gas_price_reveals: Set[str],
-        multi_denom_reveals: Set[str],
-    ) -> List[Dict[str, Any]]:
-        compromised: List[Dict[str, Any]] = []
-        for reveal in exact_match_reveals:
-            compromised.append({'heuristic': heuristic_to_str(1), 'transaction': reveal})
-        for reveal in gas_price_reveals:
-            compromised.append({'heuristic': heuristic_to_str(2), 'transaction': reveal})
-        for reveal in multi_denom_reveals:
-            compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
-        return compromised
-
     deposit_txs: Set[str] = get_equal_user_deposit_txs(address)
     deposit_txs_list: List[str] = list(deposit_txs)
     num_deposits: int = len(deposit_txs)
@@ -525,14 +553,6 @@ def search_tornado(request: Request) -> Response:
     output['data']['query']['metadata']['currency'] = currency
     output['data']['query']['metadata']['stats'] = stats
     output['data']['metadata']['compromised_size'] = num_compromised
-
-    """
-    # Uncomment me if we want actual transactions.
-    # add compromised sets to response
-    compromised: List[Dict[str, Any]] = format_compromised(
-        exact_match_reveals, gas_price_reveals, multi_denom_reveals)
-    output['data']['compromised'] = compromised
-    """
 
     output['success'] = 1
 
