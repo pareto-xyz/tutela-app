@@ -11,6 +11,9 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                     if (aliases[k]) {
                         k = aliases[k];
                     }
+                    if (aliases[value]) {
+                        value = aliases[value];
+                    }
                     return (
                         <tr className="detail-row" key={idx}>
                             <td>{k}</td>
