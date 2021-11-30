@@ -71,7 +71,7 @@ def istornado():
     amount, currency = pool.tags.strip().split()
 
     output['data']['is_tornado'] = is_tornado
-    output['data']['amount'] = amount
+    output['data']['amount'] = int(amount)
     output['data']['currency'] = currency
     output['success'] = 1
 
@@ -521,7 +521,7 @@ def search_tornado(request: Request) -> Response:
         'multi_denom': num_multi_denom_reveals,
     }
 
-    output['data']['query']['metadata']['amount'] = amount
+    output['data']['query']['metadata']['amount'] = int(amount)
     output['data']['query']['metadata']['currency'] = currency
     output['data']['query']['metadata']['stats'] = stats
     output['data']['metadata']['compromised_size'] = num_compromised
