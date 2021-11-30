@@ -12,6 +12,7 @@ ADDRESS_COL: str = 'address'
 ENTITY_COL: str = 'entity'
 CONF_COL: str = 'confidence'
 NAME_COL: str = 'name'
+HEURISTIC_COL: str = 'heuristic'
 # --
 EOA: str = 'eoa'
 DEPOSIT: str = 'deposit'
@@ -22,10 +23,10 @@ ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
 # --
-GAS_PRICE_HEUR: str = 'same_gas_price'
+GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
-SAME_NUM_TX_HEUR: str = 'same_num_transactions'
-SAME_ADDR_HEUR: str = 'same_address'
+SAME_NUM_TX_HEUR: str = 'multi_denomination'
+SAME_ADDR_HEUR: str = 'synchronous_txs'
 
 
 def safe_int(x, default=0):
@@ -264,6 +265,52 @@ def default_address_response() -> Dict[str, Any]:
         },
         'success': 0,
         'is_tornado': 0,
+    }
+    return output
+
+
+def default_tornado_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'data': {
+            'query': {
+                'address': '', 
+            },
+            'compromised_deposits': {
+            },
+            'metadata': {
+                'compromised_size': 0,
+                'num_pages': 0,
+                'page': 0,
+                'limit': 50,
+                'filter_by': {
+                    'min_conf': 0,
+                    'max_conf': 1,
+                    'entity': '*',
+                    'name': '*',
+                },
+                'schema': {
+                    CONF_COL: {
+                        'type': 'float',
+                        'values': [0, 1]
+                    }, 
+                    HEURISTIC_COL: {
+                        type: 'category',
+                        'values': [
+                            DEPO_REUSE_HEUR, 
+                            SAME_ADDR_HEUR, 
+                            GAS_PRICE_HEUR, 
+                            SAME_NUM_TX_HEUR,
+                        ],
+                    },
+                },
+                'sort_default': {
+                    'attribute': CONF_COL,
+                    'descending': True
+                }
+            },
+        },
+        'success': 1,
+        'is_tornado': 1,
     }
     return output
 
