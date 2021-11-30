@@ -304,7 +304,7 @@ def default_tornado_response() -> Dict[str, Any]:
                         'values': [0, 1]
                     }, 
                     HEURISTIC_COL: {
-                        type: 'category',
+                        'type': 'category',
                         'values': [
                             DEPO_REUSE_HEUR, 
                             SAME_ADDR_HEUR, 
