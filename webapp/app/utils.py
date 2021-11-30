@@ -466,15 +466,33 @@ class AddressRequestChecker:
         return json.dumps(_repr, sort_keys=True)
 
 
-class PoolRequestChecker:
+class TornadoPoolRequestChecker:
 
-    def __init__(
-        self,
-        request: Any,
-        table_cols: List[str],
-        conf_key: str = 'confidence',
-        name_key: str = 'name',
-        default_page: int = 0,
-        default_limit: int = 50,
-    ):
-        pass
+    def __init__(self, request: Any, default_page: int = 0, default_limit: int = 50):
+        self._request: Any = request
+        self._default_page: int = default_page
+        self._default_limit: int = default_limit
+        self._params: Dict[str, Any] = {}
+
+    def check(self):
+        return self._check_address() and self._check_page()
+
+    def _check_page(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on page
+        default: int = self._default_page
+        page: Union[str, int] = self._request.args.get('page', default)
+        page: int = safe_int(page, default)
+        page: int = max(page, 0)  # at least 0
+        self._params['page'] = page
+        return True
+
+    def _check_limit(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on limit
+        default: int = self._default_limit
+        limit: Union[str, int] = self._request.args.get('limit', default)
+        limit: int = safe_int(limit, default)
+        limit: int = min(max(limit, 1), default)  # at least 1
+        self._params['limit'] = limit
+        return True
