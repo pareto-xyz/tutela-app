@@ -6,6 +6,9 @@ import axios from 'axios';
 import example from '../../data/example';
 import QueryInfo from './QueryInfo';
 import TornadoInfo from './TornadoInfo';
+import schemaResponse from '../../data/schema';
+import TpoolOverall from './TpoolOverall';
+import TpoolStats from './TpoolStats'
 
 import ClusterResults from './ClusterResults';
 
@@ -26,6 +29,7 @@ function ClusterPage(props) {
     const [aliases, setAliases] = useState({});
     const [schema, setSchema] = useState({});
     const [paginationData, setPaginationData] = useState({});
+    const [searchType, setSearchType] = useState(null);
 
     const getAliases = () => {
         axios.get('/utils/aliases').then(response => {
@@ -75,31 +79,39 @@ function ClusterPage(props) {
             .then(function (response) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
-                // response = example;
-                const { success, data } = response.data;
-                const { cluster, metadata, query, tornado } = data;
-                console.log(metadata);
-                const { cluster_size, limit, num_pages, page } = metadata;
-                setPaginationData({ cluster_size, limit, num_pages, page });
-                const {sort_default} = metadata;
-                const { attribute, descending } = sort_default;
-                if (newAddress) {
-                    queryObj.sort = attribute;
-                    queryObj.descending = descending;
-                    setQuery(queryObj);
-                    setSchema(metadata.schema);
+                response = schemaResponse;
+                const { success, data, is_tornado } = response;
+                console.log(response);
+                if (is_tornado === 1) {
+                    const {query} = data;
                     setQueryInfo(query);
-                    setTornado(tornado);
+                    setSearchType('tornadoPool');
+                } else {
+                    setSearchType('other')
+                    const { cluster, metadata, query, tornado } = data;
+                    const { cluster_size, limit, num_pages, page } = metadata;
+                    setPaginationData({ total: cluster_size, limit, num_pages, page });
+                    const { sort_default } = metadata;
+                    const { attribute, descending } = sort_default;
+                    if (newAddress) {
+                        queryObj.sort = attribute;
+                        queryObj.descending = descending;
+                        setQuery(queryObj);
+                        setSchema(metadata.schema);
+                        setQueryInfo(query);
+                        setTornado(tornado);
+                    }
+
+                    if (success === 1 && cluster.length > 0) {
+                        setPageResults(cluster);
+                    }
                 }
 
-                if (success === 1 && cluster.length > 0) {
-                    setPageResults(cluster);
-                } else {
-                }
             })
             .catch(function (error) {
                 setPageResults([]);
-                setLoading(false);
+                setLoadingQuery(false);
+                setLoadingCluster(false);
                 console.log(error);
             }).finally(() => {
                 if (firstView) {
@@ -141,6 +153,8 @@ function ClusterPage(props) {
                         Enter an ethereum address to see likely connected ethereum addresses (ie. its cluster)
                         based on public data on previous transactions.
                     </div>}
+
+
                     <InputGroup onSubmit={submitInputAddress} className="mb-3 " hasValidation>
                         <FormControl onKeyPress={(e) => {
                             if (e.key !== 'Enter') return;
@@ -161,22 +175,33 @@ function ClusterPage(props) {
                         </Form.Control.Feedback>
                     </InputGroup>
 
-                    {showResultsSection && <div className="results-section">
+                    {searchType === 'tornadoPool' &&
+                        <>
+                            {showResultsSection && <div className="tornado-results-section">
 
-                        <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
-                        <TornadoInfo data={tornado} aliases={aliases} />
+                                <TpoolOverall data={queryInfo} loading={loadingQuery} />
+                                {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
 
-                    </div>}
-                    {showResultsSection &&
-                        <ClusterResults 
-                            paginationData={paginationData}
-                            setSort={setSort}
-                            sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
-                            results={pageResults}
-                            loading={loadingCluster}
-                            getNewResults={getNewResults}
-                            aliases={aliases}
-                        />}
+                            </div>}
+                        </>}
+                         {searchType === 'other' && <>{showResultsSection && <div className="results-section">
+
+                            <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                            <TornadoInfo data={tornado} aliases={aliases} />
+
+                        </div>}
+                            {showResultsSection &&
+                                <ClusterResults
+                                    paginationData={paginationData}
+                                    setSort={setSort}
+                                    sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
+                                    results={pageResults}
+                                    loading={loadingCluster}
+                                    getNewResults={getNewResults}
+                                    aliases={aliases}
+                                />}
+                        </>}
+
                 </div >
             </div>
         </div>

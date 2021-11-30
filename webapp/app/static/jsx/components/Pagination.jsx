@@ -2,7 +2,7 @@ import React from 'react';
 import { Form } from 'react-bootstrap';
 
 export default function Pagination({ paginationData, getNewResults }) {
-    const { cluster_size, limit, num_pages, page } = paginationData;
+    const { total, limit, num_pages, page } = paginationData;
     const firstInRange = page * limit + 1;
     const lastInRange = Math.min(cluster_size, (page + 1) * limit);
 

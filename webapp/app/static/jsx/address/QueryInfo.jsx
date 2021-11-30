@@ -42,7 +42,7 @@ export default function QueryInfo({ data, loading, aliases }) {
                     <span className="sr-only">Loading...</span>
                 </div>
             </div>}
-            <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={Object.entries(combined)} />
+            {!loading && <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={Object.entries(combined)} />}
         </div>
     );
 }
