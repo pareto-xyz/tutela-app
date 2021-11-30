@@ -46,7 +46,7 @@ def alias():
     return Response(response=response)
 
 
-@app.rout('/utils/istornado', methods=['GET'])
+@app.route('/utils/istornado', methods=['GET'])
 def istornado():
     address: str = request.args.get('address', '')
     output: Dict[str, Any] = {
