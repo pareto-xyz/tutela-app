@@ -4,7 +4,7 @@ import { Form } from 'react-bootstrap';
 export default function Pagination({ paginationData, getNewResults }) {
     const { total, limit, num_pages, page } = paginationData;
     const firstInRange = page * limit + 1;
-    const lastInRange = Math.min(cluster_size, (page + 1) * limit);
+    const lastInRange = Math.min(total, (page + 1) * limit);
 
     const changePage = desiredPage => { //zero-indexed
         getNewResults(false, {page: desiredPage});
@@ -13,7 +13,7 @@ export default function Pagination({ paginationData, getNewResults }) {
     return (
         <div className='all-pagination'>
             <div>
-                results {firstInRange}-{lastInRange} out of {cluster_size}
+                results {firstInRange}-{lastInRange} out of {total}
             </div>
             <div className="pagination">
                 <button onClick={e => {
