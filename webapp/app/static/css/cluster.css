@@ -197,6 +197,11 @@ RESULTS
     display: flex;
 }
 
+.tornado-results-section {
+    display: flex;
+    margin-top: 20px;
+}
+
 .results-section:not(:first-child) {
     margin-top: 30px;
     margin-bottom: 20px;

@@ -4,12 +4,12 @@ import AgnosticTable from '../components/AgnosticTable';
 export default function TornadoInfo({ data, aliases }) {
     return (
         <div className="tornado-info ">
-            <div className="panel-sub">tornado cash statistics</div>
+            <div className="panel-sub">about your input</div>
             <div className="panel-title">
-                ABOUT YOUR INPUT
+                TORNADO CASH STATISTICS
             </div>
             <div className="panel-sub">
-            This shows Tornado Cash transactions by your input address and addresses it is clustered with.
+            This shows Tornado Cash transactions by your input address and other clustered addresses.
             </div>
             <div className="two-tables">
                 {data && data.summary && data.summary.address && <div>
@@ -21,7 +21,7 @@ export default function TornadoInfo({ data, aliases }) {
                     <div>
                         <div className="table-title">by cluster </div>
 
-                        <AgnosticTable keyValues={Object.entries(data.summary.cluster)} />
+                        <AgnosticTable aliases={aliases} keyValues={Object.entries(data.summary.cluster)} />
                     </div>
                 }
 

@@ -82,7 +82,7 @@ def get_display_aliases() -> Dict[str, str]:
         'num_compromised': 'compromised',
         'num_compromised_synchro_tx': 'synchronous txs',
         'num_compromised_gas_price': 'unique gas price',
-        'num_compromised_multi_denom': 'multiple denominations',
+        'num_compromised_multi_denom': 'multi-denom',
         'conf': 'confidence score',
         'entity': 'address type',
         'balance': 'ETH balance',
@@ -92,6 +92,11 @@ def get_display_aliases() -> Dict[str, str]:
         'account_type': 'category',
         'label': 'legitimacy',
         'tags': 'other',
+        'num_deposits': 'total equal user deposits',
+        'compromised': 'compromised deposits',
+        'exact_match': 'exact match reveals',
+        'multi_denom': 'multi-denom reveals',
+        'gas_price': 'unique gas price reveals'
     }
 
 
