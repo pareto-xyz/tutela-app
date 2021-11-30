@@ -28,6 +28,10 @@ PAGE_LIMIT = 50
 HARD_MAX: int = 1000
 
 
+def is_tornado_address(address: str) -> bool:
+    return TornadoPool.query.filter_by(pool = address).count() > 0
+
+
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
 def index():
@@ -43,10 +47,41 @@ def cluster():
 def alias():
     response: str = json.dumps(get_display_aliases())
     return Response(response=response)
-    
+
+
+@app.rout('/utils/istornado', methods=['GET'])
+def istornado():
+    address: str = request.args.get('address', '')
+    output: Dict[str, Any] = {
+        'data': {
+            'address': address,
+            'is_tornado': 1,
+            'amount': 0,
+            'currency': '',
+        },
+        'success': 0,
+    }
+
+    if not is_valid_address(address):
+        return Response(output)
+
+    is_tornado: bool = int(is_tornado_address(address))
+    pool: pd.DataFrame = \
+        tornado_pools[tornado_pools.address == address].iloc[0]
+    amount, currency = pool.tags.strip().split()
+
+    output['data']['is_tornado'] = is_tornado
+    output['data']['amount'] = amount
+    output['data']['currency'] = currency
+    output['success'] = 1
+
+    return Response(output)
+
+
 @app.route('/transaction', methods=['GET'])
 def transaction():
     return render_template('transaction.html')
+
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -55,9 +90,6 @@ def search():
     # do a simple check that the address is valid
     if not is_valid_address(address):
         return default_address_response()
-
-    def is_tornado_address(address: str) -> bool:
-        return TornadoPool.query.filter_by(pool = address).count() > 0
 
     # check if address is a tornado pool or not
     is_tornado: bool = is_tornado_address(address)
