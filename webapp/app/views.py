@@ -319,6 +319,8 @@ def search():
 
         if addr is not None:  # make sure address exists
             entity: str = entity_to_str(addr.entity)
+            if addr.meta_data is None:
+                addr.meta_data = '{}'
             addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
             output['data']['query']['metadata'] = addr_metadata
 
