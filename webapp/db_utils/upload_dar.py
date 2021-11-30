@@ -18,7 +18,7 @@ def main(args: Any):
     cursor = conn.cursor()
 
     cursor.execute(
-        f"COPY address(address, entity, conf, meta_data, user_cluster, exchange_cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
+        f"COPY address(address, entity, conf, meta_data, heuristic, user_cluster, exchange_cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
     )
     conn.commit()
 
