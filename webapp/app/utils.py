@@ -517,6 +517,5 @@ class TornadoPoolRequestChecker:
 
     def to_str(self):
         _repr: Dict[str, Any] = deepcopy(self._params)
-        del _repr['filter_by']
         return json.dumps(_repr, sort_keys=True)
 
