@@ -19,6 +19,7 @@ def main(args: Any):
     same_metadata: pd.DataFrame = pd.read_csv(args.same_num_tx_metadata)
 
     metadata: pd.DataFrame = pd.concat([dar_metadata, gas_metadata, same_metadata])
+    metadata: pd.DataFrame = metadata.loc[metadata.groupby('address')['conf'].idxmax()]
     metadata.to_csv(args.out_csv, index=False)
 
 
