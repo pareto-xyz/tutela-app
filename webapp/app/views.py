@@ -463,11 +463,13 @@ def search():
         address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
         output['data']['tornado']['summary']['address'].update(address_tornado_dict)
 
+        """
         if addr is not None:  # nothing to do if address doesn't exist in DAR
             if addr.entity == entity_to_int(EOA):
                 # only add cluster information if current address is an EOA.
                 cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
                 output['data']['tornado']['summary'].update(cluster_tornado_dict)
+        """
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
