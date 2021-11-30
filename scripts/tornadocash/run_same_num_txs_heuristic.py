@@ -188,7 +188,7 @@ def get_metadata(
         heuristic = heuristic,
     )
     response: pd.DataFrame = pd.DataFrame.from_dict(response)
-    response: pd.DataFrame = response.groupby('address').max('conf').reset_index()
+    response: pd.DataFrame = response.loc[response.groupby('address')['conf'].idxmax()]
     return response
 
 
