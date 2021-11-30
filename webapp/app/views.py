@@ -2,9 +2,10 @@ import bz2
 import math
 import json
 import numpy as np
+import pandas as pd
 from typing import Dict, Optional, List, Any, Set
 
-from app import app, w3, ns, known_addresses, rds
+from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, \
     TornadoDeposit, TornadoWithdraw, TornadoPool
@@ -356,14 +357,6 @@ def search_address(request: Request) -> Response:
         }
         return stats
 
-    
-
-    def get_equal_user_deposits_txs(address: str) -> List[str]:
-        rows: List[TornadoPool] = TornadoPool.query.filter_by(pool = address).all()
-        txs: List[str] = [row.transaction for row in rows]
-        txs: List[str] = list(set(txs))  # make unique
-        return txs
-
 
     if len(address) > 0:
         offset: int = page * size
@@ -547,8 +540,54 @@ def search_tornado(request: Request) -> Response:
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_tornado_response()
 
+    if not is_valid_request:
+        return Response(output)
+
     address: str = checker.get('address')
     page: int = checker.get('page')
     size: int = checker.get('limit')
 
-    
+    output['data']['query']['address'] = address
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+
+    pool: pd.DataFrame = \
+        tornado_pools[tornado_pools.address == address].iloc[0]
+
+    def get_equal_user_deposit_txs(address: str) -> List[str]:
+        rows: List[TornadoPool] = \
+            TornadoPool.query.filter_by(pool = address).all()
+        txs: List[str] = [row.transaction for row in rows]
+        txs: List[str] = list(set(txs))  # make unique
+        return txs
+
+    def find_reveals(transactions: List[str]) -> List[Dict[str, Any]]:
+        exact_match_reveals: List[str] = []  # stores all reveals
+
+        for transaction in transactions:
+            rows: List[ExactMatch] = \
+                ExactMatch.query.filter_by(transaction = transaction).all()
+            for row in rows:
+                cluster: List[ExactMatch] = \
+                    ExactMatch.query.filter_by(cluster = row.cluster).all()
+                for elem in cluster:
+                    exact_match_reveals.append(elem.transaction)
+
+        return exact_match_reveals
+
+    deposit_txs: List[str] = get_equal_user_deposit_txs(address)
+    num_deposits: int = len(deposit_txs)
+
+    reveals: List[Dict[str, Any]] = find_reveals(deposit_txs)
+
+    amount, currency = pool.tags.strip().split()
+    stats: Dict[str, Any] = {
+        'num_deposits': num_deposits,
+    }
+
+    output['data']['query']['metadata']['amount'] = amount
+    output['data']['query']['metadata']['currency'] = currency
+    output['data']['query']['metadata']['stats'] = stats
+
+    response: str = json.dumps(output)
+    return Response(response=response)

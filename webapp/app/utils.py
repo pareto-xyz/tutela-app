@@ -274,9 +274,19 @@ def default_tornado_response() -> Dict[str, Any]:
         'data': {
             'query': {
                 'address': '', 
+                'metadata': {
+                    'amount': 0,
+                    'currency': '',
+                    'stats': {
+                        'num_deposits': 0,
+                        'num_compromised': 0,
+                        'exact_match': 0,
+                        'gas_price': 0,
+                        'multi_denom': 0,
+                    }
+                },
             },
-            'compromised_deposits': {
-            },
+            'compromised': [],
             'metadata': {
                 'compromised_size': 0,
                 'num_pages': 0,
