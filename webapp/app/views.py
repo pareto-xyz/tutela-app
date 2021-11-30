@@ -492,7 +492,7 @@ def search_tornado(request: Request) -> Response:
     output['data']['query']['metadata']['amount'] = amount
     output['data']['query']['metadata']['currency'] = currency
     output['data']['query']['metadata']['stats'] = stats
-    output['data']['query']['metadata']['compromised_size'] = num_compromised
+    output['data']['metadata']['compromised_size'] = num_compromised
 
     """
     # Uncomment me if we want actual transactions.
