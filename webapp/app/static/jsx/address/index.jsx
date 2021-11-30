@@ -81,12 +81,11 @@ function ClusterPage(props) {
                 setLoadingCluster(false);
                 // response = schemaResponse;
                 const { success, data, is_tornado } = response.data;
-                console.log(response);
                 if (is_tornado === 1) {
                     const { query } = data;
                     setQueryInfo(query);
                     setSearchType('tornadoPool');
-                } else {
+                } else if (is_tornado === 0) {
                     const { cluster, metadata, query, tornado } = data;
                     const { cluster_size, limit, num_pages, page } = metadata;
                     setPaginationData({ total: cluster_size, limit, num_pages, page });
@@ -106,6 +105,7 @@ function ClusterPage(props) {
                         setPageResults(cluster);
                     }
                 }
+                console.log(showResultsSection, searchType, queryInfo);
 
             })
             .catch(function (error) {
