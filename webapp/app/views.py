@@ -418,11 +418,11 @@ def search_tornado(request: Request) -> Response:
         return Response(output)
 
     # check if we can find in cache
-    # request_repr: str = checker.to_str()
+    request_repr: str = checker.to_str()
 
-    # if rds.exists(request_repr):  # check if this exists in our cache
-    #     response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
-    #     return Response(response=response)
+    if rds.exists(request_repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
 
     address: str = checker.get('address')
     page: int = checker.get('page')
@@ -494,13 +494,16 @@ def search_tornado(request: Request) -> Response:
     output['data']['query']['metadata']['stats'] = stats
     output['data']['query']['metadata']['compromised_size'] = num_compromised
 
+    """
+    # Uncomment me if we want actual transactions.
     # add compromised sets to response
     compromised: List[Dict[str, Any]] = format_compromised(
         exact_match_reveals, gas_price_reveals, multi_denom_reveals)
     output['data']['compromised'] = compromised
+    """
 
     output['success'] = 1
 
     response: str = json.dumps(output)
-    # rds.set(request_repr, bz2.compress(response.encode('utf-8')))
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))
     return Response(response=response)
