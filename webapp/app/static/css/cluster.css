@@ -18,11 +18,6 @@ html {
     text-overflow: ellipsis;
 }
 
-.panel-title.spaced {
-    margin-left: 15px;
-    margin-top: 15px;
-}
-
 .panel-sub {
     color: var(--lightgrey);
     font-size: 0.8em;
@@ -30,6 +25,29 @@ html {
 
 .halved-bar > *.right-side {
     display: none;
+}
+
+.center-inside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tooltip > .tooltip-inner {
+    text-align: left;
+}
+
+.squashed-row {
+    display: flex;
+    align-items: center;
+}
+
+.accordion-badge {
+    margin: 0px 20px 0px 10px;
+    border-radius: 5px;
+    background-color: var(--fadedgreen);
+    padding: 10px;
+    font-size: 0.9em;
 }
 
 /**
@@ -53,7 +71,7 @@ TOP
 }
 
 .anon-score-group {
-    display: none;
+    display: flex;
     width: 100%;
     align-items: center;;
     font-family: 'Ubuntu';
@@ -74,8 +92,7 @@ TOP
     color: var(--lightgrey);
 }
 
-#instructions, #invalid-input, #spinner, #anonymous-none-found {
-    display: none;
+#instructions, #invalid-input, #spinner {
     margin: 10px 0px;
 }
 #instructions {
@@ -110,20 +127,17 @@ RESULTS
 }
 
 .all-pagination {
-    display: none;
+    display: flex;
     margin: 10px 0px;
     font-size: 0.8em;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .shown {
     display: flex !important;
     visibility: visible !important;
-}
-
-.all-pagination.shown {
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
 }
 
 .pagination {
@@ -145,7 +159,6 @@ RESULTS
 .query-info {
     background-color: var(--fadedgrey);
     border-radius: 5px;
-    margin-left: 30px;
     padding: 15px;
     width: 100%;
 }
@@ -154,6 +167,7 @@ RESULTS
 
 .two-tables {
     display: flex;
+    margin-top: 10px;
 }
 
 .table-title {
@@ -180,12 +194,12 @@ RESULTS
 /* results list ------------------ */
 
 .results-section {
-    visibility: hidden;
-    flex-direction: column;
+    display: flex;
 }
 
 .results-section:not(:first-child) {
     margin-top: 30px;
+    margin-bottom: 20px;
 }
 
 .results-section:last-child {
@@ -198,9 +212,10 @@ RESULTS
     max-height: 80vh;
     overflow: scroll;
     flex: 1;
-    margin-top: 15px;
     border-radius: 5px;
-
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 #results-table {
@@ -246,10 +261,6 @@ RESULTS
     flex-wrap: wrap;
 }
 
-.sort-group {
-    display: flex; 
-}
-
 .button-group {
     margin-right: 10px;
 }
@@ -259,7 +270,7 @@ RESULTS
     border-top: dashed 1px darkgrey;
 }
 
-#specific-result {
+.specific-result, .specific-result:focus {
     padding: 0px 0px 0px 5px;
     font-size: 0.8em;
     font-family: 'Ubuntu';
@@ -271,11 +282,19 @@ RESULTS
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 }
 
+.search-options > .input-group {
+    flex: 1;
+}
+
 .dropdown-toggle {
     background-color: var(--fadedgrey);
     color: white;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     padding: .375rem 0.75rem;
+}
+
+.selected-dropdown {
+    background-color: var(--tcashgreen);
 }
 
 ul.dropdown-menu { 
@@ -291,6 +310,54 @@ ul.dropdown-menu {
     border: transparent;
     border-radius: 5px;
     text-align: center;
+}
+
+.dropdown-accordion > button {
+    background-color: transparent;
+    font-size: 12pt;
+    border: transparent;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    font-family: 'Ubuntu';
+}
+
+.dropdown > .dropdown-menu {
+    padding: 0px;
+}
+
+.dropdown-accordion.accordion-header {
+    margin-top: 10px;
+}
+
+.dropdown-accordion.accordion-header > button > * {
+    color: black;
+}
+
+.dropdown-accordion > *, .dropdown-accordion > a.dropdown-item {
+    color: black;
+}
+
+.dropdown-accordion > a.dropdown-item {
+    font-weight: 300;
+
+}
+
+.dropdown-accordion.accordion-item {
+    border-bottom: solid var(--fadedgrey) 1px;
+}
+
+.my-input > .input-group-text {
+    border-radius: 0;
+}
+
+.dropdown-accordion > .my-input > .invalid-feedback {
+    margin-left: 10px;
+}
+
+.flush-right {
+    text-align: right;
 }
 
 #filter-dropdown > *{
@@ -320,6 +387,36 @@ ul.dropdown-menu {
     padding: 15px;
 }
 
+
+.my-accordion-header {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.selected-result > .my-accordion-header > button {
+    background-color: var(--fadedgrey);
+}
+
+.my-accordion-header > button {
+    padding: 10px;
+    width: 100%;
+    background-color: #4C4C4C;
+    border: transparent;
+    display: flex;
+    align-items: center;
+    color: white;
+    justify-content: space-between;
+}
+
+.my-accordion-body {
+    background-color: var(--fadedgrey);
+    padding: 20px;
+}
+
+.expand-symbol {
+    font-size: 1.3em;
+}
+
 .result-identifier {
     display: none;
 }
@@ -330,6 +427,7 @@ ul.dropdown-menu {
     margin-left: -5px;
     width: 100%;
     font-size: 0.9em;
+    border-color: transparent;
 }
 
 .detail-row > td{
@@ -338,6 +436,8 @@ ul.dropdown-menu {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: white;
+    border-top: transparent;
 }
 
 .detail-row > td:last-child {

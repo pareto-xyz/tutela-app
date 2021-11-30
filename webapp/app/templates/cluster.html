@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Tutela</title>
+    <title>Tutela - address</title>
     <!-- Stylesheets
     ================================================== -->
     <!-- Bootstrap core CSS -->
@@ -31,157 +31,8 @@
     </script>
 </head>
 
-<body>
-
-    <header class="container">
-        <a class="header-logo" href="https://tornado.cash/"><img width="50" src="/static/img/tornado_logo.svg"
-                alt="logo"></a>
-        <div class="nav">
-            <a class="nav-link" href="/">home</a>
-            <a class="nav-link" href="/cluster"><strong>cluster</strong></a>
-            <a class="nav-link" href="/#about">about</a>
-            <a class="nav-link" href="/#reveals">reveals</a>
-        </div>
-    </header>
-
-    <div class="container halved-bar">
-        <div>
-            <div class="shown" id="instructions">
-                Enter an ethereum address to see likely connected ethereum addresses (ie. its cluster)
-                based on public data on previous transactions.
-            </div>
-            <div id="address-form">
-                <form class="input-group search-bar">
-                    <input id="input-address" type="text" class="form-control"
-                        placeholder="eg. 0x000000000000000.........." aria-label="ethereum address"
-                        aria-describedby="basic-addon2">
-                    <button class="btn" type="submit"><img width="20" src="/static/img/loupe.svg" alt="search"></button>
-                </form>
-            </div>
-            <div id="invalid-input">
-                Please enter a valid ethereum address.
-            </div>
-            <div class="results-section">
-                <div class="search-options">
-                    <div class="button-group sort-group">
-                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                            sort
-                            by</span> <span class="caret"></span></button>
-                        <ul id="sort-dropdown" class="dropdown-menu">
-                        </ul>
-                    </div>
-                    <div class="button-group">
-                        <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">
-                            filter
-                            by</span> <span class="caret"></span></button>
-                        <ul id="filter-dropdown" class="dropdown-menu">
-
-                        </ul>
-                    </div>
-                    <input id="specific-result" type="text" class="form-control"
-                        placeholder="search specific address or name" aria-label="ethereum address"
-                        aria-describedby="basic-addon2">
-                </div>
-                <div class="all-pagination">
-                    <div>
-                        results <span id="results-window"></span> out of <span class="total-results"></span>
-                    </div>
-                    <div class="pagination">
-                        <button class="page-button" id="prev-page" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </button>
-                        page
-                        <select id="page-number" class="form-select select-page" aria-label="Default select example">
-                            <option selected>1</option>
-
-                        </select>
-                        out of <span id="total-num-pages"></span>
-                        <button class="page-button" id="next-page" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </button>
-                    </div>
-                </div>
-                <div id="no-clusters-msg">No clusters found.</div>
-                <div class="results">
-                    <div class="panel-title spaced">
-                        LINKED ADDRESSES
-                    </div>
-                    <div id="spinner" class="justify-content-center">
-                        <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </div>
-                    <div id="anonymous-none-found" class="align-items-center">
-                        <br />
-                        <img width="200" src="/static/img/spy.png" />
-                        <br />
-                        <div>you're anonymous, harry!</div>
-
-                    </div>
-                    <table id="results-table">
-                    </table>
-
-                </div>
-            </div>
-        </div>
-        <div class="right-side">
-            <div class="query-info results-section">
-                <div class="panel-sub">about your input</div>
-                <div class="panel-title">
-                    OVERALL INFO
-                </div>
-
-                <div class="anon-score-group">
-                    anonymity score: &nbsp;<span id="anon-score"></span> &nbsp;/ 100
-                    <div data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="hover"
-                        data-content="The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this."
-                        class="help-circle">?</div>
-                </div>
-                <div id="query-detail-table" class="detail-table">
-                </div>
-
-            </div>
-
-            <div class="tornado-info results-section">
-                <div class="panel-sub">tornado cash statistics</div>
-                <div class="panel-title">
-                    ABOUT YOUR INPUT
-                </div>
-                <div class="panel-sub">
-                    This shows Tornado Cash transactions by your input address and addresses it is clustered with.
-                </div>
-                <br/>
-                <div class="two-tables">
-                    <div>
-                        <div class="table-title">by address:</div>
-                        <div id="tornado-detail-table-address" class="detail-table">
-                        </div>
-
-                    </div>
-                    <div id="tornado-data-cluster">
-                        <div class="table-title">by cluster:</div>
-                        <div id="tornado-detail-table-cluster" class="detail-table">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="results-section">
-
-                <div class="detail-page">
-                    <div class="result-identifier panel-sub">
-                        result&nbsp;<span id="result-number">0</span>&nbsp;out of&nbsp;<span
-                            class="total-results"></span>
-                    </div>
-                    <div id="detail-address" class="panel-title">
-                        SELECTED LINKED ADDRESS
-                    </div>
-                    <div id="detail-table">
-                    </div>
-                </div>
-            </div>
-        </div>
+<body >
+    <div id="address-page">
     </div>
 
     <!-- <footer class="container">
@@ -198,7 +49,7 @@
 
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="/static/js/cluster.js"></script>
+    <script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
 
 </body>
 
