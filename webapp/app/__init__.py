@@ -50,5 +50,8 @@ def get_realpath(path: str) -> str:
 known_addresses: pd.DataFrame = pd.read_csv(
     get_realpath('static/data/known_addresses.csv'))
 
+tornado_pools: pd.DataFrame = pd.read_csv(
+    get_realpath('static/data/tornado.csv'))
+
 
 from app import views, models

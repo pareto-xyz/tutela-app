@@ -2,21 +2,23 @@ import bz2
 import math
 import json
 import numpy as np
+import pandas as pd
 from typing import Dict, Optional, List, Any, Set
 
-from app import app, w3, ns, known_addresses, rds
+from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, \
-    TornadoDeposit, TornadoWithdraw
+    TornadoDeposit, TornadoWithdraw, TornadoPool
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
-    heuristic_to_int, heuristic_to_str, \
-    RequestChecker, default_response, \
+    heuristic_to_str, is_valid_address, \
+    AddressRequestChecker, TornadoPoolRequestChecker, \
+    default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
 from app.lib.w3 import query_web3
 
-from flask import request, Response
+from flask import request, Request, Response
 from flask import render_template
 from sqlalchemy import or_
 
@@ -36,6 +38,7 @@ def index():
 def cluster():
     return render_template('cluster.html')
 
+
 @app.route('/utils/aliases', methods=['GET'])
 def alias():
     response: str = json.dumps(get_display_aliases())
@@ -47,8 +50,50 @@ def transaction():
 
 @app.route('/search', methods=['GET'])
 def search():
+    address: str = request.args.get('address', '')
+
+    # do a simple check that the address is valid
+    if not is_valid_address(address):
+        return default_address_response()
+
+    def is_tornado_address(address: str) -> bool:
+        return TornadoPool.query.filter_by(pool = address).count() > 0
+
+    # check if address is a tornado pool or not
+    is_tornado: bool = is_tornado_address(address)
+
+    if is_tornado:
+        # ---------------------------------------------------------
+        # MODE #1
+        # This is a TCash pool, so we can show specific information
+        # about compromised addresses via our heuristics.
+        # ---------------------------------------------------------
+        response: Response = search_tornado(request)
+    else:
+        # ---------------------------------------------------------
+        # MODE #2
+        # This is a regular address, so we can search our dataset
+        # for its cluster and complimentary information.
+        # ---------------------------------------------------------
+        response: Response = search_address(request)
+
+    return response
+
+
+def search_address(request: Request) -> Response:
+    """
+    Master function for serving address requests. This function 
+    will first check if the request is valid, then find clusters
+    corresponding to this address, as well as return auxilary 
+    information, such as web3 info and Tornado specific info.
+
+    Has support for Redis for fast querying. Even if no clusters
+    are found, Tornado and basic info is still returned.
+    """
     table_cols: Set[str] = set(Address.__table__.columns.keys())
-    checker: RequestChecker = RequestChecker(
+
+    # Check if this is a valid request searching for an address
+    checker: AddressRequestChecker = AddressRequestChecker(
         request,
         table_cols,
         entity_key = ENTITY_COL,
@@ -58,9 +103,9 @@ def search():
         default_limit = PAGE_LIMIT,
     )
     is_valid_request: bool = checker.check()
-    output: Dict[str, Any] = default_response()
+    output: Dict[str, Any] = default_address_response()
 
-    if not is_valid_request: 
+    if not is_valid_request:   # if not, bunt
         return Response(output)
 
     address: str = checker.get('address')
@@ -138,85 +183,25 @@ def search():
 
         return score
 
-    def query_exact_match_heuristic(address: str) -> Set[str]:
+    def query_heuristic(address: str, class_: Any) -> Set[str]:
         """
         Given an address, find out how many times this address' txs
-        appear in a exact match heuristic. 
+        appear in a heuristic. Pass the table class for heuristic.
         """
-        rows: Optional[List[ExactMatch]] = \
-            ExactMatch.query.filter_by(address = address).all()
+        rows: Optional[List[class_]] = \
+            class_.query.filter_by(address = address).all()
 
         cluster_txs: List[str] = []
 
         if (len(rows) > 0):
-            for row in rows:
-                # find cluster for this transaction (w/ this address)
-                cluster: List[ExactMatch] = ExactMatch.query.filter_by(
-                    cluster = row.cluster).all()
-                cluster: List[str] = [member.transaction for member in cluster]
-                cluster_txs.extend(cluster)
+            clusters: List[int] = list(set([row.cluster for row in rows]))
+            cluster: List[class_] = \
+                class_.query.filter(class_.cluster.in_(clusters)).all()
+            cluster_txs: List[str] = [row.transaction for row in cluster]
 
         return set(cluster_txs)  # no duplicates
 
-    def query_gas_price_heuristic(address: str) -> Set[str]:
-        """
-        Given an address, find out how many times this address' txs 
-        appears in a same gas price reveal. 
-        """
-        rows: Optional[List[GasPrice]] = \
-            GasPrice.query.filter_by(address = address).all()
-
-        cluster_txs: List[str] = []
-
-        if len(rows) > 0:
-            for row in rows:
-                cluster: List[GasPrice] = GasPrice.query.filter_by(
-                    cluster = row.cluster).all()
-                cluster: List[str] = [member.transaction for member in cluster]
-                cluster_txs.extend(cluster)
-
-        return set(cluster_txs)
-
-    def query_multi_denom_heuristic(address: str) -> Set[str]:
-        """
-        Given an address, find out how many times this address' txs 
-        appears in a same multi-denomination reveal.
-        """
-        rows: Optional[List[MultiDenom]] = \
-            MultiDenom.query.filter_by(address = address).all()
-
-        cluster_txs: List[str] = []
-
-        if len(rows) > 0:
-            for row in rows:
-                cluster: List[MultiDenom] = MultiDenom.query.filter_by(
-                    cluster = row.cluster).all()
-                cluster: List[str] = [member.transaction for member in cluster]
-                cluster_txs.extend(cluster)
-
-        return set(cluster_txs)
-
-    def query_deposit_reuse_heuristic(
-        address: str, limit: int = HARD_MAX) -> Set[str]:
-        """
-        For the given address, find all other EOA addresses in the DAR cluster.
-        The purpose of this is when we are computing # of deposit addr, we 
-        compute using all of the addresses in cluster, rather than just the
-        current address.
-        """
-        cluster: Set[str] = {address}
-
-        addr: Address = Address.query.filter_by(address = address).first()
-        if addr is not None:
-            cluster: List[Address] = Address.query.filter_by(
-                user_cluster = addr.user_cluster, 
-                entity = entity_to_int(EOA),
-            ).limit(limit).all()
-            cluster: Set[str] = set([c.address for c in cluster])
-
-        return cluster
-
-    def query_address_tornado_stats(address: str) -> Dict[str, int]:
+    def query_tornado_stats(address: str) -> Dict[str, int]:
         """
         Given a user address, we want to supply a few statistics:
 
@@ -224,9 +209,9 @@ def search():
         2) Number of withdraws made to Tornado pools.
         3) Number of deposits made that are part of a cluster or of a TCash reveal.
         """
-        exact_match_txs: Set[str] = query_exact_match_heuristic(address)
-        gas_price_txs: Set[str] = query_gas_price_heuristic(address)
-        multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
+        exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
+        gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
+        multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
 
         reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
         reveal_txs: Set[str] = reveal_txs.union(multi_denom_txs)
@@ -254,62 +239,6 @@ def search():
             num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
             num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
         )
-        return stats
-
-    def query_cluster_tornado_stats(address: str) -> Dict[str, int]:
-        """
-        Same as `query_address_tornado_stats but for a cluster of
-        addresses obtained from deposit address reuse.
-        """
-        # find EOA addresses in the same cluster as address
-        cluster: Set[str] = query_deposit_reuse_heuristic(address)
-        reveal_txs: Set[str] = set()
-        deposit_txs: Set[str] = set()
-        reveal_exact_match_txs: Set[str] = set()
-        reveal_gas_price_txs: Set[str] = set()
-        reveal_multi_denom_txs: Set[str] = set()
-        num_deposit: int = 0
-        num_withdraw: int = 0
-
-        for address in cluster:
-            exact_match_txs: Set[str] = query_exact_match_heuristic(address)
-            gas_price_txs: Set[str] = query_gas_price_heuristic(address)
-            multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
-            cur_reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
-            cur_reveal_txs: Set[str] = cur_reveal_txs.union(multi_denom_txs)
-
-            deposits: Optional[List[TornadoDeposit]] = \
-                TornadoDeposit.query.filter_by(from_address = address).all()
-            cur_deposit_txs: Set[str] = set([d.hash for d in deposits])
-            cur_num_deposit: int = len(cur_deposit_txs)
-
-            withdraws: Optional[List[TornadoWithdraw]] = \
-                TornadoWithdraw.query.filter_by(recipient_address = address).all()
-            cur_num_withdraw: int = len(set([w.hash for w in withdraws]))
-
-            # combine with other addresses
-            reveal_txs: Set[str] = reveal_txs.union(cur_reveal_txs)
-            deposit_txs: Set[str] = deposit_txs.union(cur_deposit_txs)
-            num_deposit += cur_num_deposit
-            num_withdraw += cur_num_withdraw
-
-            reveal_exact_match_txs: Set[str] = reveal_exact_match_txs.union(exact_match_txs)
-            reveal_gas_price_txs: Set[str] = reveal_gas_price_txs.union(gas_price_txs)
-            reveal_multi_denom_txs: Set[str] = reveal_multi_denom_txs.union(multi_denom_txs)
-
-        num_remain: int = len(deposit_txs - reveal_txs)
-        num_compromised: int = num_deposit - num_remain
-
-        stats: Dict[str, int] = {
-            'cluster': {
-                'num_deposit': num_deposit,
-                'num_withdraw': num_withdraw,
-                'num_compromised': num_compromised,
-                'num_compromised_synchro_tx': num_deposit - len(deposit_txs - reveal_exact_match_txs),
-                'num_compromised_gas_price': num_deposit - len(deposit_txs - reveal_gas_price_txs),
-                'num_compromised_multi_denom': num_deposit - len(deposit_txs - reveal_multi_denom_txs),
-            }
-        }
         return stats
 
 
@@ -387,7 +316,7 @@ def search():
                     cluster_: Optional[List[Address]] = query_\
                         .order_by(order_command)\
                         .offset(offset).limit(size).all()
-                   
+                
                     if cluster_ is not None:
                         cluster_: Dict[str, Any] = [
                             to_dict(
@@ -460,16 +389,8 @@ def search():
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
-        address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
-        output['data']['tornado']['summary']['address'].update(address_tornado_dict)
-
-        """
-        if addr is not None:  # nothing to do if address doesn't exist in DAR
-            if addr.entity == entity_to_int(EOA):
-                # only add cluster information if current address is an EOA.
-                cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
-                output['data']['tornado']['summary'].update(cluster_tornado_dict)
-        """
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        output['data']['tornado']['summary']['address'].update(tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
@@ -477,4 +398,112 @@ def search():
     response: str = json.dumps(output)
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
+    return Response(response=response)
+
+
+def search_tornado(request: Request) -> Response:
+    """
+    We know the address we are searching for is a Tornado pool, which
+    means we can provide special information about compromises.
+    """
+    checker: TornadoPoolRequestChecker = TornadoPoolRequestChecker(
+        request,
+        default_page = 0,
+        default_limit = PAGE_LIMIT,
+    )
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_tornado_response()
+
+    if not is_valid_request:
+        return Response(output)
+
+    # check if we can find in cache
+    request_repr: str = checker.to_str()
+
+    if rds.exists(request_repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
+
+    address: str = checker.get('address')
+    page: int = checker.get('page')
+    size: int = checker.get('limit')
+
+    output['data']['query']['address'] = address
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+
+    pool: pd.DataFrame = \
+        tornado_pools[tornado_pools.address == address].iloc[0]
+
+    def get_equal_user_deposit_txs(address: str) -> Set[str]:
+        rows: List[TornadoPool] = \
+            TornadoPool.query.filter_by(pool = address).all()
+        txs: List[str] = [row.transaction for row in rows]
+        return set(txs)
+
+    def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
+        rows: List[class_] = \
+            class_.query.filter(class_.transaction.in_(transactions)).all()
+        clusters: List[int] = list(set([row.cluster for row in rows]))
+        rows: List[class_] = \
+            class_.query.filter(class_.cluster.in_(clusters)).all()
+
+        reveals: List[str] = list(set([row.transaction for row in rows]))
+        return set(reveals)
+
+    def format_compromised(
+        exact_match_reveals: Set[str],
+        gas_price_reveals: Set[str],
+        multi_denom_reveals: Set[str],
+    ) -> List[Dict[str, Any]]:
+        compromised: List[Dict[str, Any]] = []
+        for reveal in exact_match_reveals:
+            compromised.append({'heuristic': heuristic_to_str(1), 'transaction': reveal})
+        for reveal in gas_price_reveals:
+            compromised.append({'heuristic': heuristic_to_str(2), 'transaction': reveal})
+        for reveal in multi_denom_reveals:
+            compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
+        return compromised
+
+    deposit_txs: Set[str] = get_equal_user_deposit_txs(address)
+    deposit_txs_list: List[str] = list(deposit_txs)
+    num_deposits: int = len(deposit_txs)
+
+    exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
+    gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
+    multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
+
+    num_exact_match_reveals: int = len(exact_match_reveals.intersection(deposit_txs))
+    num_gas_price_reveals: int = len(gas_price_reveals.intersection(deposit_txs))
+    num_multi_denom_reveals: int = len(multi_denom_reveals.intersection(deposit_txs))
+
+    num_compromised: int = \
+        num_exact_match_reveals + num_gas_price_reveals + num_multi_denom_reveals
+
+    amount, currency = pool.tags.strip().split()
+    stats: Dict[str, Any] = {
+        'num_deposits': num_deposits,
+        'num_compromised': num_compromised,
+        'exact_match': num_exact_match_reveals,
+        'gas_price': num_gas_price_reveals,
+        'multi_denom': num_multi_denom_reveals,
+    }
+
+    output['data']['query']['metadata']['amount'] = amount
+    output['data']['query']['metadata']['currency'] = currency
+    output['data']['query']['metadata']['stats'] = stats
+    output['data']['query']['metadata']['compromised_size'] = num_compromised
+
+    """
+    # Uncomment me if we want actual transactions.
+    # add compromised sets to response
+    compromised: List[Dict[str, Any]] = format_compromised(
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals)
+    output['data']['compromised'] = compromised
+    """
+
+    output['success'] = 1
+
+    response: str = json.dumps(output)
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))
     return Response(response=response)

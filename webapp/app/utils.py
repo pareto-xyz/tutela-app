@@ -12,6 +12,7 @@ ADDRESS_COL: str = 'address'
 ENTITY_COL: str = 'entity'
 CONF_COL: str = 'confidence'
 NAME_COL: str = 'name'
+HEURISTIC_COL: str = 'heuristic'
 # --
 EOA: str = 'eoa'
 DEPOSIT: str = 'deposit'
@@ -22,10 +23,10 @@ ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
 # --
-GAS_PRICE_HEUR: str = 'same_gas_price'
+GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
-SAME_NUM_TX_HEUR: str = 'same_num_transactions'
-SAME_ADDR_HEUR: str = 'same_address'
+SAME_NUM_TX_HEUR: str = 'multi_denomination'
+SAME_ADDR_HEUR: str = 'synchronous_txs'
 
 
 def safe_int(x, default=0):
@@ -203,7 +204,7 @@ def to_dict(
     return output
 
 
-def default_response() -> Dict[str, Any]:
+def default_address_response() -> Dict[str, Any]:
     output: Dict[str, Any] = {
         'data': {
             'query': {
@@ -263,11 +264,78 @@ def default_response() -> Dict[str, Any]:
             }
         },
         'success': 0,
+        'is_tornado': 0,
     }
     return output
 
 
-class RequestChecker:
+def default_tornado_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'data': {
+            'query': {
+                'address': '', 
+                'metadata': {
+                    'amount': 0,
+                    'currency': '',
+                    'stats': {
+                        'num_deposits': 0,
+                        'num_compromised': 0,
+                        'exact_match': 0,
+                        'gas_price': 0,
+                        'multi_denom': 0,
+                    }
+                },
+            },
+            'compromised': [],
+            'metadata': {
+                'compromised_size': 0,
+                'num_pages': 0,
+                'page': 0,
+                'limit': 50,
+                'schema': {
+                    CONF_COL: {
+                        'type': 'float',
+                        'values': [0, 1]
+                    }, 
+                    HEURISTIC_COL: {
+                        'type': 'category',
+                        'values': [
+                            DEPO_REUSE_HEUR, 
+                            SAME_ADDR_HEUR, 
+                            GAS_PRICE_HEUR, 
+                            SAME_NUM_TX_HEUR,
+                        ],
+                    },
+                },
+                'sort_default': {
+                    'attribute': CONF_COL,
+                    'descending': True
+                }
+            },
+        },
+        'success': 1,
+        'is_tornado': 1,
+    }
+    return output
+
+
+def is_valid_address(address: str) -> bool:
+    address: str = address.lower().strip()
+
+    if len(address) != 42:
+        return False
+
+    if len(address) > 2:
+        if address[:2] != '0x':
+            return False
+
+    if len(address.split()) != 1:
+        return False
+
+    return True
+
+
+class AddressRequestChecker:
     """
     Given a request object with its args, make sure that it is 
     providing valid arguments.
@@ -306,20 +374,10 @@ class RequestChecker:
         is 42 chars long. Check that there are no spaces.
         """
         address: str = self._request.args.get('address', '')
-        address: str = address.lower().strip()
-
-        if len(address) != 42:
-            return False
-
-        if len(address) > 2:
-            if address[:2] != '0x':
-                return False
-
-        if len(address.split()) != 1:
-            return False
-
-        self._params['address'] = address
-        return True
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
 
     def _check_page(self) -> bool:
         # intentionally only returns True as we don't want to block a user
@@ -410,3 +468,55 @@ class RequestChecker:
         _repr: Dict[str, Any] = deepcopy(self._params)
         del _repr['filter_by']
         return json.dumps(_repr, sort_keys=True)
+
+
+class TornadoPoolRequestChecker:
+
+    def __init__(self, request: Any, default_page: int = 0, default_limit: int = 50):
+        self._request: Any = request
+        self._default_page: int = default_page
+        self._default_limit: int = default_limit
+        self._params: Dict[str, Any] = {}
+
+    def check(self):
+        return self._check_address() and self._check_page() and self._check_limit()
+
+    def _check_address(self) -> bool:
+        """
+        Check that the first two chars are 0x and that the string
+        is 42 chars long. Check that there are no spaces.
+        """
+        address: str = self._request.args.get('address', '')
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
+
+    def _check_page(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on page
+        default: int = self._default_page
+        page: Union[str, int] = self._request.args.get('page', default)
+        page: int = safe_int(page, default)
+        page: int = max(page, 0)  # at least 0
+        self._params['page'] = page
+        return True
+
+    def _check_limit(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on limit
+        default: int = self._default_limit
+        limit: Union[str, int] = self._request.args.get('limit', default)
+        limit: int = safe_int(limit, default)
+        limit: int = min(max(limit, 1), default)  # at least 1
+        self._params['limit'] = limit
+        return True
+
+    def get(self, k: str) -> Optional[Any]:
+        return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = deepcopy(self._params)
+        del _repr['filter_by']
+        return json.dumps(_repr, sort_keys=True)
+
