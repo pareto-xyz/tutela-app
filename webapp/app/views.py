@@ -201,26 +201,6 @@ def search_address(request: Request) -> Response:
 
         return set(cluster_txs)  # no duplicates
 
-    def query_deposit_reuse_heuristic(
-        address: str, limit: int = HARD_MAX) -> Set[str]:
-        """
-        For the given address, find all other EOA addresses in the DAR cluster.
-        The purpose of this is when we are computing # of deposit addr, we 
-        compute using all of the addresses in cluster, rather than just the
-        current address.
-        """
-        cluster: Set[str] = {address}
-
-        addr: Address = Address.query.filter_by(address = address).first()
-        if addr is not None:
-            cluster: List[Address] = Address.query.filter_by(
-                user_cluster = addr.user_cluster, 
-                entity = entity_to_int(EOA),
-            ).limit(limit).all()
-            cluster: Set[str] = set([c.address for c in cluster])
-
-        return cluster
-
     def query_tornado_stats(address: str) -> Dict[str, int]:
         """
         Given a user address, we want to supply a few statistics:
@@ -479,20 +459,20 @@ def search_tornado(request: Request) -> Response:
     gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
     multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
 
-    exact_match_reveals: Set[str] = exact_match_reveals.intersection(deposit_txs)
-    gas_price_reveals: Set[str] = gas_price_reveals.intersection(deposit_txs)
-    multi_denom_reveals: Set[str] = multi_denom_reveals.intersection(deposit_txs)
+    num_exact_match_reveals: int = len(exact_match_reveals.intersection(deposit_txs))
+    num_gas_price_reveals: int = len(gas_price_reveals.intersection(deposit_txs))
+    num_multi_denom_reveals: int = len(multi_denom_reveals.intersection(deposit_txs))
 
     num_compromised: int = \
-        len(exact_match_reveals) + len(gas_price_reveals) + len(multi_denom_reveals)
+        num_exact_match_reveals + num_gas_price_reveals + num_multi_denom_reveals
 
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
         'num_compromised': num_compromised,
-        'exact_match': len(exact_match_reveals),
-        'gas_price': len(gas_price_reveals),
-        'multi_denom': len(multi_denom_reveals),
+        'exact_match': num_exact_match_reveals,
+        'gas_price': num_gas_price_reveals,
+        'multi_denom': num_multi_denom_reveals,
     }
 
     output['data']['query']['metadata']['amount'] = amount
