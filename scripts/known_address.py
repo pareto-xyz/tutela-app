@@ -68,8 +68,23 @@ def main(args: Any):
     etherscan_df.entity = etherscan_df.entity.str.lower()
     etherscan_df['tags'] = np.nan
 
-    df: pd.DataFrame = pd.concat(
+    combined_df: pd.DataFrame = pd.concat(
         [combined_df, etherscan_df],
+        ignore_index=True,
+    )
+
+    # process tornado.csv
+    tornado_df: pd.DataFrame =pd.read_csv(args.tornado_csv)
+    tornado_df.rename(columns={
+        'legitimacy': 'label',
+        'type': 'entity',
+    }, inplace=True)
+    tornado_df: pd.DataFrame = tornado_df[
+        ~tornado_df.address.isin(combined_df.address)]
+    tornado_df.entity = tornado_df.entity.str.lower()
+
+    df: pd.DataFrame = pd.concat(
+        [combined_df, tornado_df],
         ignore_index=True,
     )
     df.rename(columns={'label': 'legitimacy'}, inplace=True)
@@ -97,6 +112,12 @@ if __name__ == "__main__":
         type=str,
         default='./data/static/etherscan.csv', 
         help='path to data root (default: ./data/static/etherscan.csv)',
+    )
+    parser.add_argument(
+        '--tornado-csv',
+        type=str,
+        default='./data/static/tornado.csv', 
+        help='path to data root (default: ./data/static/tornado.csv)',
     )
     parser.add_argument(
         '--known-csv',

@@ -6,12 +6,14 @@ from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, known_addresses, rds
 from app.models import \
-    Address, ExactMatch, GasPrice, \
+    Address, ExactMatch, GasPrice, MultiDenom, \
     TornadoDeposit, TornadoWithdraw, TornadoPool
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
-    AddressRequestChecker, default_address_response, is_valid_address, \
+    heuristic_to_int, heuristic_to_str, \
+    AddressRequestChecker, \
+    default_address_response, is_valid_address, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
 from app.lib.w3 import query_web3
 
@@ -40,7 +42,10 @@ def cluster():
 def alias():
     response: str = json.dumps(get_display_aliases())
     return Response(response=response)
-
+    
+@app.route('/transaction', methods=['GET'])
+def transaction():
+    return render_template('transaction.html')
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -109,8 +114,10 @@ def search_address(request: Request) -> Response:
     desc_sort: str = checker.get('desc_sort')
     filter_by: List[Any] = checker.get('filter_by')
 
-    if rds.exists(address):  # check if this exists in our cache
-        response: str = bz2.decompress(rds.get(address)).decode('utf-8')
+    request_repr: str = checker.to_str()
+
+    if rds.exists(request_repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
     # --- fill out some of the known response fields ---
@@ -178,8 +185,7 @@ def search_address(request: Request) -> Response:
     def query_exact_match_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs
-        appear in a exact match heuristic. Returns a list of all 
-        transactions with the same cluster as this address.
+        appear in a exact match heuristic. 
         """
         rows: Optional[List[ExactMatch]] = \
             ExactMatch.query.filter_by(address = address).all()
@@ -199,7 +205,7 @@ def search_address(request: Request) -> Response:
     def query_gas_price_heuristic(address: str) -> Set[str]:
         """
         Given an address, find out how many times this address' txs 
-        appears in a same gas price reveal. We will return the tx info too?
+        appears in a same gas price reveal. 
         """
         rows: Optional[List[GasPrice]] = \
             GasPrice.query.filter_by(address = address).all()
@@ -208,13 +214,31 @@ def search_address(request: Request) -> Response:
 
         if len(rows) > 0:
             for row in rows:
-                # find cluster for this tx
                 cluster: List[GasPrice] = GasPrice.query.filter_by(
                     cluster = row.cluster).all()
                 cluster: List[str] = [member.transaction for member in cluster]
                 cluster_txs.extend(cluster)
 
-        return set(cluster_txs)  # no duplicates
+        return set(cluster_txs)
+
+    def query_multi_denom_heuristic(address: str) -> Set[str]:
+        """
+        Given an address, find out how many times this address' txs 
+        appears in a same multi-denomination reveal.
+        """
+        rows: Optional[List[MultiDenom]] = \
+            MultiDenom.query.filter_by(address = address).all()
+
+        cluster_txs: List[str] = []
+
+        if len(rows) > 0:
+            for row in rows:
+                cluster: List[MultiDenom] = MultiDenom.query.filter_by(
+                    cluster = row.cluster).all()
+                cluster: List[str] = [member.transaction for member in cluster]
+                cluster_txs.extend(cluster)
+
+        return set(cluster_txs)
 
     def query_deposit_reuse_heuristic(
         address: str, limit: int = HARD_MAX) -> Set[str]:
@@ -246,7 +270,10 @@ def search_address(request: Request) -> Response:
         """
         exact_match_txs: Set[str] = query_exact_match_heuristic(address)
         gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+        multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
+
         reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+        reveal_txs: Set[str] = reveal_txs.union(multi_denom_txs)
 
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
@@ -259,14 +286,17 @@ def search_address(request: Request) -> Response:
             TornadoWithdraw.query.filter_by(recipient_address = address).all()
         num_withdraw: int = len(set([w.hash for w in withdraws]))
 
-        # compute number of txs compromised by TCash heuristics
         num_remain: int = len(deposit_txs - reveal_txs)
         num_compromised: int = num_deposit - num_remain
 
+        # compute number of txs compromised by TCash heuristics
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
             num_compromised = num_compromised,
+            num_compromised_synchro_tx = num_deposit - len(deposit_txs - exact_match_txs),
+            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
+            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
         )
         return stats
 
@@ -277,16 +307,20 @@ def search_address(request: Request) -> Response:
         """
         # find EOA addresses in the same cluster as address
         cluster: Set[str] = query_deposit_reuse_heuristic(address)
-
         reveal_txs: Set[str] = set()
         deposit_txs: Set[str] = set()
+        reveal_exact_match_txs: Set[str] = set()
+        reveal_gas_price_txs: Set[str] = set()
+        reveal_multi_denom_txs: Set[str] = set()
         num_deposit: int = 0
         num_withdraw: int = 0
 
         for address in cluster:
             exact_match_txs: Set[str] = query_exact_match_heuristic(address)
             gas_price_txs: Set[str] = query_gas_price_heuristic(address)
+            multi_denom_txs: Set[str] = query_multi_denom_heuristic(address)
             cur_reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
+            cur_reveal_txs: Set[str] = cur_reveal_txs.union(multi_denom_txs)
 
             deposits: Optional[List[TornadoDeposit]] = \
                 TornadoDeposit.query.filter_by(from_address = address).all()
@@ -303,6 +337,10 @@ def search_address(request: Request) -> Response:
             num_deposit += cur_num_deposit
             num_withdraw += cur_num_withdraw
 
+            reveal_exact_match_txs: Set[str] = reveal_exact_match_txs.union(exact_match_txs)
+            reveal_gas_price_txs: Set[str] = reveal_gas_price_txs.union(gas_price_txs)
+            reveal_multi_denom_txs: Set[str] = reveal_multi_denom_txs.union(multi_denom_txs)
+
         num_remain: int = len(deposit_txs - reveal_txs)
         num_compromised: int = num_deposit - num_remain
 
@@ -311,6 +349,9 @@ def search_address(request: Request) -> Response:
                 'num_deposit': num_deposit,
                 'num_withdraw': num_withdraw,
                 'num_compromised': num_compromised,
+                'num_compromised_synchro_tx': num_deposit - len(deposit_txs - reveal_exact_match_txs),
+                'num_compromised_gas_price': num_deposit - len(deposit_txs - reveal_gas_price_txs),
+                'num_compromised_multi_denom': num_deposit - len(deposit_txs - reveal_multi_denom_txs),
             }
         }
         return stats
@@ -332,6 +373,8 @@ def search_address(request: Request) -> Response:
 
         if addr is not None:  # make sure address exists
             entity: str = entity_to_str(addr.entity)
+            if addr.meta_data is None:
+                addr.meta_data = '{}'
             addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
             output['data']['query']['metadata'] = addr_metadata
 
@@ -344,7 +387,10 @@ def search_address(request: Request) -> Response:
             query_data: Dict[str, Any] = output['data']['query']
             output['data']['query'] = {
                 **query_data, 
-                **to_dict(addr, table_cols, to_transform=[('entity', entity_to_str)])
+                **to_dict(addr, table_cols, to_transform=[
+                    ('entity', entity_to_str),
+                    ('heuristic', heuristic_to_str),
+                ])
             }
 
             if entity == EOA:
@@ -367,7 +413,10 @@ def search_address(request: Request) -> Response:
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ],
                             ) 
                             for c in cluster_
                         ]
@@ -397,7 +446,10 @@ def search_address(request: Request) -> Response:
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)],
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ],
                             )
                             for c in cluster_
                         ]
@@ -425,7 +477,10 @@ def search_address(request: Request) -> Response:
                                 c,
                                 table_cols,
                                 to_remove=['id'],
-                                to_transform=[('entity', entity_to_str)]
+                                to_transform=[
+                                    ('entity', entity_to_str),
+                                    ('heuristic', heuristic_to_str),
+                                ]
                             ) 
                             for c in cluster_
                         ]
@@ -449,28 +504,32 @@ def search_address(request: Request) -> Response:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **web3_resp}
 
-            # --- check if we know existing information about this address ---
-            known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
-            if len(known_lookup) > 0:
-                query_metadata: Dict[str, Any] = output['data']['query']['metadata']
-                output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
+        # --- check if we know existing information about this address ---
+        known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
+        if len(known_lookup) > 0:
+            query_metadata: Dict[str, Any] = output['data']['query']['metadata']
+            output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
         address_tornado_dict: Dict[str, Any] = query_address_tornado_stats(address)
         output['data']['tornado']['summary']['address'].update(address_tornado_dict)
 
+        """
+        # Uncomment me if you want to compute tornado statistics for a cluster. This 
+        # however, is a very expensive operation. 
         if addr is not None:  # nothing to do if address doesn't exist in DAR
             if addr.entity == entity_to_int(EOA):
                 # only add cluster information if current address is an EOA.
                 cluster_tornado_dict: Dict[str, Any] = query_cluster_tornado_stats(address)
                 output['data']['tornado']['summary'].update(cluster_tornado_dict)
+        """
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
 
     response: str = json.dumps(output)
-    rds.set(address, bz2.compress(response.encode('utf-8')))  # add to cache
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
 

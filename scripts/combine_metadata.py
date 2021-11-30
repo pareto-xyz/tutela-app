@@ -10,7 +10,7 @@ from src.utils.utils import from_json
 
 
 def main(args: Any):
-    df: pd.DataFrame = pd.read_csv(args.metadata_pruned_csv)
+    df: pd.DataFrame = pd.read_csv(args.metadata_joined_csv)
 
     user_clusters = from_json(args.user_clusters_json)
     exchange_clusters = from_json(args.exchange_clusters_json)
@@ -51,7 +51,7 @@ def main(args: Any):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('metadata_pruned_csv', type=str)
+    parser.add_argument('metadata_joined_csv', type=str)
     parser.add_argument('user_clusters_json', type=str)
     parser.add_argument('exchange_clusters_json', type=str)
     parser.add_argument('out_csv', type=str)

@@ -2,27 +2,34 @@
 Lambda Class's Same Gas Price Heuristic.
 """
 
-import os
+import os, json
 from tqdm import tqdm
 import pandas as pd
 import networkx as nx
-from collections import defaultdict
-from typing import Any, Tuple, Optional, Dict, List, Set
-from src.utils.utils import to_json
+from typing import Any, Tuple, Optional, Dict, List, Set, Any
+from src.utils.utils import to_json, Entity, Heuristic
 
 
 def main(args: Any):
     withdraw_df, deposit_df = load_data(args.data_dir)
     clusters, tx2addr = \
         get_same_gas_price_clusters(deposit_df, withdraw_df, by_pool=args.by_pool)
+    address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
+    address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     appendix: str = '_by_pool' if args.by_pool else ''
     clusters_file: str = os.path.join(
         args.save_dir, f'gas_price_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(
         args.save_dir, f'gas_price_tx2addr{appendix}.json')
+    address_file: str = os.path.join(
+        args.save_dir, f'gas_price_address_set{appendix}.json')
+    metadata_file: str = os.path.join(
+        args.save_dir, f'gas_price_metadata{appendix}.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(address_sets, address_file)
+    address_metadata.to_csv(metadata_file, index=False)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -64,8 +71,10 @@ def get_same_gas_price_clusters(
     for _, withdraw_row in withdraw_df.iterrows():
         
         # apply heuristic for the given withdraw transaction.
-        heuristic_fn = same_gas_price_heuristic_by_pool if by_pool else same_gas_price_heuristic
-        results = heuristic_fn(withdraw_row, unique_gas_deposit_df)
+        heuristic_fn = same_gas_price_heuristic_by_pool \
+            if by_pool else same_gas_price_heuristic
+        results: Tuple[bool, pd.Series] = \
+            heuristic_fn(withdraw_row, unique_gas_deposit_df)
 
         # when a deposit transaction matching the withdraw transaction gas price is found, add
         # the linked transactions to the dictionary.
@@ -89,6 +98,60 @@ def get_same_gas_price_clusters(
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
 
     return clusters, tx2addr
+
+
+def get_address_sets(
+    tx_clusters: List[Set[str]],
+    tx2addr: Dict[str, str],
+) -> List[Set[str]]:
+    """
+    Stores pairs of addresses that are related to each other. Don't 
+    apply graphs on this because we are going to join this into the 
+    other clusters.
+    """
+    address_sets: List[Set[str]] = []
+
+    for cluster in tx_clusters:
+        addr_set: Set[str] = set([tx2addr[tx] for tx in cluster])
+        addr_set: List[str] = list(addr_set)
+
+        if len(addr_set) > 1:  # make sure not singleton
+            for addr1 in addr_set:
+                for addr2 in addr_set:
+                    if addr1 != addr2:
+                        address_sets.append({addr1, addr2})
+
+    return address_sets
+
+
+def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
+    """
+    Stores metadata about addresses to add to db. 
+    """
+    unique_addresses: Set[str] = set().union(*address_sets)
+
+    address: List[str] = []
+    entity: List[int] = [] 
+    conf: List[float] = []
+    meta_data: List[str] = []
+    heuristic: List[int] = []
+
+    for member in unique_addresses:
+        address.append(member)
+        entity.append(Entity.EOA.value)
+        conf.append(1)
+        meta_data.append(json.dumps({}))
+        heuristic.append(Heuristic.GAS_PRICE.value)
+
+    response: Dict[str, List[Any]] = dict(
+        address = address,
+        entity = entity,
+        conf = conf,
+        meta_data = meta_data,
+        heuristic = heuristic,
+    )
+    response: pd.DataFrame = pd.DataFrame.from_dict(response)
+    return response
 
 
 def filter_by_unique_gas_price(transactions_df: pd.DataFrame) -> pd.DataFrame:

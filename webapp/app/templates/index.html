@@ -24,10 +24,12 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0HKGXPMPCH"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+        function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
         gtag('config', 'G-0HKGXPMPCH');
     </script>
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
 </head>
 
 
@@ -36,7 +38,7 @@
         <a class="header-logo" href="https://tornado.cash/"><img width="50" src="/static/img/tornado_logo.svg"
                 alt="logo"></a>
         <div class="nav">
-            <a class="nav-link" href="/cluster">cluster</a>
+            <a class="nav-link" href="/cluster">address</a>
             <a class="nav-link" href="#about">about</a>
             <a class="nav-link" href="#reveals">reveals</a>
         </div>
@@ -45,7 +47,7 @@
         <h1>assess your anonymity.</h1>
         <div id="address-form">
             <form class="input-group search-bar mb-3">
-                <input id="input-address" type="text" class="form-control fixed-width" 
+                <input id="input-address" type="text" class="form-control fixed-width"
                     placeholder="eg. 0x000000000000000.........." aria-label="ethereum address"
                     aria-describedby="basic-addon2">
                 <button class="btn" type="submit"><img width="20" src="/static/img/loupe.svg" alt="search"></button>
@@ -153,7 +155,8 @@
                     <div class="block-text">
                         If your “source” wallet mixes a specific set of denominations and your “destination” wallet
                         withdraws them all (example: if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH in order to get 32.1 ETH
-                        to begin staking on the beacon chain), then you could reveal yourself within the Tornado protocol 
+                        to begin staking on the beacon chain), then you could reveal yourself within the Tornado
+                        protocol
                         if no other wallet has mixed this exact denomination set.
                     </div>
                 </div>
@@ -181,7 +184,18 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="/static/js/index.js"></script>
+    <script>
+        $(function () {
+
+            var form = $('#address-form');
+            form.submit(e => {
+                e.preventDefault();
+                const a = $("#input-address").first().val()
+                window.location.href = "/cluster?address=" + a;
+            })
+        });
+    </script>
 
 </body>
+
 </html>

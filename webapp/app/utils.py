@@ -1,5 +1,7 @@
+import json
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from typing import Dict, Any, List, Tuple, Optional, Union
 from sqlalchemy import desc, cast, Float
 from app.models import Address
@@ -10,6 +12,7 @@ ADDRESS_COL: str = 'address'
 ENTITY_COL: str = 'entity'
 CONF_COL: str = 'confidence'
 NAME_COL: str = 'name'
+# --
 EOA: str = 'eoa'
 DEPOSIT: str = 'deposit'
 EXCHANGE: str = 'exchange'
@@ -17,10 +20,12 @@ DEX: str = 'dex'
 DEFI: str = 'defi'
 ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
-DEPO_REUSE: int = 0
-SAME_ADDR: int = 1
-GAS_PRICE: int = 2
-SAME_NUM_TX: int = 3
+TORNADO: str = 'tornado'
+# --
+GAS_PRICE_HEUR: str = 'same_gas_price'
+DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
+SAME_NUM_TX_HEUR: str = 'same_num_transactions'
+SAME_ADDR_HEUR: str = 'same_address'
 
 
 def safe_int(x, default=0):
@@ -74,6 +79,9 @@ def get_display_aliases() -> Dict[str, str]:
         'num_deposit': 'deposits',
         'num_withdraw': 'withdraws',
         'num_compromised': 'compromised',
+        'num_compromised_synchro_tx': 'synchronous txs',
+        'num_compromised_gas_price': 'unique gas price',
+        'num_compromised_multi_denom': 'multiple denominations',
         'conf': 'confidence score',
         'entity': 'address type',
         'balance': 'ETH balance',
@@ -96,12 +104,13 @@ def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, An
     result: pd.Series = result.iloc[0]
     result: Dict[str, Any] = result.to_dict()
     del result['address']
-    result['legitimacy'] = result['label']
-    del result['label']
+    if 'label' in result and 'legitimacy' not in result:
+        result['legitimacy'] = result['label']
+        del result['label']
     return result
 
 
-def entity_to_str(i):
+def entity_to_str(i: int) -> str:
     if i == 0:
         return EOA
     elif i == 1:
@@ -116,11 +125,13 @@ def entity_to_str(i):
         return ICO_WALLET
     elif i == 6:
         return MINING
+    elif i == 7:
+        return TORNADO
     else:
         raise Exception(f'Fatal error: {i}')
 
 
-def entity_to_int(s):
+def entity_to_int(s: str) -> int:
     if s == EOA:
         return 0
     elif s == DEPOSIT:
@@ -135,6 +146,34 @@ def entity_to_int(s):
         return 5
     elif s == MINING:
         return 6
+    elif s == TORNADO:
+        return 7
+    else:
+        raise Exception(f'Fatal error: {s}')
+
+
+def heuristic_to_str(s: int) -> str:
+    if s == 0:
+        return DEPO_REUSE_HEUR
+    elif s == 1:
+        return SAME_ADDR_HEUR
+    elif s == 2:
+        return GAS_PRICE_HEUR
+    elif s == 3:
+        return SAME_NUM_TX_HEUR
+    else:
+        raise Exception(f'Fatal error: {s}')
+
+
+def heuristic_to_int(s: str) -> int:
+    if s == DEPO_REUSE_HEUR:
+        return 0
+    elif s == SAME_ADDR_HEUR: 
+        return 1
+    elif s == GAS_PRICE_HEUR:
+        return 2
+    elif s == SAME_NUM_TX_HEUR:
+        return 3
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -203,7 +242,15 @@ def default_address_response() -> Dict[str, Any]:
                     ENTITY_COL: {
                         'type': 'category',
                         'values': [
-                            EOA, DEPOSIT, EXCHANGE, DEX, DEFI, ICO_WALLET, MINING],
+                            EOA, 
+                            DEPOSIT, 
+                            EXCHANGE, 
+                            DEX, 
+                            DEFI, 
+                            ICO_WALLET, 
+                            MINING,
+                            TORNADO,
+                        ],
                     },
                     NAME_COL: {
                         'type': 'string',
@@ -365,6 +412,11 @@ class AddressRequestChecker:
 
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = deepcopy(self._params)
+        del _repr['filter_by']
+        return json.dumps(_repr, sort_keys=True)
 
 
 class PoolRequestChecker:

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from typing import List, Dict, Any
 
-from src.utils.utils import Entity
+from src.utils.utils import Entity, Heuristic
 from src.utils.loader import DataframeLoader
 from src.cluster.base import BaseCluster
 
@@ -119,6 +119,7 @@ class DepositCluster(BaseCluster):
             'address': [],
             'entity': [],
             'conf': [],
+            'heuristic': [],
             'meta_data': [],
         }
 
@@ -127,6 +128,7 @@ class DepositCluster(BaseCluster):
             metadata['address'].append(user)
             metadata['conf'].append(conf)
             metadata['entity'].append(Entity.EOA.value)
+            metadata['heuristic'].append(Heuristic.DEPO_REUSE.value)
             metadata['meta_data'].append(json.dumps({}))
 
         for exchange, exchange_df in data.groupby('exchange'):
@@ -135,6 +137,7 @@ class DepositCluster(BaseCluster):
             metadata['address'].append(exchange)
             metadata['conf'].append(conf)
             metadata['entity'].append(Entity.EXCHANGE.value)
+            metadata['heuristic'].append(Heuristic.DEPO_REUSE.value)
             metadata['meta_data'].append(json.dumps(exchange_metadata))
 
         for deposit, deposit_df in data.groupby('deposit'):
@@ -145,6 +148,7 @@ class DepositCluster(BaseCluster):
             metadata['address'].append(deposit)
             metadata['conf'].append(conf)
             metadata['entity'].append(Entity.DEPOSIT.value)
+            metadata['heuristic'].append(Heuristic.DEPO_REUSE.value)
             deposit_metadata: Dict[str, Any] = {
                 'exchange_address': exchange,
                 'exchange_name': exchange_name,
