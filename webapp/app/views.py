@@ -451,6 +451,20 @@ def search_tornado(request: Request) -> Response:
         reveals: List[str] = list(set([row.transaction for row in rows]))
         return set(reveals)
 
+    def format_compromised(
+        exact_match_reveals: Set[str],
+        gas_price_reveals: Set[str],
+        multi_denom_reveals: Set[str],
+    ) -> List[Dict[str, Any]]:
+        compromised: List[Dict[str, Any]] = []
+        for reveal in exact_match_reveals:
+            compromised.append({'heuristic': heuristic_to_str(1), 'transaction': reveal})
+        for reveal in gas_price_reveals:
+            compromised.append({'heuristic': heuristic_to_str(2), 'transaction': reveal})
+        for reveal in multi_denom_reveals:
+            compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
+        return compromised
+
     deposit_txs: Set[str] = get_equal_user_deposit_txs(address)
     deposit_txs_list: List[str] = list(deposit_txs)
     num_deposits: int = len(deposit_txs)
@@ -478,6 +492,12 @@ def search_tornado(request: Request) -> Response:
     output['data']['query']['metadata']['amount'] = amount
     output['data']['query']['metadata']['currency'] = currency
     output['data']['query']['metadata']['stats'] = stats
+    output['data']['query']['metadata']['compromised_size'] = num_compromised
+
+    # add compromised sets to response
+    compromised: List[Dict[str, Any]] = format_compromised(
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals)
+    output['data']['compromised'] = compromised
 
     output['success'] = 1
 

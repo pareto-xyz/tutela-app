@@ -292,12 +292,6 @@ def default_tornado_response() -> Dict[str, Any]:
                 'num_pages': 0,
                 'page': 0,
                 'limit': 50,
-                'filter_by': {
-                    'min_conf': 0,
-                    'max_conf': 1,
-                    'entity': '*',
-                    'name': '*',
-                },
                 'schema': {
                     CONF_COL: {
                         'type': 'float',
