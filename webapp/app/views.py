@@ -57,7 +57,7 @@ def search():
         return default_address_response()
 
     def is_tornado_address(address: str) -> bool:
-        return TornadoPool.query.filter_by(pool = address).exists()
+        return TornadoPool.query.filter_by(pool = address).count() > 0
 
     # check if address is a tornado pool or not
     is_tornado: bool = is_tornado_address(address)
@@ -562,16 +562,13 @@ def search_tornado(request: Request) -> Response:
         return txs
 
     def find_reveals(transactions: List[str]) -> List[Dict[str, Any]]:
-        exact_match_reveals: List[str] = []  # stores all reveals
-
-        for transaction in transactions:
-            rows: List[ExactMatch] = \
-                ExactMatch.query.filter_by(transaction = transaction).all()
-            for row in rows:
-                cluster: List[ExactMatch] = \
-                    ExactMatch.query.filter_by(cluster = row.cluster).all()
-                for elem in cluster:
-                    exact_match_reveals.append(elem.transaction)
+        rows: List[ExactMatch] = \
+            ExactMatch.query.filter(ExactMatch.transaction.in_(transactions)).all()
+        clusters: List[int] = list(set([row.cluster for row in rows]))
+        rows: List[ExactMatch] = \
+            ExactMatch.query.filter(ExactMatch.cluster.in_(clusters)).all()
+        exact_match_reveals: List[str] = list(set([row.transaction for row in rows]))
+        breakpoint()
 
         return exact_match_reveals
 

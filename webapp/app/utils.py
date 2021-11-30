@@ -485,7 +485,18 @@ class TornadoPoolRequestChecker:
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page()
+        return self._check_address() and self._check_page() and self._check_limit()
+
+    def _check_address(self) -> bool:
+        """
+        Check that the first two chars are 0x and that the string
+        is 42 chars long. Check that there are no spaces.
+        """
+        address: str = self._request.args.get('address', '')
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
 
     def _check_page(self) -> bool:
         # intentionally only returns True as we don't want to block a user
@@ -506,3 +517,12 @@ class TornadoPoolRequestChecker:
         limit: int = min(max(limit, 1), default)  # at least 1
         self._params['limit'] = limit
         return True
+
+    def get(self, k: str) -> Optional[Any]:
+        return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = deepcopy(self._params)
+        del _repr['filter_by']
+        return json.dumps(_repr, sort_keys=True)
+
