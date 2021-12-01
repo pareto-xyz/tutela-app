@@ -93,3 +93,6 @@ class SubGraphSequences:
 
         paths = [v for k, v in paths.items()]
         return paths
+
+    def get_count(self):
+        return len(self.graph.nodes()) + 1
