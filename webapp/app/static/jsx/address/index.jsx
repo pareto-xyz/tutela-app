@@ -103,9 +103,10 @@ function ClusterPage(props) {
 
                     if (success === 1 && cluster.length > 0) {
                         setPageResults(cluster);
+                    } else {
+                        setPageResults([]);
                     }
                 }
-                console.log(showResultsSection, searchType, queryInfo);
 
             })
             .catch(function (error) {
