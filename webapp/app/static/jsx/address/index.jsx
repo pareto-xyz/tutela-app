@@ -54,7 +54,7 @@ function ClusterPage(props) {
     }
 
     const getNewResults = (newAddress, newQueries) => {
-        if (newQueries === 'clear') {
+        if (newQueries === 'clear' || newAddress) {
             const allQueries = Object.keys(queryObj);
             for (const key of allQueries) {
                 if (key.startsWith('filter_')) {
@@ -132,7 +132,9 @@ function ClusterPage(props) {
             return;
         }
         setInvalid(false);
-        queryObj.address = addr;
+        queryObj = {
+            address: addr
+        }; // clears all the sort, filters, page, etc.
         setQuery(queryObj);
         getNewResults(true);
         window.history.replaceState(null, null, "?address=" + addr);
