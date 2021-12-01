@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import pandas as pd
-from copy import deepcopy
+from copy import copy
 from typing import Dict, Any, List, Tuple, Optional, Union
 from sqlalchemy import desc, cast, Float
 from app.models import Address
@@ -470,7 +470,7 @@ class AddressRequestChecker:
         return self._params.get(k, None)
 
     def to_str(self):
-        _repr: Dict[str, Any] = deepcopy(self._params)
+        _repr: Dict[str, Any] = copy(self._params)
         del _repr['filter_by']
         return json.dumps(_repr, sort_keys=True)
 
@@ -521,6 +521,6 @@ class TornadoPoolRequestChecker:
         return self._params.get(k, None)
 
     def to_str(self):
-        _repr: Dict[str, Any] = deepcopy(self._params)
+        _repr: Dict[str, Any] = copy(self._params)
         return json.dumps(_repr, sort_keys=True)
 
