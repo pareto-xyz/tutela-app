@@ -26,7 +26,7 @@ TORNADO: str = 'tornado'
 GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
-SAME_ADDR_HEUR: str = 'synchronous_txs'
+SAME_ADDR_HEUR: str = 'address_match'
 
 
 def safe_int(x, default=0):
@@ -80,7 +80,7 @@ def get_display_aliases() -> Dict[str, str]:
         'num_deposit': 'deposits',
         'num_withdraw': 'withdraws',
         'num_compromised': 'compromised',
-        'num_compromised_synchro_tx': 'synchronous txs',
+        'num_compromised_exact_match': 'address match',
         'num_compromised_gas_price': 'unique gas price',
         'num_compromised_multi_denom': 'multi-denom',
         'conf': 'confidence score',
@@ -94,7 +94,7 @@ def get_display_aliases() -> Dict[str, str]:
         'tags': 'other',
         'num_deposits': 'total equal user deposits',
         'compromised': 'compromised deposits',
-        'exact_match': 'exact match reveals',
+        'exact_match': 'address match reveals',
         'multi_denom': 'multi-denom reveals',
         'gas_price': 'unique gas price reveals'
     }
