@@ -42,7 +42,7 @@ class Diff2Vec:
         self.min_count = min_count
         self.seed = seed
 
-    def fit(self, graph: nx.classes.graph.Graph):
+    def fit(self, graph: nx.Graph):
         """
         Fitting a Diff2Vec model.
         Arg types:

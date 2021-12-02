@@ -22,7 +22,7 @@ def make_graph_dataframe(
 
     print('processing txs',  end = '', flush=True)
     for chunk in yield_transactions(transactions_csv, chunk_size):
-        chunk: db.DataFrame = \
+        chunk: pd.DataFrame = \
             chunk.groupby(['from_address', 'to_address'], as_index=False).size()
 
         if count == 0:
