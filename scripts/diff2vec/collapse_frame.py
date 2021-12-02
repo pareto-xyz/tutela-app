@@ -10,7 +10,7 @@ from typing import Any
 
 
 def main(args: Any):
-    start: int = 0
+    start: int = 1  # skip header
     size: int = 1
 
     print('collapsing entries',  end = '', flush=True)
@@ -19,15 +19,16 @@ def main(args: Any):
             args.raw_csv,
             nrows = args.chunk_size,
             skiprows = start,
+            header = None,
         )
-        df: pd.DataFrame = \
+        df.columns = ['from_address', 'to_address', 'size']  # manually name columns
+        subset: pd.DataFrame = \
             df.groupby(['from_address', 'to_address'], as_index=False).sum()
 
         if start == 0:
-            df.to_csv(args.out_csv, index=False)
+            subset.to_csv(args.out_csv, index=False)
         else:
-            df.to_csv(args.out_csv, mode='a', header=False, index=False)
-       
+            subset.to_csv(args.out_csv, mode='a', header=False, index=False)
         print('.', end = '', flush=True)
         size: int = len(df)
         start += size
