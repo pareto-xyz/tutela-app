@@ -30,6 +30,7 @@ def make_graph_dataframe(
         else:
             chunk.to_csv(out_csv, mode='a', header=False, index=False)
 
+        del chunk  # wipe memory
         print('.', end = '', flush=True)
         count += 1 
 
