@@ -13,6 +13,7 @@ def main(args: Any):
     start: int = 0
     size: int = 1
 
+    print('collapsing entries',  end = '', flush=True)
     while size > 0:
         df: pd.DataFrame = pd.read_csv(
             args.raw_csv,
@@ -26,7 +27,8 @@ def main(args: Any):
             df.to_csv(args.out_csv, index=False)
         else:
             df.to_csv(args.out_csv, mode='a', header=False, index=False)
-        
+       
+        print('.', end = '', flush=True)
         size: int = len(df)
         start += size
 
