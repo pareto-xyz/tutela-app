@@ -19,10 +19,14 @@ def main(args: Any):
             nrows = args.chunk_size,
             skiprows = start,
         )
-        breakpoint()
         df: pd.DataFrame = \
             df.groupby(['from_address', 'to_address'], as_index=False).sum()
 
+        if start == 0:
+            df.to_csv(args.out_csv, index=False)
+        else:
+            df.to_csv(args.out_csv, mode='a', header=False, index=False)
+        
         size: int = len(df)
         start += size
 
