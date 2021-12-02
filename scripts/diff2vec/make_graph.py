@@ -26,7 +26,7 @@ def make_graph_dataframe(
             chunk.groupby(['from_address', 'to_address'], as_index=False).size()
 
         if count == 0:
-            chunk.to_csv(out_csv)
+            chunk.to_csv(out_csv, index=False)
         else:
             chunk.to_csv(out_csv, mode='a', header=False, index=False)
 
