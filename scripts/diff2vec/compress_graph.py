@@ -1,9 +1,8 @@
-"""
-Need to convert the transactions dataframe to a smaller dataframe 
-with the columns: `Address A | Address B | # of interactions`
-"""
+import numpy as np
 import pandas as pd
-from typing import Any, Iterable
+from typing import Any, Iterable, Dict, Set, List
+
+from src.utils.utils import to_json
 
 
 def yield_transactions(
@@ -15,14 +14,34 @@ def yield_transactions(
         yield chunk
 
 
+def make_address_map(chunk: pd.DataFrame, min_index: int) -> Dict[str, Any]:
+    from_set: Set[str] = set(chunk.from_address.to_numpy())
+    to_set: Set[str] = set(chunk.to_address.to_numpy())
+
+    # build mapping from unique addresses
+    addresses: List[str] = sorted(list(from_set.union(to_set)))
+    indices: List[int] = list(range(len(addresses)))
+    indices: List[int] = list(np.array(indices) + min_index)
+
+    return dict(zip(addresses, indices))
+
+
 def make_graph_dataframe(
-    transactions_csv: str, out_csv: str, chunk_size: int = 10000) -> pd.DataFrame:
+    transactions_csv: str,
+    out_csv: str,
+    addr_json: str,
+    chunk_size: int = 10000,
+) -> pd.DataFrame:
     count: int = 0
+    address_map: Dict[str, int] = {}
 
     print('processing txs',  end = '', flush=True)
     for chunk in yield_transactions(transactions_csv, chunk_size):
-        chunk: pd.DataFrame = \
-            chunk.groupby(['from_address', 'to_address'], as_index=False).size()
+        cur_map: Dict[str, int] = make_address_map(chunk, len(address_map))
+        address_map.update(cur_map)
+
+        chunk.from_address = chunk.from_address.apply(lambda x: address_map[x])
+        chunk.to_address = chunk.to_address.apply(lambda x: address_map[x])
 
         if count == 0:
             chunk.to_csv(out_csv, index=False)
@@ -33,10 +52,12 @@ def make_graph_dataframe(
         print('.', end = '', flush=True)
         count += 1 
 
+    to_json(address_map, addr_json)
+
 
 def main(args: Any):
     make_graph_dataframe(
-        args.transactions_csv, args.save_csv, args.chunk_size)
+        args.transactions_csv, args.save_csv, args.addr_json, args.chunk_size)
 
 
 if __name__ == "__main__":
@@ -44,6 +65,7 @@ if __name__ == "__main__":
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('transactions_csv', type=str, help='path to transaction data')
     parser.add_argument('save_csv', type=str, help='path to save data')
+    parser.add_argument('addr_json', type=str, help='path to save addr map')
     parser.add_argument('--chunk-size', type=int, default=1000000,
                         help='Chunk size (default: 1000000)')
     args: Any = parser.parse_args()
