@@ -14,14 +14,23 @@ def yield_transactions(
         yield chunk
 
 
-def make_address_map(chunk: pd.DataFrame, min_index: int) -> Dict[str, Any]:
+def make_address_map(
+    address_map: Dict[str, int], 
+    chunk: pd.DataFrame, 
+    min_index: int,
+) -> Dict[str, Any]:
     from_set: Set[str] = set(chunk.from_address.to_numpy())
     to_set: Set[str] = set(chunk.to_address.to_numpy())
 
     # build mapping from unique addresses
-    addresses: List[str] = sorted(list(from_set.union(to_set)))
+    addresses: Set[str] = from_set.union(to_set)
+    bank: Set[str] = set(list(address_map.keys()))
+    # remove existing addresses
+    addresses: Set[str] = addresses - bank
+    addresses: List[str] = sorted(list(addresses))
+
     indices: List[int] = list(range(len(addresses)))
-    indices: List[int] = list(np.array(indices) + min_index)
+    indices: List[int] = [x + min_index for x in indices]
 
     return dict(zip(addresses, indices))
 
@@ -37,7 +46,8 @@ def make_graph_dataframe(
 
     print('processing txs',  end = '', flush=True)
     for chunk in yield_transactions(transactions_csv, chunk_size):
-        cur_map: Dict[str, int] = make_address_map(chunk, len(address_map))
+        cur_map: Dict[str, int] = \
+            make_address_map(address_map, chunk, len(address_map))
         address_map.update(cur_map)
 
         chunk.from_address = chunk.from_address.apply(lambda x: address_map[x])
