@@ -16,6 +16,7 @@ python run.py           (run the actual app)
 ```
 
 Note: if it throws an error about `ens` not being found, do NOT install `ens`. install/reinstall `web3` (`pip install web3`).
+
 If it throws other import errors, then just `pip install {package-name}`
 
 ## Usage + setup 
@@ -35,6 +36,7 @@ Note that you will need to do this even if you did this in the parent directory.
 ###  Dependencies
 
 create a venv using `python -m venv ./path/to/where/you/want/your/venv`
+
 then: `source ./{path-to-venv}/bin/activate`
 
 then 
@@ -84,11 +86,13 @@ flask db upgrade
 If you made backend changes that change the api response, you'll need to flush redis. 
 
 `redis-cli -h localhost -p 6380`
+
 ^ make sure redis-server is running in another terminal tab simultaneously. 
 
 ### if changing front-end code (involving react):
 
 `cd webapp/app/static`
+
 `npm run watch`
 
 now, whenever you change and save your code, it will automatically update the running front-end code. 
