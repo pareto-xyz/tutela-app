@@ -1,36 +1,12 @@
-%
-% File acl2020.tex
-%
-%% Based on the style files for ACL 2020, which were
-%% Based on the style files for ACL 2018, NAACL 2018/19, which were
-%% Based on the style files for ACL-2015, with some improvements
-%%  taken from the NAACL-2016 style
-%% Based on the style files for ACL-2014, which were, in turn,
-%% based on ACL-2013, ACL-2012, ACL-2011, ACL-2010, ACL-IJCNLP-2009,
-%% EACL-2009, IJCNLP-2008...
-%% Based on the style files for EACL 2006 by 
-%%e.agirre@ehu.es or Sergi.Balari@uab.es
-%% and that of ACL 08 by Joakim Nivre and Noah Smith
-
 \documentclass[11pt,a4paper]{article}
 \usepackage[hyperref]{acl2020}
 \usepackage{times}
 \usepackage{latexsym}
 \renewcommand{\UrlFont}{\ttfamily\small}
 
-% This is not strictly necessary, and may be commented out,
-% but it will improve the layout of the manuscript,
-% and will typically save some space.
 \usepackage{microtype}
 
-\aclfinalcopy % Uncomment this line for the final submission
-%\def\aclpaperid{***} %  Enter the acl Paper ID here
-
-%\setlength\titlebox{5cm}
-% You can expand the titlebox if you need extra space
-% to show all the authors. Please do not make the titlebox
-% smaller than 5cm (the original size); we will check this
-% in the camera-ready version and ask you to change it back.
+\aclfinalcopy
 
 \newcommand\BibTeX{B\textsc{ib}\TeX}
 
@@ -58,7 +34,9 @@ In particular, Tutela has two functionalities: first, it clusters together Ether
 
 \section{Introduction}
 
-TODO
+On any modern blockchain, the cost of creating a new wallet, being virtually zero, enables the same entity to manage several pseudonymous addresses. The decentralization underpinning blockchains like Bitcoin \citep{nakamoto2008bitcoin} and Ethereum \citep{buterin2013ethereum}, breeds a sense of privacy. This often leads to misuse \citep{christin2013traveling}, such as money laundering through a large number of addresses \citep{moser2013inquiry}, or unfair voting power distributed among multiple addresses owned by the same user. Thus, it is of interest in many investigations to identify addresses linked to the same entity. This is predominantly done through heuristics. Every transaction an address makes on the blockchain, being a public ledger, reveals information about the underlying entity. As such, with graph analysis tools, one can cluster addresses together that with reasonable confidence, possess the same owner.
+
+
 
 \section{Background}
 
@@ -88,7 +66,7 @@ TODO
 
 \subsection{Interaction History}
 
-\section{History and Roadmap}
+\section{Analysis}
 
 \section{Discussion}
 
@@ -97,5 +75,8 @@ TODO
 \subsection{Extensions}
 
 \subsection{Broader Impact}
+
+\bibliography{whitepaper}
+\bibliographystyle{acl_natbib}
 
 \end{document}

@@ -20,3 +20,5 @@ dump.rdb
 **.aux
 **.out
 **.pdf
+**.bbl
+**.blg
