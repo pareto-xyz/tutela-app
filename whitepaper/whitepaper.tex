@@ -65,6 +65,14 @@ The top right section is only populated if the searched address is a Tornado Cas
 Finally, the bottom section labeled ``Linked Addresses'' shows a list of addresses clustered with the searched one. Each item in this list is denoted as either an externally owned address (EOA), a deposit address, or an exchange address. Each item also contains a confidence score denoting the strength of association with the searched address, and the heuristic that bound it to the searched address.
 This example shows a thousand clustered addresses, representing an entity with a large wallet portfolio (e.g. bot) -- hence why the anonymity score is zero.
 
+\begin{figure}[h!]
+\includegraphics[width=\linewidth]{figures/demo2.pdf}
+\caption{Tutela interface when searching an address corresponding to a Tornado Cash pool.}
+\label{fig:demo2}
+\end{figure}
+
+If the user searches an address corresponding to a Tornado Cash pool, Tutela returns a different functionality, shown in Figure~\ref{fig:demo2}. Namely, we compute the ``true'' anonymity set size for the pool, subtracting out all equal user deposits that may have compromised through our heuristics. At the time of publication, the Tornado Cash website reports only the full anonymity set size, not taking into account potential compromises. A concrete use case of Tutela is to adjust this number to more faithfully protect the privacy of Tornado Cash users.
+
 \section{Data and Setup}
 
 TODO
@@ -100,6 +108,9 @@ TODO. This is where most of the heavy lifting needs to happen.
 \subsection{Extensions}
 
 \subsection{Broader Impact}
+
+\section*{Acknowledgments}
+We would like to acknowledge both the Tornado Cash team and the Convex Research team for their support. This work was funded by the Tornado Cash community bounty to develop anonymity tools to protect user privacy. We also thank the Tornado Cash community at large for their consistent feedback and patience through our application's development. Finally, we thank the Stanford Venture Studio for their support with compute credits.
 
 \bibliography{whitepaper}
 \bibliographystyle{acl_natbib}
