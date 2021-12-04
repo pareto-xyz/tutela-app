@@ -2,6 +2,7 @@
 \usepackage[hyperref]{acl2020}
 \usepackage{times}
 \usepackage{latexsym}
+\usepackage{graphicx}
 \renewcommand{\UrlFont}{\ttfamily\small}
 
 \usepackage{microtype}
@@ -28,7 +29,7 @@
 \begin{abstract}
 A common misconception among blockchain users is that decentralization guarantees privacy. The reality is almost the opposite as every transaction one makes, being recorded on a public ledger, reveals information about one's identity.
 Mixers, such as Tornado Cash, were developed to preserve privacy through ``mixing'' transactions in an anonymity pool, such that it is impossible to identify who withdrew tokens from the pool. Unfortunately, it is still possible to reveal information about those in the anonymity pool if users are not careful.
-We introduce Tutela, an application build on expert heuristics to report the true anonymity of an Ethereum address.
+We introduce Tutela, an application built on expert heuristics to report the true anonymity of an Ethereum address.
 In particular, Tutela has two functionalities: first, it clusters together Ethereum addresses based on interaction history such that for an Ethereum address, we can identify other addresses likely owned by the same entity; second, Tutela computes the true size of the anonymity pool of Tornado Cash mixing, taking into account compromised addresses that reveal identity information. A public implementation of Tutela can be found at \url{https://github.com/TutelaLabs/tutela-app}.
 \end{abstract}
 
@@ -40,7 +41,7 @@ Such anonymity tools have been widely explored for Bitcoin \cite{haslhofer2016bi
 Ethereum, in particular, has an account-based protocol that implicitly encourages an entity to reuse a handful of addresses.
 As such, this poses greater challenges to user privacy than UTXO-based blockchains.
 
-In response to this shortcoming, several coin mixing protocols have been proposed like M\"{o}bius \citep{meiklejohn2018mobius}, MixEth \citep{seres2019mixeth}, and Tornado Cash \citep{pertsev2019tornado} to obfuscate transaction tracing, the latter of which is deployed in practice.
+In response to this shortcoming, several coin mixing protocols have been proposed like M\"{o}bius \citep{meiklejohn2018mobius}, MixEth \citep{seres2019mixeth}, and Tornado Cash \citep{pertsev2019tornado} to obfuscate transaction tracing, the final of which is deployed in practice.
  % As this has limited application to more recent blockchains like Ethereum, new heuristics \citep{victor2020address,beres2021blockchain} have surfaced focusing on graph analysis of transactions between addresses.
 Still, new heuristics have surfaced \citep{victor2020address,beres2021blockchain} that deanonymize Ethereum users. These heuristics largely exist in academic silos, and not been combined nor demonstrated in application.
 
@@ -49,7 +50,15 @@ We also propose a set of new heuristics targeted at Tornado Cash, motivating tha
 
 \section{Tutela Overview}
 
-TODO
+Tutela\footnote{At the time of publication, Tutela is hosted at \url{https://www.tutela.xyz}.}, latin for protection, is a web application that informs users which of their Ethereum addresses are affiliated. Users can search an address, and receive a summary of their anonymity.
+
+\begin{figure}[h!]
+\includegraphics[width=\linewidth]{figures/demo.pdf}
+\caption{Tutela interface when searching an Ethereum address. This address is also a Tornado Cash user.}
+\label{fig:demo}
+\end{figure}
+
+We summarize the main functionalities shown in Figure~\ref{fig:demo}.
 
 \section{Data and Setup}
 
@@ -72,6 +81,8 @@ TODO
 \subsection{Interaction History}
 
 \section{Analysis}
+
+TODO. This is where most of the heavy lifting needs to happen.
 
 \section{Discussion}
 
