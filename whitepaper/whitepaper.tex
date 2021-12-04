@@ -58,7 +58,12 @@ Tutela\footnote{At the time of publication, Tutela is hosted at \url{https://www
 \label{fig:demo}
 \end{figure}
 
-We summarize the main functionalities shown in Figure~\ref{fig:demo}.
+We summarize the main functionalities shown in Figure~\ref{fig:demo}. The response page is separated into three sections. The top left section summarizes the anonymity for the searched address. It contains an ``anonymity score'' out of 100, where a lower number represents less anonymity. In this example, the searched address has an anonymity score of 0, representing a large of amount of leaked identity information. Other information, such as balance in ETH or ENS names are shown when relevant.
+
+The top right section is only populated if the searched address is a Tornado Cash user. In this example, the searched addresses has deposited 97 times to a Tornado Cash pool while having withdrawn 88 times. Interestingly, we find that through heuristics, we are able to tie 87 of those withdraw transactions to deposit transactions, thereby meaningfully reducing the useful size of the Tornado Cash pool. See Section~\ref{sec:tornado} for more details.
+
+Finally, the bottom section labeled ``Linked Addresses'' shows a list of addresses clustered with the searched one. Each item in this list is denoted as either an externally owned address (EOA), a deposit address, or an exchange address. Each item also contains a confidence score denoting the strength of association with the searched address, and the heuristic that bound it to the searched address.
+This example shows a thousand clustered addresses, representing an entity with a large wallet portfolio (e.g. bot) -- hence why the anonymity score is zero.
 
 \section{Data and Setup}
 
@@ -70,7 +75,11 @@ TODO
 
 \subsection{Diff2Vec}
 
+\subsection{Anonymity Score}
+\label{sec:anonymityscore}
+
 \section{Tornado Cash Heuristics}
+\label{sec:tornado}
 
 \subsection{Address Match}
 
