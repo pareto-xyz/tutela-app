@@ -36,21 +36,31 @@
 
 \title{Tutela: An Anonymity Tool for Ethereum and Tornado Cash}
 
-\author{Mike Wu$^\dagger$, Will McTighe$^\ddagger$, Kaili Wang$^\dagger$ \\
-  Department of Computer Science$^\dagger$ \\
-  Graduate School of Business$^\ddagger$ \\
-  Stanford University \\
-  \texttt{\{wumike,wmctighe,kkwang22\}@stanford.edu} \\}
-
+\author{
+  \small{Mike Wu, Will McTighe, Kaili Wang}\\
+  \small{Stanford University} \\ \And
+  \small{Nick Bax} \\
+  \small{Convex Research} \\ \And
+  \small{Istv\'{a}n A. Seres} \\
+  \small{E\"{o}tv\"{o}s Lor\'{a}nd University} \\ \AND
+  \small{Frederico Carrone, Tomas De Mattey, Manuel Puebla, Herman O. Demaestri, Mariano Nicolini, Pedro Fontana} \\
+  \small{LambdaClass} \\}
 \date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
 A common misconception among blockchain users is that decentralization guarantees privacy. The reality is almost the opposite as every transaction one makes, being recorded on a public ledger, reveals information about one's identity.
+Mixers, such as Tornado Cash, were developed to preserve privacy through ``mixing'' transactions in an anonymity pool, such that it is impossible to identify who withdrew tokens from the pool. Unfortunately, it is still possible to reveal information about those in the anonymity pool if users are not careful.
+We introduce Tutela, an application build on expert heuristics to report the true anonymity of an Ethereum address.
+In particular, Tutela has two functionalities: first, it clusters together Ethereum addresses based on interaction history such that for an Ethereum address, we can identify other addresses likely owned by the same entity; second, Tutela computes the true size of the anonymity pool of Tornado Cash mixing, taking into account compromised addresses that reveal identity information. A public implementation of Tutela can be found at \url{https://github.com/TutelaLabs/tutela-app}.
 \end{abstract}
 
 \section{Introduction}
+
+TODO
+
+\section{Background}
 
 TODO
 
