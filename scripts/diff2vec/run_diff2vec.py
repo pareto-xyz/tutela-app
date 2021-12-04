@@ -26,11 +26,12 @@ def main(args: Any):
 def build_graph(data: pd.DataFrame) -> nx.Graph:
     node_a: np.array = data.from_address.to_numpy()
     node_b: np.array = data.to_address.to_numpy()
-    edge_ab: List[Tuple[str, str]] = itertools.product(node_a, node_b)
+    edge_ab: List[Tuple[str, str]] = list(zip(node_a, node_b))
 
+    del data
     graph: nx.Graph = nx.Graph()
-    graph.add_nodes_from(node_a)
-    graph.add_nodes_from(node_b)
+    graph.add_nodes_from(np.unique(node_a))
+    graph.add_nodes_from(np.unique(node_b))
     graph.add_edges_from(edge_ab)
 
     return graph
