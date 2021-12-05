@@ -90,19 +90,25 @@ Using this large dataset, we describe two Ethereum-wide heuristics used to clust
 
 Deposit address reuse (DAR) links together EOAs through usage a centralized exchange (CEX). We refer to the original paper \citep{victor2020address} for a detailed description but provide an overview here.
 
+\begin{figure}[b!]
+\includegraphics[width=\linewidth]{figures/dar.pdf}
+\caption{Graph of transactions between EOA, deposit, and CEX addresses. A cluster is defined as a weakly connected component in an undirected subgraph containing only EOA and deposit nodes. The gray circles show EOA addresses in two clusters.}
+\label{fig:dar}
+\end{figure}
+
 When users sell Ether to a CEX, the exchange typically creates ``deposit addresses'', which receive the assets from the EOA and then forward these funds to a main address associated with the CEX. Critically, these deposit addresses are created per customer, not per address. That is, multiple addresses that send funds to the same deposit address are highly likely to be owned by the same entity. However, these deposit addresses not known. The DAR algorithm seeks to identify deposit addresses through heuristics.
 It uses two hyperparameters: the maximum amount difference $\alpha$ and the maximum time difference $\tau$ between two transactions: a ``receiving'' transaction from an EOA to a suspected deposit address, and a ``forwarding'' transaction from a deposit to a main exchange address (we assume access to a list of main CEX addresses). The intution is that true deposits likely forward funds quickly, and differences in amount should be only be due to transaction fees. We exclude suspected deposit addresses that are known entities (e.g. CEX, DEX, miner, etc.).
 
 Then, we can search for $($EOA, deposit, exchange$)$ tuples that match the constraints set by $\alpha$ and $\tau$.
-If we construct an undirected graph with these tuples, a ``cluster'' is defined as a weakly connected component. This definition captures interesting cases where a single entity has multiple EOAs that send to different deposits of multiple CEXs. In practice, we pick $\alpha = 0.01$ and $\tau = 3,200$ as in \citep{victor2020address}.
+If we construct an undirected graph with addresses as nodes and edges between associated EOA and deposits, a ``cluster'' is defined as a weakly connected component. This definition captures interesting cases where a single entity has multiple EOAs that send to different deposits of multiple CEXs (see Figure~\ref{fig:dar}). In practice, we pick $\alpha = 0.01$ and $\tau = 3,200$ \citep{victor2020address}.
 
 For each cluster, we would like to assign a confidence score, representing our belief in this cluster representing a single entity. We note that any uncertainty in clustering must come from uncertainty in defining deposit addresses. So, for any address in a cluster $C$, we assign its uncertainty to the largest uncertainty from a deposit in $C$. Now, for any deposit, we define its uncertainty as
 
 \begin{equation}
-\frac{1}{2}\left(\frac{|A_f - A_r|}{\alpha}\right) + \frac{1}{2}\left(\frac{T_f - T_r}{\tau}\right)
+\frac{1}{2}\left(\frac{|a_f - a_r|}{\alpha}\right) + \frac{1}{2}\left(\frac{t_f - t_r}{\tau}\right)
 \end{equation}
 
-where $A_f$ and $A_r$ are the amounts from the forwarding and receiving transactions, respectively. Similarly, $T_f$ and $T_r$ are the forwarding and receiving block numbers.
+where $a_f$ and $a_r$ are the amounts from the forwarding and receiving transactions, respectively. Similarly, $t_f$ and $t_r$ are the forwarding and receiving block numbers.
 A larger difference in either amount or time would increase the uncertainty, which is bound to be between 0 and 1.
 
 \subsection{Diff2Vec}
