@@ -75,7 +75,11 @@ If the user searches an address corresponding to a Tornado Cash pool, Tutela ret
 
 \section{Data and Setup}
 
-TODO
+Ethereum transactions are downloaded from the \texttt{crypto\_ethereum} dataset using BigQuery, including all transactions from August 7th, 2015 to October 1st, 2021.  In total, this amounts to 4 terbytes of data with over 1B rows.
+In addition, we assume access to a list of known addresses, obtained from a public Kaggle challenge\footnote{See list of labelled Ethereum addresses found at \url{https://www.kaggle.com/hamishhall/labelled-ethereum-addresses}.}, containing almost 20,000 labelled addresses corresponding to different centralized exchanges, decentralized exchanges, relayers, DeFi applications, and more.
+This list will be used to identify exchange addresses for heuristics and apply known constraints on the identity of clustered addresses.
+
+Additionally, we create a partition of the transaction data from \texttt{crypto\_ethereum} pertaining to Tornado Cash pools. This is done by checking that the address receiving a transaction is a Tornado Cash smart contract (taken from a BigQuery dataset \texttt{tornado\_cash\_transactions}). To capture the transactions executed by the Ethereum virtual machine (e.g. through a smart contract), we use the \texttt{crypto\_ethereum.traces} table. In the special case that a withdrawal from a Tornado Cash pool is made by a relayer, we decode the input code using the contract ABI to find the recipient address. In total, we uncover around 97,365 deposit and 83,782 withdraw transactions across currency pools. These two datasets will be used for Tornado Cash -specific heuristics.
 
 \section{Ethereum Heuristics}
 
@@ -106,6 +110,8 @@ TODO. This is where most of the heavy lifting needs to happen.
 \subsection{Limitations}
 
 \subsection{Extensions}
+
+offchain data
 
 \subsection{Broader Impact}
 
