@@ -95,6 +95,15 @@ It uses two hyperparameters: the maximum amount difference $\alpha$ and the maxi
 Then, we can search for $($EOA, deposit, exchange$)$ tuples that match the constraints set by $\alpha$ and $\tau$.
 If we construct an undirected graph with these tuples, a ``cluster'' is defined as a weakly connected component. This definition captures interesting cases where a single entity has multiple EOAs that send to different deposits of multiple CEXs. In practice, we pick $\alpha = 0.01$ and $\tau = 3,200$ as in \citep{victor2020address}.
 
+For each cluster, we would like to assign a confidence score, representing our belief in this cluster representing a single entity. We note that any uncertainty in clustering must come from uncertainty in defining deposit addresses. So, for any address in a cluster $C$, we assign its uncertainty to the largest uncertainty from a deposit in $C$. Now, for any deposit, we define its uncertainty as
+
+\begin{equation}
+\frac{1}{2}\left(\frac{|A_f - A_r|}{\alpha}\right) + \frac{1}{2}\left(\frac{T_f - T_r}{\tau}\right)
+\end{equation}
+
+where $A_f$ and $A_r$ are the amounts from the forwarding and receiving transactions, respectively. Similarly, $T_f$ and $T_r$ are the forwarding and receiving block numbers.
+A larger difference in either amount or time would increase the uncertainty, which is bound to be between 0 and 1.
+
 \subsection{Diff2Vec}
 
 \subsection{Anonymity Score}
