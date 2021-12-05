@@ -83,7 +83,8 @@ Additionally, we create a partition of the transaction data from \texttt{crypto\
 
 \section{Ethereum Heuristics}
 
-Using this large dataset, we describe two Ethereum-wide heuristics used to cluster together addresses potentially belonging to the same entity. After summarizing each algorithm, we will present key advantages and drawbacks.
+Using this large dataset, we describe two Ethereum-wide heuristics used to cluster together addresses potentially belonging to the same entity.
+ % After summarizing each algorithm, we will present key advantages and drawbacks.
 
 \subsection{Deposit Address Reuse}
 
@@ -105,6 +106,10 @@ where $A_f$ and $A_r$ are the amounts from the forwarding and receiving transact
 A larger difference in either amount or time would increase the uncertainty, which is bound to be between 0 and 1.
 
 \subsection{Diff2Vec}
+
+The benefit of DAR is interpretability: we can understand why the algorithm believes two addresses are linked. However, this comes at the cost of recall. DAR searches for a very specific behavior, and most addresses will not be in a cluster of greater than size 1. Initial feedback from Tutela users reported limited success in finding clusters.
+
+To supplement DAR, we consider a second Ethereum-wide heuristic that projects addresses to points in a low-dimensional vector space based on who it transacts with. In this vector space, addresses belonging to the same entity should be close together in Euclidean distance.
 
 \subsection{Anonymity Score}
 \label{sec:anonymityscore}
