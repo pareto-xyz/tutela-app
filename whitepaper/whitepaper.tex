@@ -83,7 +83,13 @@ Additionally, we create a partition of the transaction data from \texttt{crypto\
 
 \section{Ethereum Heuristics}
 
+Using this large dataset, we describe two Ethereum-wide heuristics used to cluster together addresses potentially belonging to the same entity. After summarizing each algorithm, we will present key advantages and drawbacks.
+
 \subsection{Deposit Address Reuse}
+
+Deposit address reuse (DAR) links together EOAs through usage a centralized exchange (CEX). We refer to the original paper \citep{victor2020address} for a detailed description but will give an overview here.
+
+When users sell Ether to a CEX, the exchange typically creates ``deposit addresses'', which receive the assets from the EOA and then forward these funds to a main address associated with the CEX. Critically, these deposit addresses are created per customer, not per address. That is, multiple addresses that send funds to the same deposit address are highly likely to be owned by the same entity. However, these deposit addresses not known. The DAR algorithm seeks to identify deposit addresses through heuristics involving differences in amount and time of two transactions: the first between the EOA and suspected deposit address, and the second between the deposit and the CEX. We assume access to a list of CEX main addresses.
 
 \subsection{Diff2Vec}
 
@@ -109,11 +115,15 @@ TODO. This is where most of the heavy lifting needs to happen.
 
 \subsection{Limitations}
 
+
+
 \subsection{Extensions}
 
 offchain data
 
 \subsection{Broader Impact}
+
+chainanalysis, regulation
 
 \section*{Acknowledgments}
 We would like to acknowledge both the Tornado Cash team and the Convex Research team for their support. This work was funded by the Tornado Cash community bounty to develop anonymity tools to protect user privacy. We also thank the Tornado Cash community at large for their consistent feedback and patience through our application's development. Finally, we thank the Stanford Venture Studio for their support with compute credits.
