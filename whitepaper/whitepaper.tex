@@ -87,6 +87,7 @@ This list will be used to identify exchange addresses for heuristics and apply k
 Additionally, we create a partition of the transaction data from \texttt{crypto\_ethereum} pertaining to Tornado Cash pools. This is done by checking that the address receiving a transaction is a Tornado Cash smart contract (taken from a BigQuery dataset \texttt{tornado\_cash\_transactions}). To capture the transactions executed by the Ethereum virtual machine (e.g. through a smart contract), we use the \texttt{crypto\_ethereum.traces} table. In the special case that a withdrawal from a Tornado Cash pool is made by a relayer, we decode the input code using the contract ABI to find the recipient address. In total, we uncover around 97,365 deposit and 83,782 withdraw transactions across currency pools. These two datasets will be used for Tornado Cash -specific heuristics.
 
 \section{Ethereum Heuristics}
+\label{sec:eth}
 
 Using this large dataset, we describe two Ethereum-wide heuristics used to cluster together addresses potentially belonging to the same entity.
  % After summarizing each algorithm, we will present key advantages and drawbacks.
@@ -190,13 +191,27 @@ where $\beta$ is a hyperparameter controlling slope. A larger value for $\beta$ 
 \section{Tornado Cash Heuristics}
 \label{sec:tornado}
 
+Focusing on the subset of Ethereum transaction data involving Tornado cash deposits and withdrawals, we discuss a collection of heuristics for accessing compromised deposits.
+
 \subsection{Address Match}
+
+\mike{TODO}
 
 \subsection{Unique Gas Price}
 
+\mike{TODO}
+
 \subsection{Multiple Denomination}
 
+\mike{TODO}
+
 \subsection{Interaction History}
+
+\mike{TODO}
+
+\subsection{Connection to DAR}
+
+Unlike Ethereum heuristics, which find clusters of compromised \textit{addresses}, Tornado Cash heuristics find clusters of compromised \textit{transactions}. However, aside from address matching, these Tornado Cash heuristics can also be applied on the address level: given a cluster of compromised transactions, find the sender address for each transaction, and compute the unique set. These clusters can be added to the ones discussed in Section~\ref{sec:eth}.
 
 \section{Analysis}
 
@@ -211,6 +226,9 @@ We conclude with a few discussion points and final remarks. In particular, we pr
 Generally, we acknowledge that heuristics are not perfect measures. In return for their simplicity, there may be many false positives in practice e.g. addresses in a cluster that should not be there.
 
 For the Ethereum heuristics, we emphasize that picking proper hyperparameters is a challenge. In DAR, the quality of the algorithm is very sensitive to the choice of maximum thresholds $\alpha$ and $\tau$. Too small of thresholds, and no clusters will be found; too large of thresholds, and clusters will be low quality, containing many addresses it should not. Currently, the best practice is to tune these by hand. In NODE, the size of subgraph $l$ and the dimensionality $d$ similarly determine the resulting quality. The choice of $l$ should reflect the size of the full graph $G$: a bigger graph requires the embedding to summarize a larger neighborhood. Other NODE hyperparameters, such as window size or optimization choices, are less important to the final embedding. Running the DAR or NODE on Ethereum is computationally expensive, requiring both a large RAM and storage.
+
+On the other hand, the Tornado Cash heuristics are much simpler than the Ethereum ones, and benefit from  determinism -- there is much less uncertainty surrounding the Tornado Cash heuristics.
+However, given that only a small subset of Ethereum addresses are Tornado Cash users, this has limited applicability to the majority of users.
 
 \subsection{Extensions}
 
