@@ -5,6 +5,7 @@
 \usepackage{amsmath}
 \usepackage{latexsym}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \renewcommand{\UrlFont}{\ttfamily\small}
 
 \usepackage{microtype}
@@ -115,7 +116,7 @@ A larger difference in either amount or time would decrease the confidence, whic
 \subsection{Learned Node Embedding}
 
 The benefit of DAR is interpretability: we can understand why the algorithm believes two addresses are linked. However, this comes at the cost of recall. DAR searches for a very specific behavior, and most addresses will not be in a cluster of greater than size 1. Initial feedback from Tutela users reported limited success in finding clusters.
-To supplement DAR, we consider a second Ethereum-wide heuristic that projects addresses to points in a low-dimensional vector space based on who it transacts with. In this vector space, addresses belonging to the same entity should be close together in Euclidean distance.
+To supplement DAR, we consider a second Ethereum-wide heuristic (NODE) that projects addresses to points in a low-dimensional vector space based on who it transacts with. In this vector space, addresses belonging to the same entity should be close together in Euclidean distance.
 
 Consider constructing an undirected graph $G(V, E)$ from all Ethereum transactions, where nodes $V$ are composed of distinct addresses and an edge is placed between two nodes if there is a transaction between this. Each edge is given a weight $w: V \times V \rightarrow \mathbb{N}$ designating the number of interactions between two addresses. For instance, and if Alice has sent Bob 1 ETH five times,  then $w(\textup{Alice}, \textup{Bob}) = 5$. Note that this graph is distinct from the one used in Section~\ref{sec:dar}.
 
@@ -138,6 +139,35 @@ To train the parameters $\theta$, we optimize the objective
 \end{equation}
 where $\texttt{dist}$ is a distance function. Example include Euclidean distance, or a cross entropy loss.
 That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vector. Then, assign $f_1(v) \in \mathbb{R}^d$ to be the final embedding for $v$.\newline
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}[b]{0.25\linewidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/diff2vec1}
+  \caption{Subgraph $\tilde{G}$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.5\linewidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/diff2vec2}
+  \caption{Sequences $S$}
+  \end{subfigure}
+  \par\bigskip
+  \begin{subfigure}[b]{0.4\linewidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/diff2vec3}
+  \caption{Feature $y(a)$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.4\linewidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/diff2vec4}
+  \caption{Word2Vec $f_\theta$}
+  \end{subfigure}
+\caption{The four steps of the Diff2Vec algorithm, focusing on the individual node $a \in V$.}
+\label{fig:diff2vec}
+\end{figure}
 
 Steps three and four amount to Word2Vec\footnote{We use \texttt{gensim.models.word2vec}.} \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$. Given an address $v \in V$, to find its cluster, we can search for the closest $k$ vectors in $\mathbb{R}^d$. Unlike DAR, this heuristic will always return $k$ addresses. We score the confidence of an address $u$ in the cluster by its Euclidean distance to the embedding of $v$:
 \begin{equation*}
