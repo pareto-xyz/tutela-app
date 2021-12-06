@@ -140,7 +140,7 @@ To train the parameters $\theta$, we optimize the objective
 where $\texttt{dist}$ is a distance function. Example include Euclidean distance, or a cross entropy loss.
 That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vector. Then, assign $f_1(v) \in \mathbb{R}^d$ to be the final embedding for $v$.\newline
 
-Steps three and four amount to Word2Vec \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$.
+Steps three and four amount to Word2Vec\footnote{We use \texttt{gensim.models.word2vec}.} \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$.
 
 \subsection{Anonymity Score}
 \label{sec:anonymityscore}
