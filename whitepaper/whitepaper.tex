@@ -135,12 +135,12 @@ The intuition of Diff2Vec is to summarize a node by its neighborhood through a d
 Count how many times other nodes appear within $h$ positions before and after when $v$ appears, summed over all sequences $s \in S$. This will result in $2h$ vectors each of length $|V|$ --- $2$ from counting before \textit{and} after; $h$ from counting frequences 1 to $h$ positions away from $v$; $|V|$ since each vector stores counts of all nodes in $V$. Denote this feature vector by $y(v) \in \mathbb{R}^{2h|V|}$.
 
 \paragraph{Step Four} Finally, we wish to compress the feature vector from Step Three to a $d$-dimensional continuous space. To do this, we train a two layer perceptron $f_\theta = f_1 \circ f_2$ using stochastic gradient descent \citep{goodfellow2016deep,kingma2014adam}. Define $f_1: \mathbb{R}^{|V|} \rightarrow \mathbb{R}^d$ and $f_2 \mathbb{R}^d \rightarrow \mathbb{R}^{2h|V|}$, with a ReLU nonlinearity in between. The input to the network is a one hotted representation of the current node $v$.
-To train the parameters $\theta$, we optimize the objective
+To train the parameters $\theta$, we optimize the objective:
 \begin{equation}
   \mathcal{L}(v; \theta) = \texttt{dist}(f_\theta(\texttt{one\_hot}(v)), y(v))
   \label{eq:obj}
 \end{equation}
-where $\texttt{dist}$ is a distance function. Example include Euclidean distance, or a cross entropy loss.
+where $\texttt{dist}$ is a distance function. Examples include Euclidean distance, or a cross entropy loss.
 That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vector. Then, assign $f_1(v) \in \mathbb{R}^d$ to be the final embedding for $v$.\newline
 
 \begin{figure}[h!]
@@ -236,7 +236,7 @@ As described, Tutela uses only on-chain data to access anonymity. However, exten
 
 \subsection{Broader Impact}
 
-\mike{Will, add something about chainanalysis nad regulation.}
+\mike{Will, add something about chainanalysis and regulation.}
 
 \section*{Acknowledgments}
 We would like to acknowledge both the Tornado Cash team and the Convex Research team for their support. This work was funded by the Tornado Cash community bounty to develop anonymity tools to protect user privacy. We also thank the Tornado Cash community at large for their consistent feedback and patience through our application's development. Finally, we thank the Stanford Venture Studio for their support with compute credits.
