@@ -143,10 +143,17 @@ Steps three and four amount to Word2Vec\footnote{We use \texttt{gensim.models.wo
 \begin{equation*}
 \kappa(u) = \frac{1}{\|f_\theta(\texttt{one\_hot}(u)) - f_\theta(\texttt{one\_hot}(v))\|_2}
 \end{equation*}
-since a smaller distance (closer to 0) represents more semantic similarity or $u$ to $v$.
+since a smaller distance (closer to 0) represents more semantic similarity of $u$ to $v$.
 
 \subsection{Anonymity Score}
 \label{sec:anonymityscore}
+
+Given a query address $v$, using one or both heuristics, we obtain a set of clustered addresses $C$ with confidence scores $\kappa$ for every member. We wish to compute a statistic summarizing the anonymity of the query address, such that a larger cluster reveals more identity information, hence lower anonymity. We define the anonymity score as:
+\begin{equation}
+\texttt{anonymity}(v) = 1 - \texttt{tanh}(\beta * \kappa(v) * |C|)
+\label{eq:anonymity}
+\end{equation}
+where $\beta$ is a hyperparameter controlling slope. A larger value for $\beta$ more aggressively penalizes larger clusters. We chose $\beta = 0.1$.
 
 \section{Tornado Cash Heuristics}
 \label{sec:tornado}
