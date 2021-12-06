@@ -2,6 +2,7 @@
 \usepackage[hyperref]{acl2020}
 \usepackage{times}
 \usepackage{amsfonts}
+\usepackage{amsmath}
 \usepackage{latexsym}
 \usepackage{graphicx}
 \renewcommand{\UrlFont}{\ttfamily\small}
@@ -140,7 +141,11 @@ To train the parameters $\theta$, we optimize the objective
 where $\texttt{dist}$ is a distance function. Example include Euclidean distance, or a cross entropy loss.
 That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vector. Then, assign $f_1(v) \in \mathbb{R}^d$ to be the final embedding for $v$.\newline
 
-Steps three and four amount to Word2Vec\footnote{We use \texttt{gensim.models.word2vec}.} \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$.
+Steps three and four amount to Word2Vec\footnote{We use \texttt{gensim.models.word2vec}.} \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$. Given an address $v \in V$, to find its cluster, we can search for the closest $k$ vectors in $\mathbb{R}^d$. Unlike DAR, this heuristic will always return $k$ addresses. We score the confidence of an address $u$ in the cluster by its Euclidean distance to the embedding of $v$:
+\begin{equation*}
+\kappa(u) = \frac{1}{\|f_\theta(\texttt{one\_hot}(u)) - f_\theta(\texttt{one\_hot}(v))\|_2}
+\end{equation*}
+since a smaller distance (closer to 0) represents more semantic similarity or $u$ to $v$.
 
 \subsection{Anonymity Score}
 \label{sec:anonymityscore}
