@@ -113,12 +113,34 @@ For each cluster, we would like to assign a confidence score, representing our b
 where $a_f$ and $a_r$ are the amounts from the forwarding and receiving transactions, respectively. Similarly, $t_f$ and $t_r$ are the forwarding and receiving block numbers.
 A larger difference in either amount or time would increase the uncertainty, which is bound to be between 0 and 1.
 
-\subsection{Diff2Vec}
+\subsection{Learned Node Embedding}
 
 The benefit of DAR is interpretability: we can understand why the algorithm believes two addresses are linked. However, this comes at the cost of recall. DAR searches for a very specific behavior, and most addresses will not be in a cluster of greater than size 1. Initial feedback from Tutela users reported limited success in finding clusters.
 To supplement DAR, we consider a second Ethereum-wide heuristic that projects addresses to points in a low-dimensional vector space based on who it transacts with. In this vector space, addresses belonging to the same entity should be close together in Euclidean distance.
 
 Consider constructing an undirected graph $G(V, E)$ from all Ethereum transactions, where nodes $V$ are composed of distinct addresses and an edge is placed between two nodes if there is a transaction between this. Each edge is given a weight $w: V \times V \rightarrow \mathbb{N}$ designating the number of interactions between two addresses. For instance, and if Alice has sent Bob 1 ETH five times,  then $w(\textup{Alice}, \textup{Bob}) = 5$. Note that this graph is distinct from the one used in Section~\ref{sec:dar}.
+
+At this abstraction layer, we seek to learn a ``node embedding function'' $f: V \rightarrow \mathbb{R}^d$ that projects a node to a $d$-dimensional vector representation. Importantly, we want this embedding to capture semantic information about the node, such as which other addresses it frequently interacts with. To do so, we leverage popular graph representation learning algorithms \citep{grover2016node2vec,rozemberczki2018fast}. In particular, we focus on Diff2Vec \citep{rozemberczki2018fast}, which has been applied to blockchain transactions \citep{beres2021blockchain}, though not at scale.
+
+The intuition of Diff2Vec is to summarize a node by its neighborhood through a diffusion-like random process. Specifically, there are four steps to Diff2Vec: (1) generating a ``diffusion graph'', (2) sampling a ``node sequence'', (3) extracting features, (4) learning a neural network embedding. We briefly summarize each step below.
+
+\paragraph{Step One} Fixing a starting node $v \in V$, we initialize a diffusion subgraph $\tilde{G}$ containing only $\{v\}$. Then, we randomly sample a node $u$ from $\tilde{G}$, then randomly pick $w \in \textup{Neighors}(u, G)$, where $G$ is the original graph. Add node $w$ and the edge $(u, w)$ to $\tilde{G}$. Repeat until $\tilde{G}$ has $l$ nodes, where $l$ is a hyperparameter representing the amount of information we want to capture in our eventual node embedding. A larger $L$ may capture a large neighborhood but sacrifice in granularity.
+
+\paragraph{Step Two} Given $\tilde{G}$, we generate a sequence $s = (v_1, v_2, \ldots)$ recording the notes visited during an Euler walk. To do this, we must ensure that $\tilde{G}$ is Eulerian, which holds if every node has an even degree. A simple way to achieve this is to double each edge in $\tilde{G}$. At this point, we can summarize a node $v \in V$ by multiple sequences $S = (s_1, s_2, \ldots)$, each from a random walk.
+
+\paragraph{Step Three} Given a set of sequences $S$, we aim to produce a single feature vector based on frequencies of which vertices appear near each other in sequences $s \in S$. Specifically, fix a node $v$. Then, pick a window size $h$.
+Count how many times other nodes appear within $h$ positions before and after when $v$ appears, summed over all sequences $s \in S$. This will result in $2h$ vectors each of length $|V|$ --- $2$ from counting before \textit{and} after; $h$ from counting frequences 1 to $h$ positions away from $v$; $|V|$ since each vector stores counts of all nodes in $V$. Denote this feature vector by $y(v) \in \mathbb{R}^{2h|V|}$.
+
+\paragraph{Step Four} Finally, we wish to compress the feature vector from Step Three to a $d$-dimensional continuous space. To do this, we train a two layer perceptron $f_\theta = f_1 \circ f_2$ using stochastic gradient descent \citep{goodfellow2016deep,kingma2014adam}. Define $f_1: \mathbb{R}^{|V|} \rightarrow \mathbb{R}^d$ and $f_2 \mathbb{R}^d \rightarrow \mathbb{R}^{2h|V|}$, with a ReLU nonlinearity in between. The input to the network is a one hotted representation of the current node $v$.
+To train the parameters $\theta$, we optimize the objective
+\begin{equation}
+  \mathcal{L}(v; \theta) = \texttt{dist}(f_\theta(\texttt{one\_hot}(v)), y(v))
+  \label{eq:obj}
+\end{equation}
+where $\texttt{dist}$ is a distance function. Example include Euclidean distance, or a cross entropy loss.
+That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vector. Then, assign $f_1(v) \in \mathbb{R}^d$ to be the final embedding for $v$.\newline
+
+Steps three and four amount to Word2Vec \citep{mikolov2013efficient,mikolov2013distributed}. In practice we optimize with SGD for 10 epochs with a learning rate of 0.05. We set $d = 128$, $l = 80$, and $h = 10$.
 
 \subsection{Anonymity Score}
 \label{sec:anonymityscore}
@@ -138,7 +160,7 @@ Consider constructing an undirected graph $G(V, E)$ from all Ethereum transactio
 
 TODO. This is where most of the heavy lifting needs to happen.
 
-\section{Discussion}
+\section{Discussion and Future Work}
 
 \subsection{Limitations}
 
