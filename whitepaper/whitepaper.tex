@@ -6,9 +6,11 @@
 \usepackage{latexsym}
 \usepackage{graphicx}
 \usepackage{subcaption}
+\usepackage{xcolor}
 \renewcommand{\UrlFont}{\ttfamily\small}
 
 \usepackage{microtype}
+\newcommand{\mike}[1]{\textcolor{red}{\bf [MW: #1]}}
 
 \aclfinalcopy
 
@@ -198,21 +200,25 @@ where $\beta$ is a hyperparameter controlling slope. A larger value for $\beta$ 
 
 \section{Analysis}
 
-TODO. This is where most of the heavy lifting needs to happen.
+\mike{TODO. This is where most of the heavy lifting needs to happen.}
 
 \section{Discussion and Future Work}
 
+We conclude with a few discussion points and final remarks. In particular, we present possible limitations and extensions to the proposed system.
+
 \subsection{Limitations}
 
+Generally, we acknowledge that heuristics are not perfect measures. In return for their simplicity, there may be many false positives in practice e.g. addresses in a cluster that should not be there.
 
+For the Ethereum heuristics, we emphasize that picking proper hyperparameters is a challenge. In DAR, the quality of the algorithm is very sensitive to the choice of maximum thresholds $\alpha$ and $\tau$. Too small of thresholds, and no clusters will be found; too large of thresholds, and clusters will be low quality, containing many addresses it should not. Currently, the best practice is to tune these by hand. In NODE, the size of subgraph $l$ and the dimensionality $d$ similarly determine the resulting quality. The choice of $l$ should reflect the size of the full graph $G$: a bigger graph requires the embedding to summarize a larger neighborhood. Other NODE hyperparameters, such as window size or optimization choices, are less important to the final embedding. Running the DAR or NODE on Ethereum is computationally expensive, requiring both a large RAM and storage.
 
 \subsection{Extensions}
 
-offchain data
+As described, Tutela uses only on-chain data to access anonymity. However, extensions can be made to include off-chain data, such as from decentralized applications (e.g. DeFI, NFT, games, etc.), layer two data, external blockchains, and more.
 
 \subsection{Broader Impact}
 
-chainanalysis, regulation (@will)
+\mike{Will, add something about chainanalysis nad regulation.}
 
 \section*{Acknowledgments}
 We would like to acknowledge both the Tornado Cash team and the Convex Research team for their support. This work was funded by the Tornado Cash community bounty to develop anonymity tools to protect user privacy. We also thank the Tornado Cash community at large for their consistent feedback and patience through our application's development. Finally, we thank the Stanford Venture Studio for their support with compute credits.
