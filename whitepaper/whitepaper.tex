@@ -221,7 +221,7 @@ The anonymity set size listed on Tornado Cash's webpage\footnote{https://tornado
 
 \subsection{Connection to DAR}
 
-Unlike Ethereum heuristics, which find clusters of compromised \textit{addresses}, Tornado Cash heuristics find clusters of compromised \textit{transactions}. However, aside from address matching, these Tornado Cash heuristics can also be applied on the address level: given a cluster of compromised transactions, find the sender address for each transaction, and compute the unique set. These clusters can be added to the ones discussed in Section~\ref{sec:eth}.
+Unlike Ethereum heuristics, which find clusters of compromised \textit{addresses}, Tornado Cash heuristics find clusters of compromised \textit{transactions}. However, aside from address matching, these Tornado Cash heuristics can also be applied on the address level: given a cluster of compromised transactions, find the sender address for each transaction, and compute the unique set. Remove any addresses in our list of known addresses. These clusters can be added to the ones discussed in Section~\ref{sec:eth}.
 
 \section{Analysis}
 
