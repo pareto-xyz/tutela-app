@@ -197,6 +197,12 @@ where $\beta$ is a hyperparameter controlling slope. A larger value for $\beta$ 
 
 Focusing on the subset of Ethereum transaction data involving Tornado cash deposits and withdrawals, we discuss a collection of heuristics for accessing compromised deposits.
 
+\begin{figure}[b!]
+\includegraphics[width=\linewidth]{figures/tornado.pdf}
+\caption{Summary of Tornado Cash heuristics: different shapes represent different entities, while different colors with the same shape represent different addresses owned by the same entity.}
+\label{fig:tornado}
+\end{figure}
+
 \subsection{Address Match}
 
 If the address making a deposit transaction to a Tornado Cash pool matches the address making a withdrawal transaction (from eithe the same pool or a different pool), the two transactions can be linked, and the corresponding deposit is compromised, as the user identity is revealed.
