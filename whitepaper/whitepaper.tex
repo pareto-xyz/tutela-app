@@ -231,7 +231,23 @@ Unlike Ethereum heuristics, which find clusters of compromised \textit{addresses
 
 \section{Analysis}
 
-\mike{TODO. This is where most of the heavy lifting needs to happen.}
+We provide a brief quantitative analysis of the scale and efficacy of Tutela heuristics.
+
+\subsection{Ethereum Heuristics}
+
+Using DAR, we found 26M EOA addresses, resulting in 2.5M clusters of Ethereum addresses. The average cluster size contains 4.3 ($\pm$ 8.6) EOA addresses; the largest cluster contains 2.1k EOA addresses. Figure~\ref{fig:dargraph} shows a visualization of 10,000 random nodes from the DAR graph. In particular, we observe interesting structure with many small clusters scattered uniformly, balanced by several large clusters in the perimeter.
+
+Next, we can measure the quality of the DAR clusters using a held out ``test set'' of known clustered addresses. We obtain such a set from \cite{beres2021blockchain} where 1,028 clusters of addresses (average size of 4.0 $\pm$ 3.6 EOA addresses per cluster) are derived from ENS names. We find a recall of 39.4\% using Tutela heuristics. While there is room for improvement, we are cautiously optimistic that DAR was able to recover a nontrivial number without any knowledge of ENS names. This provides evidence for the generality of DAR clusters.
+
+\begin{figure}[h!]
+\includegraphics[width=\linewidth]{figures/dar_graph.png}
+\caption{10k subgraph of 26M graph created via deposit address reuse. Contains EOA (green), deposits (blue), and exchanges (red).}
+\label{fig:dargraph}
+\end{figure}
+
+\mike{Add Diff2Vec when done.}
+
+\subsection{Tornado Cash Heuristics}
 
 \section{Discussion and Future Work}
 
