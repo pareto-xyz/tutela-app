@@ -145,18 +145,21 @@ That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vec
 
 \begin{figure}[h!]
   \centering
+  \hfill
   \begin{subfigure}[b]{0.25\linewidth}
   \centering
   \includegraphics[width=\textwidth]{figures/diff2vec1}
   \caption{Subgraph $\tilde{G}$}
   \end{subfigure}
   \hfill
-  \begin{subfigure}[b]{0.5\linewidth}
+  \begin{subfigure}[b]{0.4\linewidth}
   \centering
   \includegraphics[width=\textwidth]{figures/diff2vec2}
   \caption{Sequences $S$}
   \end{subfigure}
+  \hfill
   \par\bigskip
+  \hfill
   \begin{subfigure}[b]{0.4\linewidth}
   \centering
   \includegraphics[width=\textwidth]{figures/diff2vec3}
@@ -168,6 +171,7 @@ That is, Equation~\ref{eq:obj} optimizes $f_\theta$ to predict the frequency vec
   \includegraphics[width=\textwidth]{figures/diff2vec4}
   \caption{Word2Vec $f_\theta$}
   \end{subfigure}
+  \hfill
 \caption{The four steps of the Diff2Vec algorithm, focusing on the individual node $a \in V$.}
 \label{fig:diff2vec}
 \end{figure}
@@ -212,6 +216,8 @@ We ignore all addresses that make fewer then three transactions to Tornado Cash 
 where $\#D(v,p)$ is the number of deposit transactions made by address $v$ to pool $p$, and similarly $\#W(v, p)$ is the number of withdrawal transactions. We remove all transactions of addresses with confidence $\kappa(v) < 0.1$.
 
 \subsection{Anonymity Set Size}
+
+The anonymity set size listed on Tornado Cash's webpage\footnote{https://tornadocash.eth.link} do not take into account compromised deposits. We can compute the uncompromised (or useful) anonymity set size as the total number of deposits in this pool removing revealed deposits from each of the heuristics above. This resulting number is a more faithful representation of the privacy provided by a Tornado Cash pool.
 
 \subsection{Connection to DAR}
 
