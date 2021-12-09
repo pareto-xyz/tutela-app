@@ -195,7 +195,7 @@ ABOUT
 .left-section-header:before,
 .left-section-header:after {
   width: 95%;
-  height: 100%;
+  height: 70%;
   border: 1px solid var(--fadedgreen);
   border-radius: 6px;
   content: "";
