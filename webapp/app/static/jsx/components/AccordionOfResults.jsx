@@ -26,56 +26,57 @@ export default function AccordionOfResults(props) {
         const [selected, setSelected] = useState(false);
         const expandable = Object.keys(result).length > 2;
         return (
-            <Accordion.Item eventKey={idx} className={selected && 'selected-result'} key={idx}>
-                <Accordion.Header className="my-accordion-header" onClick={() => setSelected(!selected)}>
-                    <div className="first-part-accordion-header">
-                        {title}
-                        &nbsp;
-                        <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
-                        &nbsp;&nbsp;<Toast className="copied-badge" width="100" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
-                            Copied!
-                        </Toast>
-                    </div>
+            <Accordion.Item eventKey={idx} className={`col-12 ${selected && 'selected-result'}`} key={idx}>
+                <div className="row">
+                    <Accordion.Header className="col-12 my-accordion-header" onClick={() => setSelected(!selected)}>
+                        <div className="row">
+                            <div className="col-12 first-part-accordion-header">
+                                {title}
+                                &nbsp;
+                                <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
+                                &nbsp;&nbsp;<Toast className="copied-badge" width="100" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
+                                    Copied!
+                                </Toast>
+                            </div>
 
-                    <div className="squashed-row">
-                        <div className="accordion-badge">{badge}</div>
-                        {expandable && <div className="expand-symbol">&#x25BC;</div>}
-                    </div>
-
-                </Accordion.Header>
-                {expandable &&
-                    <Accordion.Body className="my-accordion-body">
-                        <div className="panel-sub">result #{startIndex + idx + 1}</div>
-                        <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
-                        <div className="etherscan-link">
-                            {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
+                            <div className="col-12 squashed-row">
+                                <div className="accordion-badge">{badge}</div>
+                                {expandable && <div className="expand-symbol">&#x25BC;</div>}
+                            </div>
                         </div>
-                    </Accordion.Body>}
+                    </Accordion.Header>
+                    {expandable &&
+                        <Accordion.Body className="my-accordion-body">
+                            <div className="panel-sub">result #{startIndex + idx + 1}</div>
+                            <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
+                            <div className="etherscan-link">
+                                {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
+                            </div>
+                        </Accordion.Body>}
+                </div>
             </Accordion.Item>
         );
     }
 
     return (
-        <div >
-
-
+        <div className="row linked-adress">
             {sectionHeader && sectionHeader}
             {SortAndFilters && SortAndFilters}
             {!noResults && Pagination && Pagination}
 
-            <div >
-                {(loading || noResults) && <div className="results loading">
+            <div className="col-12">
+                {(loading || noResults) && <div className="results loading col-12">
 
                     {loading ? Spinner : (noResults && noDataComponent)
                     }
                 </div>}
-                <Accordion className="overall-accordion" >
+                <Accordion className="row overall-accordion" >
                     {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
 
                 </Accordion>
 
             </div>
-            <div className="results loading">
+            <div className="results loading col-12">
                 {loading && Spinner }
             </div>
             {!noResults && Pagination && Pagination}

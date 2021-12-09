@@ -11,7 +11,7 @@ export default function Pagination({ paginationData, getNewResults }) {
     }
 
     return (
-        <div className='all-pagination'>
+        <div className='all-pagination col-12'>
             <div>
                 results {firstInRange}-{lastInRange} out of {total}
             </div>

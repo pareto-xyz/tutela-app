@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, } from 'react-bootstrap';
-import { compromisedTcashAddrResponse, failedCompromisedTcashResponse } from '../../data/ihavebeencompromised';
+//import { compromisedTcashAddrResponse, failedCompromisedTcashResponse } from '../../data/ihavebeencompromised';
 import AccordionOfResults from '../components/AccordionOfResults';
 
 

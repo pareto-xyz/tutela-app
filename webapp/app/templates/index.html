@@ -1,48 +1,92 @@
 <!DOCTYPE html>
 <html lang="en" class="ombre">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Tutela</title>
     <!-- Stylesheets
     ================================================== -->
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=PT+Mono&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Custom styles for this template -->
-    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/cluster.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/fonts.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/cluster.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/fonts.css" />
 
     <!-- favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">
-    <script src="https://kit.fontawesome.com/1457fb9ff3.js" crossorigin="anonymous"></script>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/static/img/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/static/img/favicon-16x16.png"
+    />
+    <script
+      src="https://kit.fontawesome.com/3eb368cf27.js"
+      crossorigin="anonymous"
+    ></script>
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0HKGXPMPCH"></script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-0HKGXPMPCH"
+    ></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-0HKGXPMPCH');
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-0HKGXPMPCH");
     </script>
-    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-</head>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@17/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"
+    ></script>
+  </head>
 
-
-<body class="container">
+<body>
     <div id="root">
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
-
-
 </body>
+      <!-- Change nav color on scroll -->
+      <script>
+        $(window).scroll(function () {
+          $(".nav").toggleClass("scrolled", $(this).scrollTop() > 50);
+        });
+      </script>
 
+      <script>
+        $(function () {
+          var form = $("#address-form");
+          form.submit((e) => {
+            e.preventDefault();
+            const a = $("#input-address").first().val();
+            window.location.href = "/cluster?address=" + a;
+          });
+        });
+      </script>
+    </div>
 </html>

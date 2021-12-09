@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Footer() {
     return (
-        <div className="container">
+        <div className="footer-react col-12">
             <footer>
                 <a href="https://github.com/TutelaLabs/tutela-app"><i className="fab fa-github"></i></a>
                 <span>

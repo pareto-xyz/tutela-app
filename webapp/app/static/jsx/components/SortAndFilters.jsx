@@ -203,7 +203,7 @@ export default function SortAndFilters({ schema, setSort, getNewResults }) {
     }
 
     return (
-        <div className="search-options">
+        <div className="search-options col-12">
             <Dropdown className="button-group" onSelect={selectSort}>
                 <Dropdown.Toggle variant="dark" size="sm" >
                     sort by

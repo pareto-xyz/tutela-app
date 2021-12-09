@@ -6,7 +6,7 @@ export default function TpoolOverall({data, loading}) {
     let {num_deposits, tcash_num_uncompromised} = stats || {};
 
     return (
-        <div className="query-info ">
+        <div className="query-info col-md-12 col-lg-6">
             <div className="panel-sub">about your input</div>
             {!loading && <div className="panel-title">
                 OVERALL INFO ON THE {amount} {currency} TORNADO CASH POOL
