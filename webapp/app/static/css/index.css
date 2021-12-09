@@ -258,7 +258,7 @@ ABOUT
 
 .block-title {
   font-size: 0.9em;
-  margin: 20px 0px;
+  margin: 2rem 0 1rem;
   border-bottom: 1px solid var(--tcashgreen);
   min-height: 2em;
   text-transform: uppercase;
