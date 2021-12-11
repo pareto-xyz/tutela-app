@@ -16,3 +16,9 @@ webapp/app/static/node_modules/
 webapp/app/migrations/
 dump.rdb
 **/bundle.js
+**.log
+**.aux
+**.out
+**.pdf
+**.bbl
+**.blg
