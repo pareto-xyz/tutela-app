@@ -17,6 +17,7 @@ Links that we found helpful in developing and deploying Tutela on EC2. Tutela us
 - Flask deployment: https://medium.com/innovation-incubator/deploy-a-flask-app-on-aws-ec2-d1d774c275a2
 - Redis config: https://redis.io/topics/config
 - Redis quickstart: https://redis.io/topics/quickstart
+- Installing SSL: https://linuxbeast.com/tutorials/aws/install-lets-encrypt-with-apache2-on-ec2-ubuntu-18-04/
 
 ## Usage 
 

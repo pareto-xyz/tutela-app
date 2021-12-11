@@ -7,9 +7,12 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
             <tbody>
                 {keyValues.map((entry, idx) => {
                     let [k, value] = entry;
-                    if (toIgnore.has(k)) return < ></>;
+                    if (toIgnore.has(k) || typeof(value) === 'object' || typeof(k) === 'object') return < ></>;
                     if (aliases[k]) {
                         k = aliases[k];
+                    }
+                    if (aliases[value]) {
+                        value = aliases[value];
                     }
                     return (
                         <tr className="detail-row" key={idx}>

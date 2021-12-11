@@ -54,7 +54,7 @@ function ClusterPage(props) {
     }
 
     const getNewResults = (newAddress, newQueries) => {
-        if (newQueries === 'clear') {
+        if (newQueries === 'clear' || newAddress) {
             const allQueries = Object.keys(queryObj);
             for (const key of allQueries) {
                 if (key.startsWith('filter_')) {
@@ -81,13 +81,11 @@ function ClusterPage(props) {
                 setLoadingCluster(false);
                 // response = schemaResponse;
                 const { success, data, is_tornado } = response.data;
-                console.log(response);
                 if (is_tornado === 1) {
-                    const {query} = data;
+                    const { query } = data;
                     setQueryInfo(query);
                     setSearchType('tornadoPool');
-                } else {
-                    setSearchType('other')
+                } else if (is_tornado === 0) {
                     const { cluster, metadata, query, tornado } = data;
                     const { cluster_size, limit, num_pages, page } = metadata;
                     setPaginationData({ total: cluster_size, limit, num_pages, page });
@@ -101,9 +99,12 @@ function ClusterPage(props) {
                         setQueryInfo(query);
                         setTornado(tornado);
                     }
+                    setSearchType('other')
 
                     if (success === 1 && cluster.length > 0) {
                         setPageResults(cluster);
+                    } else {
+                        setPageResults([]);
                     }
                 }
 
@@ -131,7 +132,9 @@ function ClusterPage(props) {
             return;
         }
         setInvalid(false);
-        queryObj.address = addr;
+        queryObj = {
+            address: addr
+        }; // clears all the sort, filters, page, etc.
         setQuery(queryObj);
         getNewResults(true);
         window.history.replaceState(null, null, "?address=" + addr);
@@ -184,23 +187,24 @@ function ClusterPage(props) {
 
                             </div>}
                         </>}
-                         {searchType === 'other' && <>{showResultsSection && <div className="results-section">
+                    {searchType === 'other' && <>
+                    {showResultsSection && <div className="results-section">
 
-                            <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
-                            <TornadoInfo data={tornado} aliases={aliases} />
+                        <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                        <TornadoInfo data={tornado} aliases={aliases} />
 
-                        </div>}
-                            {showResultsSection &&
-                                <ClusterResults
-                                    paginationData={paginationData}
-                                    setSort={setSort}
-                                    sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
-                                    results={pageResults}
-                                    loading={loadingCluster}
-                                    getNewResults={getNewResults}
-                                    aliases={aliases}
-                                />}
-                        </>}
+                    </div>}
+                        {showResultsSection &&
+                            <ClusterResults
+                                paginationData={paginationData}
+                                setSort={setSort}
+                                sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
+                                results={pageResults}
+                                loading={loadingCluster}
+                                getNewResults={getNewResults}
+                                aliases={aliases}
+                            />}
+                    </>}
 
                 </div >
             </div>

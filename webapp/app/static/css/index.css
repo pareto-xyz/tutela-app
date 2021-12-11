@@ -109,7 +109,13 @@ td, th {
 
 #input-address.fixed-width {
     width: 600px;
-    font-size: 1.3em;
+    border: transparent;
+}
+
+#address-form > .input-group > .btn {
+    background-color: white;
+    border-radius: 0px 0.25rem 0.25rem 0;
+    padding: 0px 0.75rem;
 }
 
 .results {
