@@ -187,6 +187,7 @@ def heuristic_to_int(s: str) -> int:
 def to_dict(
     addr: Address, 
     table_cols: List[str], 
+    to_add: Dict = {},
     to_remove: List[str] = [], 
     to_transform: List[Tuple[str, Any]] = [],
 ) -> Dict[str, Any]:
@@ -200,6 +201,10 @@ def to_dict(
     }
     output['conf'] = round(output['conf'], 3)
     del output['meta_data']  # Q: should we keep this?
+
+    for k, v in to_add.items():
+        if k not in output:
+            output[k] = v
 
     for k in to_remove:
         if k in output:

@@ -17,7 +17,7 @@ from app.utils import \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
-from app.lib.w3 import query_web3
+from app.lib.w3 import query_web3, get_ens_name
 
 from flask import request, Request, Response
 from flask import render_template
@@ -379,6 +379,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),
@@ -412,6 +413,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),
@@ -443,6 +445,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),

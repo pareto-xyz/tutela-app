@@ -9,7 +9,7 @@ def get_balance(address: str, w3: Web3) -> float:
     return w3.eth.get_balance(address) / 10**18
 
 
-def get_ens_name(address: str, ns: ENS) ->str:
+def get_ens_name(address: str, ns: ENS) -> str:
     return ns.name(address)
 
 
