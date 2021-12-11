@@ -379,7 +379,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
-                                to_add={'ens_name', get_ens_name(c['address'])},
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),
@@ -413,6 +413,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),
@@ -444,7 +445,7 @@ def search_address(request: Request) -> Response:
                             to_dict(
                                 c,
                                 table_cols,
-                                to_add={'ens_name', get_ens_name(c['address'])},
+                                to_add={'ens_name': get_ens_name(c.address, ns)},
                                 to_remove=['id'],
                                 to_transform=[
                                     ('entity', entity_to_str),
