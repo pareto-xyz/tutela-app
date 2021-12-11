@@ -209,7 +209,7 @@ If the address making a deposit transaction to a Tornado Cash pool matches the a
 
 \subsection{Unique Gas Price}
 
-Users can specify the gas price when making a deposit or withdrawal to a Tornado Cash pool. Those who do so tend to specify gas prices that are identical for deposit and withdrawal transactions. User-specified gas prices follow common patterns such as being round numbers of being unique to an individual. Care must be taken to remove transactions made by a relayer service which may set gas price as well. Relayer-specified prices tend to be oddly specific and not round numbers. Relayers can be filtered out by decoding the input code from Ethereum transaction data.
+Prior to EIP-1559, Ethereum users could specify the gas price when making a deposit or withdrawal to a Tornado Cash pool. Those who do so tend to specify gas prices that are identical for deposit and withdrawal transactions. User-specified gas prices follow common patterns such as being round numbers or being unique to an individual. Care must be taken to remove transactions made by a relayer service which may set gas price as well. Relayer-specified prices tend to be oddly specific and not round numbers. Relayers can be filtered out by decoding the input code from Ethereum transaction data.
 
 \subsection{Multiple Denomination}
 
