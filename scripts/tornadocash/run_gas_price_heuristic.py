@@ -38,9 +38,13 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     # Change recipient_address to lowercase.
     withdraw_df['recipient_address'] = withdraw_df['recipient_address'].str.lower()
-    
+
     # Change block_timestamp field to be a timestamp object.
     withdraw_df['block_timestamp'] = withdraw_df['block_timestamp'].apply(pd.Timestamp)
+
+    # Remove withdrawals from relayer services. Assume when recipient address is not the 
+    # from_address, then this is using a relayer.
+    withdraw_df = withdraw_df[withdraw_df['from_address'] == withdraw_df['recipient_address']]
 
     deposit_df: pd.DataFrame = pd.read_csv(
         os.path.join(root, 'lighter_complete_deposit_txs.csv'))
