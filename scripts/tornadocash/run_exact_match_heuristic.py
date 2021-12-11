@@ -54,6 +54,7 @@ def get_exact_matches(
     """
     tx2addr: Dict[str, str] = {}
     graph: nx.DiGraph = nx.DiGraph()
+    raw_links: Dict[str, str] = {}
 
     for withdraw_row in tqdm(withdraw_df.itertuples(), total=withdraw_df.shape[0]):
         results: Tuple[bool, List[pd.Series]] = \
@@ -62,6 +63,8 @@ def get_exact_matches(
         if results[0]:
             deposit_rows: List[pd.Series] = results[1]
             for deposit_row in deposit_rows:
+                raw_links[withdraw_row.hash] = deposit_row.hash
+
                 graph.add_node(withdraw_row.hash)
                 graph.add_node(deposit_row.hash)
                 graph.add_edge(withdraw_row.hash, deposit_row.hash)
@@ -72,6 +75,9 @@ def get_exact_matches(
 
     clusters: List[Set[str]] = [  # ignore singletons
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+
+    print(f'# links (graph): {len(clusters)}')
+    print(f'# links (raw): {len(raw_links)}')
 
     return clusters, tx2addr
 

@@ -66,6 +66,7 @@ def get_same_gas_price_clusters(
     # initialize an empty dictionary to store the linked transactions.
     tx2addr: Dict[str, str] = {}
     graph: nx.DiGraph = nx.DiGraph()
+    raw_links: Dict[str, str] = {}  # store non-graph version
 
     all_withdraws: List[str] = []
     all_deposits: List[str] = []
@@ -85,6 +86,8 @@ def get_same_gas_price_clusters(
         if results[0]:
             deposit_row: pd.Series = results[1]
 
+            raw_links[withdraw_row.hash] = deposit_row.hash
+
             graph.add_node(withdraw_row.hash)
             graph.add_node(deposit_row.hash)
             graph.add_edge(withdraw_row.hash, deposit_row.hash)
@@ -100,6 +103,9 @@ def get_same_gas_price_clusters(
 
     clusters: List[Set[str]] = [  # ignore singletons
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+
+    print(f'# links (graph): {len(clusters)}')
+    print(f'# links (raw): {len(raw_links)}')
 
     return clusters, tx2addr
 
