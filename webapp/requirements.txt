@@ -13,4 +13,5 @@ MarkupSafe==2.0.1
 psycopg2-binary==2.9.1
 SQLAlchemy==1.4.26
 Werkzeug==2.0.2
+web3==5.25.0
 zipp==3.6.0
