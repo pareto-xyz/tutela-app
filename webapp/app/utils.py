@@ -2,9 +2,9 @@ import json
 import numpy as np
 import pandas as pd
 from copy import copy
-from typing import Dict, Any, List, Tuple, Optional, Union
+from typing import Dict, Any, List, Tuple, Optional, Union, Set
 from sqlalchemy import desc, cast, Float
-from app.models import Address
+from app.models import Address, TornadoPool
 from sqlalchemy import or_, and_
 
 # CONSTS for schema
@@ -524,3 +524,25 @@ class TornadoPoolRequestChecker:
         _repr: Dict[str, Any] = copy(self._params)
         return json.dumps(_repr, sort_keys=True)
 
+# -- Tornado pool utilities --
+
+def is_tornado_address(address: str) -> bool:
+    return TornadoPool.query.filter_by(pool = address).count() > 0
+
+
+def get_equal_user_deposit_txs(address: str) -> Set[str]:
+    rows: List[TornadoPool] = \
+        TornadoPool.query.filter_by(pool = address).all()
+    txs: List[str] = [row.transaction for row in rows]
+    return set(txs)
+
+
+def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
+    rows: List[class_] = \
+        class_.query.filter(class_.transaction.in_(transactions)).all()
+    clusters: List[int] = list(set([row.cluster for row in rows]))
+    rows: List[class_] = \
+        class_.query.filter(class_.cluster.in_(clusters)).all()
+
+    reveals: List[str] = list(set([row.transaction for row in rows]))
+    return set(reveals)
