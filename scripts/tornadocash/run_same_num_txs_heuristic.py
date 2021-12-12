@@ -13,7 +13,7 @@ from src.utils.utils import Entity, Heuristic
 pd.options.mode.chained_assignment = None
 
 MIN_CONF: float = 0.1
-_MAX_TIME_DIFF: int = 1
+_MAX_TIME_DIFF: int = 24
 MAX_TIME_DIFF: float = Timedelta(_MAX_TIME_DIFF, 'hours').total_seconds()
 
 
