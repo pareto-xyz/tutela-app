@@ -2,6 +2,8 @@
 To scale the run_deposit.py script, we had to forgo creating 
 NX graph in memory. This script does exactly that. The motivation
 is to isolate the high memory parts to a single file.
+
+Input: user_clusters.json, exchange_clusters.json, 
 """
 
 import os
