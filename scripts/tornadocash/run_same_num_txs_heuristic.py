@@ -228,7 +228,7 @@ def same_num_of_transactions_heuristic(
 
     # find block timestamps of all withdraw transactions
     withdraw_times: List[Timestamp] = [hash2time[tx] for tx in withdraw_txs]
-    max_withdraw_time_diff: Timestamp = max_time_diff(withdraw_times)
+    max_withdraw_time_diff: Timestamp = get_max_time_diff(withdraw_times)
 
     # if withdraws span too much time, ignore address
     if max_withdraw_time_diff > MAX_TIME_DIFF:
@@ -268,7 +268,7 @@ def same_num_of_transactions_heuristic(
 
     # find block timestamps of all deposit transactions
     deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
-    max_deposit_time_diff: Timestamp = max_time_diff(deposit_times)
+    max_deposit_time_diff: Timestamp = get_max_time_diff(deposit_times)
 
     # if deposits span too much time, ignore address
     if max_deposit_time_diff > MAX_TIME_DIFF:
@@ -461,7 +461,7 @@ def get_address_deposits(
     return addr2deposit
 
 
-def max_time_diff(times: List[Timestamp]) -> Timestamp:
+def get_max_time_diff(times: List[Timestamp]) -> Timestamp:
     diffs: List[Timestamp] = []
 
     for t1 in times:
@@ -472,7 +472,7 @@ def max_time_diff(times: List[Timestamp]) -> Timestamp:
                 diffs.append(t2 - t1)
 
     max_diff: Timestamp = max(diffs)
-    breakpoint()
+    return max_diff
 
 
 if __name__ == "__main__":
