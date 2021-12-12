@@ -6,12 +6,14 @@ import itertools
 import pandas as pd
 from tqdm import tqdm
 from typing import Any, Tuple, List, Set, Dict, Optional
+from pandas import Timestamp, Timedelta
 from src.utils.utils import from_json, to_json, to_pickle
 from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
 
-MIN_CONF: float = 0.2
+MIN_CONF: float = 0.1
+MAX_TIME_DIFF: Timestamp = Timedelta(1, 'hours')
 
 
 def main(args: Any):
@@ -106,9 +108,9 @@ def get_same_num_transactions_clusters(
         addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
         to_json(addr2deposit, cached_addr2deposit)
 
-    withdraw_hash2block: Dict[str, int] = dict(zip(withdraw_df.hash, withdraw_df.block_number))
-    deposit_hash2block: Dict[str, int] = dict(zip(deposit_df.hash, deposit_df.block_number))
-    hash2block: Dict[str, int] = {**withdraw_hash2block, **deposit_hash2block}
+    withdraw_hash2time: Dict[str, int] = dict(zip(withdraw_df.hash, withdraw_df.block_timestamp))
+    deposit_hash2time: Dict[str, int] = dict(zip(deposit_df.hash, deposit_df.block_timestamp))
+    hash2time: Dict[str, int] = {**withdraw_hash2time, **deposit_hash2time}
 
     tx_clusters: List[Set[str]] = []
     tx2addr: Dict[str, str] = {}
@@ -121,7 +123,7 @@ def get_same_num_transactions_clusters(
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
             withdraw_row, withdraw_df, addr2deposit, tornado_addresses, 
-            hash2block, exact = exact)
+            hash2time, exact = exact)
 
         if results[0]:
             response_dict = results[1]
@@ -206,17 +208,13 @@ def same_num_of_transactions_heuristic(
     withdraw_df: pd.DataFrame, 
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
-    hash2block: Dict[str, int],
+    hash2time: Dict[str, int],
     exact: bool = False,
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
-
-    # use this map from hash to block number to put constraints 
-    # on when withdraws / deposits are valid.
-    # withdraw_block: int = hash2block[withdraw_tx]
 
     # remove entries that only give to one pool, we are taking 
     # multi-denominational deposits only
@@ -228,14 +226,23 @@ def same_num_of_transactions_heuristic(
     withdraw_tx2addr = dict(zip(withdraw_txs, 
         [withdraw_addr for _ in range(len(withdraw_txs))]))
 
+    # find block timestamps of all withdraw transactions
+    withdraw_times: List[Timestamp] = [hash2time[tx] for tx in withdraw_txs]
+    max_withdraw_time_diff: Timestamp = max_time_diff(withdraw_times)
+
+    # if withdraws span too much time, ignore address
+    if max_withdraw_time_diff > MAX_TIME_DIFF:
+        return (False, None)
+
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
     if exact:
         addresses, conf_map = get_same_num_of_deposits(
-            withdraw_counts, addr2deposit, hash2block)
+            withdraw_counts, addr2deposit)
     else:
         addresses, conf_map = get_same_or_more_num_of_deposits(
-            withdraw_counts, addr2deposit, hash2block)
+            withdraw_counts, addr2deposit)
+
     deposit_addrs: List[str] = list(set(addresses))
     deposit_confs: List[float] = [conf_map[addr] for addr in deposit_addrs]
 
@@ -259,6 +266,14 @@ def same_num_of_transactions_heuristic(
             deposit_txs.extend(cur_deposit_txs)
             deposit_tx2addr.update(cur_deposit_tx2addr)
 
+    # find block timestamps of all deposit transactions
+    deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
+    max_deposit_time_diff: Timestamp = max_time_diff(deposit_times)
+
+    # if deposits span too much time, ignore address
+    if max_deposit_time_diff > MAX_TIME_DIFF:
+        return (False, None)
+
     if len(deposit_addrs) > 0:
         privacy_score: float = 1. - 1. / len(deposit_addrs)
         response_dict: Dict[str, Any] = dict(
@@ -279,7 +294,6 @@ def same_num_of_transactions_heuristic(
 def get_same_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
     addr2deposit: Dict[str, Dict[str, List[str]]], 
-    hash2block: Dict[str, int],
 ) -> Tuple[List[str], Dict[str, float]]:
     conf_mapping: Dict[str, float] = dict()
     for address, deposits in addr2deposit.items():
@@ -445,6 +459,20 @@ def get_address_deposits(
     pbar.close()
 
     return addr2deposit
+
+
+def max_time_diff(times: List[Timestamp]) -> Timestamp:
+    diffs: List[Timestamp] = []
+
+    for t1 in times:
+        for t2 in times:
+            if t1 > t2:
+                diffs.append(t1 - t2)
+            elif t1 < t2:
+                diffs.append(t2 - t1)
+
+    max_diff: Timestamp = max(diffs)
+    breakpoint()
 
 
 if __name__ == "__main__":
