@@ -79,7 +79,7 @@ function ClusterPage(props) {
             .then(function (response) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
-                // response = schemaResponse;
+                // response = example;
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;

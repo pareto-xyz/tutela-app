@@ -124,7 +124,7 @@ export default function SortAndFilters({ schema, descendingSort, sortBy, setSort
         return (
             <Accordion.Item eventKey={idx} className='dropdown-accordion' key={idx}>
                 <Accordion.Header className="dropdown-accordion" onClick={() => setSelected(!selected)}>
-                    <div>{key}</div> <div className="expand-symbol">{selected ? '-' : '+'}</div>
+                    <div>{key}</div> <div className="expand-symbol">&#x25BC;</div>
                 </Accordion.Header>
                 {type === 'float' && <FloatBody k={key} values={values} />}
                 {type === 'category' && <CategoryBody k={key} values={values} />}
