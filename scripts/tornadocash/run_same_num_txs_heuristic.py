@@ -13,12 +13,13 @@ from src.utils.utils import Entity, Heuristic
 pd.options.mode.chained_assignment = None
 
 MIN_CONF: float = 0.1
-MAX_TIME_DIFF: Timestamp = Timedelta(1, 'hours')
+_MAX_TIME_DIFF: int = 1
+MAX_TIME_DIFF: Timestamp = Timedelta(_MAX_TIME_DIFF, 'hours')
 
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    appendix: str = '_exact' if args.exact else ''
+    appendix: str = f'_exact_{_MAX_TIME_DIFF}hr' if args.exact else f'_{_MAX_TIME_DIFF}hr'
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
@@ -266,15 +267,15 @@ def same_num_of_transactions_heuristic(
             deposit_txs.extend(cur_deposit_txs)
             deposit_tx2addr.update(cur_deposit_tx2addr)
 
-    # find block timestamps of all deposit transactions
-    deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
-    max_deposit_time_diff: Timestamp = get_max_time_diff(deposit_times)
+    if len(deposit_txs) > 0:
+        # find block timestamps of all deposit transactions
+        deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
+        max_deposit_time_diff: Timestamp = get_max_time_diff(deposit_times)
 
-    # if deposits span too much time, ignore address
-    if max_deposit_time_diff > MAX_TIME_DIFF:
-        return (False, None)
+        # if deposits span too much time, ignore address
+        if max_deposit_time_diff > MAX_TIME_DIFF:
+            return (False, None)
 
-    if len(deposit_addrs) > 0:
         privacy_score: float = 1. - 1. / len(deposit_addrs)
         response_dict: Dict[str, Any] = dict(
             withdraw_txs = withdraw_txs,
@@ -468,7 +469,7 @@ def get_max_time_diff(times: List[Timestamp]) -> Timestamp:
         for t2 in times:
             if t1 > t2:
                 diffs.append(t1 - t2)
-            elif t1 < t2:
+            else:
                 diffs.append(t2 - t1)
 
     max_diff: Timestamp = max(diffs)
