@@ -144,6 +144,8 @@ def get_same_num_transactions_clusters(
         pbar.update()
     pbar.close()
 
+    print(f'# clusters: {len(tx_clusters)}')
+
     return tx_clusters, address_sets, tx2addr, addr2conf
 
 
