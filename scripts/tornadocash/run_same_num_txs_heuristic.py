@@ -16,7 +16,7 @@ MIN_CONF: float = 0.2
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    appendix: str = '_exact' if args.by_pool else ''
+    appendix: str = '_exact' if args.exact else ''
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
