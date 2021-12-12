@@ -8,17 +8,6 @@ from src.diff2vec.diff2vec import Diff2Vec
 
 def main(args: Any):
     data: pd.DataFrame = pd.read_csv(args.data_csv)
-    node_a: np.array = data.from_address.to_numpy()
-    node_b: np.array = data.to_address.to_numpy()
-    edge_ab: List[Tuple[str, str]] = list(zip(node_a, node_b))
-
-    del data  # free memory
-
-    graph: nx.Graph = nx.Graph()
-    graph.add_nodes_from(np.unique(node_a))
-    graph.add_nodes_from(np.unique(node_b))
-    graph.add_edges_from(edge_ab)
-
     model: Diff2Vec = Diff2Vec(
         dimensions = args.dim,
         window_size = args.window,
@@ -28,10 +17,24 @@ def main(args: Any):
         workers = args.workers,
         seed = args.seed,
     )
-    
+    graph: nx.Graph = build_graph(data)
     model.fit(graph)
 
     embeddings: np.array = model.get_embedding()
+
+
+def build_graph(data: pd.DataFrame) -> nx.Graph:
+    node_a: np.array = data.from_address.to_numpy()
+    node_b: np.array = data.to_address.to_numpy()
+    edge_ab: List[Tuple[str, str]] = itertools.product(node_a, node_b)
+
+    graph: nx.Graph = nx.Graph()
+    graph.add_nodes_from(node_a)
+    graph.add_nodes_from(node_b)
+    graph.add_edges_from(edge_ab)
+
+    return graph
+
 
 
 if __name__ == "__main__":
