@@ -69,7 +69,7 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         withdraw_df.recipient_address.apply(lambda x: withdraw_counts[x])
     deposit_counts: pd.Series = \
         deposit_df.from_address.apply(lambda x: deposit_counts[x])
-    
+
     withdraw_df['tx_counts'] = withdraw_counts
     deposit_df['tx_counts'] = deposit_counts
 
@@ -106,6 +106,10 @@ def get_same_num_transactions_clusters(
         addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
         to_json(addr2deposit, cached_addr2deposit)
 
+    withdraw_hash2block: Dict[str, int] = dict(zip(withdraw_df.hash, withdraw_df.block_number))
+    deposit_hash2block: Dict[str, int] = dict(zip(deposit_df.hash, deposit_df.block_number))
+    hash2block: Dict[str, int] = {**withdraw_hash2block, **deposit_hash2block}
+
     tx_clusters: List[Set[str]] = []
     tx2addr: Dict[str, str] = {}
     address_sets: List[Set[str]] = []
@@ -116,7 +120,8 @@ def get_same_num_transactions_clusters(
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, addr2deposit, tornado_addresses, exact = exact)
+            withdraw_row, withdraw_df, addr2deposit, tornado_addresses, 
+            hash2block, exact = exact)
 
         if results[0]:
             response_dict = results[1]
@@ -201,6 +206,7 @@ def same_num_of_transactions_heuristic(
     withdraw_df: pd.DataFrame, 
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
+    hash2block: Dict[str, int],
     exact: bool = False,
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
