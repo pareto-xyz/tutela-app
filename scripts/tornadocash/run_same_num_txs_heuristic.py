@@ -14,7 +14,7 @@ pd.options.mode.chained_assignment = None
 
 MIN_CONF: float = 0.1
 _MAX_TIME_DIFF: int = 1
-MAX_TIME_DIFF: Timestamp = Timedelta(_MAX_TIME_DIFF, 'hours')
+MAX_TIME_DIFF: float = Timedelta(_MAX_TIME_DIFF, 'hours').total_seconds()
 
 
 def main(args: Any):
@@ -229,7 +229,7 @@ def same_num_of_transactions_heuristic(
 
     # find block timestamps of all withdraw transactions
     withdraw_times: List[Timestamp] = [hash2time[tx] for tx in withdraw_txs]
-    max_withdraw_time_diff: Timestamp = get_max_time_diff(withdraw_times)
+    max_withdraw_time_diff: float = get_max_time_diff(withdraw_times)
 
     # if withdraws span too much time, ignore address
     if max_withdraw_time_diff > MAX_TIME_DIFF:
@@ -270,7 +270,7 @@ def same_num_of_transactions_heuristic(
     if len(deposit_txs) > 0:
         # find block timestamps of all deposit transactions
         deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
-        max_deposit_time_diff: Timestamp = get_max_time_diff(deposit_times)
+        max_deposit_time_diff: float = get_max_time_diff(deposit_times)
 
         # if deposits span too much time, ignore address
         if max_deposit_time_diff > MAX_TIME_DIFF:
@@ -462,18 +462,13 @@ def get_address_deposits(
     return addr2deposit
 
 
-def get_max_time_diff(times: List[Timestamp]) -> Timestamp:
-    diffs: List[Timestamp] = []
+def get_max_time_diff(times: List[Timestamp]) -> float:
+    diffs: List[float] = []
 
-    for t1 in times:
-        for t2 in times:
-            if t1 > t2:
-                diffs.append(t1 - t2)
-            else:
-                diffs.append(t2 - t1)
+    for t1, t2 in itertools.product(times, repeat=2):
+        diffs.append(abs((t1 - t2).total_seconds()))
 
-    max_diff: Timestamp = max(diffs)
-    return max_diff
+    return max(diffs)
 
 
 if __name__ == "__main__":
