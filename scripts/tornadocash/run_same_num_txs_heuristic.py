@@ -1,12 +1,12 @@
 """
 Lambda Class's "Same # of Transactions" Heuristic.
 """
-import os, json, pickle
+import os, json
 import itertools
 import pandas as pd
 from tqdm import tqdm
 from typing import Any, Tuple, List, Set, Dict, Optional
-from src.utils.utils import from_json, to_json, from_pickle, to_pickle
+from src.utils.utils import from_json, to_json, to_pickle
 from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
@@ -16,15 +16,16 @@ MIN_CONF: float = 0.2
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters.json')
-    tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr.json')
-    addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf.json')
-    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets.json')
-    metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata.csv')
+    appendix: str = '_exact' if args.exact else ''
+    clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
+    tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
+    addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
+    address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets{appendix}.json')
+    metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata{appendix}.csv')
    
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
-        deposit_df, withdraw_df, tornado_df, args.data_dir)
+        deposit_df, withdraw_df, tornado_df, args.data_dir, exact=args.exact)
     
     # save some stuff before continuing
     to_json(clusters, clusters_file)
@@ -68,7 +69,7 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         withdraw_df.recipient_address.apply(lambda x: withdraw_counts[x])
     deposit_counts: pd.Series = \
         deposit_df.from_address.apply(lambda x: deposit_counts[x])
-    
+
     withdraw_df['tx_counts'] = withdraw_counts
     deposit_df['tx_counts'] = deposit_counts
 
@@ -84,6 +85,7 @@ def get_same_num_transactions_clusters(
     withdraw_df: pd.DataFrame, 
     tornado_df: pd.DataFrame,
     data_dir: str,
+    exact: bool = False
 ):
     """
     Same Number of Transactions Heuristic.
@@ -104,6 +106,10 @@ def get_same_num_transactions_clusters(
         addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
         to_json(addr2deposit, cached_addr2deposit)
 
+    withdraw_hash2block: Dict[str, int] = dict(zip(withdraw_df.hash, withdraw_df.block_number))
+    deposit_hash2block: Dict[str, int] = dict(zip(deposit_df.hash, deposit_df.block_number))
+    hash2block: Dict[str, int] = {**withdraw_hash2block, **deposit_hash2block}
+
     tx_clusters: List[Set[str]] = []
     tx2addr: Dict[str, str] = {}
     address_sets: List[Set[str]] = []
@@ -114,7 +120,8 @@ def get_same_num_transactions_clusters(
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, addr2deposit, tornado_addresses)
+            withdraw_row, withdraw_df, addr2deposit, tornado_addresses, 
+            hash2block, exact = exact)
 
         if results[0]:
             response_dict = results[1]
@@ -141,6 +148,8 @@ def get_same_num_transactions_clusters(
 
         pbar.update()
     pbar.close()
+
+    print(f'# clusters: {len(tx_clusters)}')
 
     return tx_clusters, address_sets, tx2addr, addr2conf
 
@@ -197,11 +206,17 @@ def same_num_of_transactions_heuristic(
     withdraw_df: pd.DataFrame, 
     addr2deposit: Dict[str, str], 
     tornado_addresses: Dict[str, int],
+    hash2block: Dict[str, int],
+    exact: bool = False,
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
+
+    # use this map from hash to block number to put constraints 
+    # on when withdraws / deposits are valid.
+    # withdraw_block: int = hash2block[withdraw_tx]
 
     # remove entries that only give to one pool, we are taking 
     # multi-denominational deposits only
@@ -215,7 +230,12 @@ def same_num_of_transactions_heuristic(
 
     # Based on withdraw_counts, the set of the addresses that have 
     # the same number of deposits is calculated.
-    addresses, conf_map = get_same_or_more_num_of_deposits(withdraw_counts, addr2deposit)
+    if exact:
+        addresses, conf_map = get_same_num_of_deposits(
+            withdraw_counts, addr2deposit, hash2block)
+    else:
+        addresses, conf_map = get_same_or_more_num_of_deposits(
+            withdraw_counts, addr2deposit, hash2block)
     deposit_addrs: List[str] = list(set(addresses))
     deposit_confs: List[float] = [conf_map[addr] for addr in deposit_addrs]
 
@@ -256,6 +276,20 @@ def same_num_of_transactions_heuristic(
     return (False, None)
 
 
+def get_same_num_of_deposits(
+    withdraw_counts: pd.DataFrame, 
+    addr2deposit: Dict[str, Dict[str, List[str]]], 
+    hash2block: Dict[str, int],
+) -> Tuple[List[str], Dict[str, float]]:
+    conf_mapping: Dict[str, float] = dict()
+    for address, deposits in addr2deposit.items():
+        if compare_transactions_exact(withdraw_counts, deposits):
+            conf_mapping[address] = 1.0
+
+    addresses: List[str] = list(conf_mapping.keys())
+    return addresses, conf_mapping
+
+
 def get_same_or_more_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
     addr2deposit: Dict[str, Dict[str, List[str]]], 
@@ -272,10 +306,6 @@ def get_same_or_more_num_of_deposits(
 
     addresses: List[str] = list(conf_mapping.keys())
     return addresses, conf_mapping
-    # result: Dict[str, Any] = dict(
-    #     filter( lambda elem: compare_transactions(withdraw_counts, elem[1]), 
-    #             addr2deposit.items()))
-    # return list(result.keys())
 
 
 def diff_transactions(
@@ -304,6 +334,18 @@ def compare_transactions(
         return False
     for currency in withdraw_counts_dict.keys():
         if not (len(deposit_dict[currency]) >= withdraw_counts_dict[currency]):
+            return False
+    return True
+
+
+def compare_transactions_exact(
+    withdraw_counts_dict: pd.DataFrame, 
+    deposit_dict: pd.DataFrame,
+) -> bool:
+    if set(withdraw_counts_dict.keys()) != set(deposit_dict.keys()):
+        return False
+    for currency in withdraw_counts_dict.keys():
+        if not (len(deposit_dict[currency]) == withdraw_counts_dict[currency]):
             return False
     return True
 
@@ -411,6 +453,8 @@ if __name__ == "__main__":
     parser.add_argument('data_dir', type=str, help='path to tornado cash data')
     parser.add_argument('tornado_csv', type=str, help='path to tornado cash pool addresses')
     parser.add_argument('save_dir', type=str, help='folder to save matches')
+    parser.add_argument('--exact', action='store_true', default=False,
+                        help='stricter matching policy')
     args: Any = parser.parse_args()
 
     main(args)
