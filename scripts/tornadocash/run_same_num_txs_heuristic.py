@@ -214,6 +214,10 @@ def same_num_of_transactions_heuristic(
     withdraw_counts, withdraw_set = get_num_of_withdraws(
         withdraw_tx, withdraw_df, tornado_addresses)
 
+    # use this map from hash to block number to put constraints 
+    # on when withdraws / deposits are valid.
+    # withdraw_block: int = hash2block[withdraw_tx]
+
     # remove entries that only give to one pool, we are taking 
     # multi-denominational deposits only
     if len(withdraw_counts) == 1:
@@ -228,10 +232,10 @@ def same_num_of_transactions_heuristic(
     # the same number of deposits is calculated.
     if exact:
         addresses, conf_map = get_same_num_of_deposits(
-            withdraw_counts, addr2deposit)
+            withdraw_counts, addr2deposit, hash2block)
     else:
         addresses, conf_map = get_same_or_more_num_of_deposits(
-            withdraw_counts, addr2deposit)
+            withdraw_counts, addr2deposit, hash2block)
     deposit_addrs: List[str] = list(set(addresses))
     deposit_confs: List[float] = [conf_map[addr] for addr in deposit_addrs]
 
@@ -275,6 +279,7 @@ def same_num_of_transactions_heuristic(
 def get_same_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
     addr2deposit: Dict[str, Dict[str, List[str]]], 
+    hash2block: Dict[str, int],
 ) -> Tuple[List[str], Dict[str, float]]:
     conf_mapping: Dict[str, float] = dict()
     for address, deposits in addr2deposit.items():
