@@ -12,7 +12,7 @@ class UndirectedGraph:
     """
 
     def __init__(self):
-        self._nodes: Set[int] = {}
+        self._nodes: Set[int] = set()
         self._edges: List[int] = []
 
     def add_edge(self, node_a: int, node_b: int):
