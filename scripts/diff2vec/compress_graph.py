@@ -1,3 +1,8 @@
+"""
+Rather than storing addresses in DataFrames, store integers (much smaller). 
+Then we can we create a map to do the replacement later.
+"""
+
 import numpy as np
 import pandas as pd
 from typing import Any, Iterable, Dict, Set, List
