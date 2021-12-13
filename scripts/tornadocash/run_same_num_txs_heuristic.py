@@ -13,12 +13,10 @@ from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
 
-MAX_NUM_DAYS: int = 1
-
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    appendix: str = f'_exact_{MAX_NUM_DAYS}days'
+    appendix: str = f'_exact_{args.max_num_days}days'
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
@@ -27,7 +25,7 @@ def main(args: Any):
    
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
-        deposit_df, withdraw_df, tornado_df, MAX_NUM_DAYS, args.data_dir)
+        deposit_df, withdraw_df, tornado_df, args.max_num_days, args.data_dir)
     
     # save some stuff before continuing
     to_json(clusters, clusters_file)
@@ -127,7 +125,8 @@ def get_same_num_transactions_clusters(
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, deposit_windows, deposit_portfolios, tornado_addresses)
+            withdraw_row, withdraw_df, deposit_windows, deposit_portfolios, 
+            tornado_addresses, max_num_days)
 
         if results[0]:
             response_dict = results[1]
@@ -213,11 +212,12 @@ def same_num_of_transactions_heuristic(
     deposit_windows: pd.DataFrame,
     deposit_portfolios: pd.DataFrame,
     tornado_addresses: Dict[str, int],
+    max_num_days: int,
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
-        withdraw_tx, withdraw_df, tornado_addresses, max_num_days = MAX_NUM_DAYS)
+        withdraw_tx, withdraw_df, tornado_addresses, max_num_days = max_num_days)
 
     # remove entries that only give to one pool, we are taking 
     # multi-denominational deposits only
@@ -451,6 +451,8 @@ if __name__ == "__main__":
     parser.add_argument('data_dir', type=str, help='path to tornado cash data')
     parser.add_argument('tornado_csv', type=str, help='path to tornado cash pool addresses')
     parser.add_argument('save_dir', type=str, help='folder to save matches')
+    parser.add_argument('--max-num-days', type=int, default=1, 
+                        help='number of maximum days (default: 1)')
     args: Any = parser.parse_args()
 
     main(args)
