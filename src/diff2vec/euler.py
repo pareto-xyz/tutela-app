@@ -80,6 +80,7 @@ class SubGraphSequences:
         return components
 
     def get_sequences(self):
+        print('Computing connected components')
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
         paths: Dict[str, List[str]] = dict() 
 
