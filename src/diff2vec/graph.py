@@ -58,5 +58,59 @@ class UndirectedGraph:
         subgraph: UndirectedGraph = UndirectedGraph()
         subgraph.add_nodes_from(component)
 
+    def is_connected(self):
+        """
+        Method to check if all non-zero degree vertices are connected. It 
+        mainly does DFS traversal starting from node with non-zero degree.
+        """
+        visited: Dict[int, bool] = defaultdict(False)
+
+        # find a vertex with non-zero degree
+        for node in self._nodes:
+            if len(self._edges[node]) > 1:
+                break
+
+        # if no edges, return true
+        if node == self.__len__() - 1:
+            return True
+
+        # traverse starting from vertex with non-zero degree
+        _ = self._dfs([], node, visited)
+
+        # check if all non-zero vertices are visited
+        for node in self._nodes:
+            if not visited[node] and len(self._edges[node]) > 0:
+                return False
+
+        return True
+
+    def is_eulerian(self):
+        """The function returns one of the following values:
+        0 --> If graph is not Eulerian
+        1 --> If graph has an Euler path (Semi-Eulerian)
+        2 --> If graph has an Euler Circuit (Eulerian)
+        """
+        if not self.is_connected():
+            return 0
+
+        # Count vertices with odd degree
+        odd: int = 0
+        for node in self._nodes:
+            if len(self._edges[node]) % 2 != 0:
+                odd += 1
+
+        # If odd count is 2, then semi-eulerian.
+        # If odd count is 0, then eulerian.
+        # If count is more than 2, then graph is not Eulerian
+        # Note that odd count can never be 1 for undirected graph.
+        if odd == 0:
+            return 2
+        elif odd == 1:
+            raise Exception('This is not possible!')
+        elif odd == 2:
+            return 1
+        else: 
+            return 0
+
     def __len__(self):
         return len(self._nodes)
