@@ -8,7 +8,7 @@ from tqdm import tqdm
 from collections import defaultdict
 from typing import Any, Tuple, List, Set, Dict, Optional
 from pandas import Timestamp, Timedelta
-from src.utils.utils import from_json, to_json, from_pickle, to_pickle
+from src.utils.utils import to_json, from_pickle, to_pickle
 from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
