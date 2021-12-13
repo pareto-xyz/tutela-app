@@ -8,3 +8,4 @@
 6. Run `tornadocash/run_same_num_txs_heuristic.py` to generate `same_num_txs_clusters_exact.json`, `same_num_txs_tx2addr_exact.json`, `same_num_txs_address_set_exact.json`, and `same_num_txs_metadata_exact.csv` files.
 7. Run `heuristic_metadata.py` to generate `metadata-joined.csv`.
 8. Run `run_nx.py` to generate `metadata-final.csv`. This is the file that will be used to populate the PostgreSQL database.
+9. Run `combine_metadata.py` to add clusters to `metadata-pruned.csv`.
