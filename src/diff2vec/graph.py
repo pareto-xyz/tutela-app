@@ -2,6 +2,8 @@
 NetworkX does not run within 10 hours. We may need to make our own lightweight 
 Graph library. 
 """
+import sys
+from tqdm import tqdm
 from collections import defaultdict
 from typing import List, Set, Tuple, Dict, Union
 
@@ -13,7 +15,7 @@ class UndirectedGraph:
 
     def __init__(self):
         self._nodes: Set[int] = set()
-        self._edges: List[int] = []
+        self._edges: Dict[int, List[int]] =  defaultdict(lambda: [])
 
     def add_edge(self, node_a: int, node_b: int):
         self._edges[node_a].append(node_b)
@@ -24,8 +26,11 @@ class UndirectedGraph:
         self._nodes = self._nodes.union(nodes)
 
     def add_edges_from(self, edges: List[Tuple[int]]):
+        pbar = tqdm(total=len(edges))
         for node_a, node_b in edges:
             self.add_edge(node_a, node_b)
+            pbar.update()
+        pbar.close()
 
     def _dfs(self, path: List[int], node: int, visited: Dict[int, bool]) -> List[int]:
         visited[node] = True  # mark current vertex as visited
@@ -39,14 +44,19 @@ class UndirectedGraph:
         return path
 
     def connected_components(self):
-        visited: Dict[int, bool] = defaultdict(False)
+        sys.setrecursionlimit(len(self._nodes))
+        visited: Dict[int, bool] = defaultdict(lambda: False)
         components: List[Set[int]] = []
 
+        pbar = tqdm(total=len(self._nodes))
         for node in self._nodes:
             if not visited[node]:
                 component: List[int] = self._dfs([], node, visited)
                 component: Set[int] = set(component)
                 components.append(component)
+
+            pbar.update()
+        pbar.close()
 
         return components
 

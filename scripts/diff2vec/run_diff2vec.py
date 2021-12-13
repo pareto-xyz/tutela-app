@@ -1,18 +1,18 @@
 import itertools
 import numpy as np
 import pandas as pd
-import networkx as nx
 from typing import Any, List, Tuple
 
 from src.diff2vec.graph import UndirectedGraph
-# from src.diff2vec.diff2vec import Diff2Vec
+from src.diff2vec.diff2vec import Diff2Vec
 
 
 def main(args: Any):
     print('Loading data from CSV')
-    data: pd.DataFrame = pd.read_csv(args.data_csv)
-    graph: nx.Graph = build_graph(data)
-    # graph: UndirectedGraph = build_graph(data)
+    data: pd.DataFrame = pd.read_csv(args.data_csv, nrows=1000000)
+    print('Building graph')
+    graph: UndirectedGraph = build_graph(data)
+    print(f'Made graph with {len(graph)} nodes')
 
     # model: Diff2Vec = Diff2Vec(
     #     dimensions = args.dim,
@@ -26,31 +26,17 @@ def main(args: Any):
     # model.fit(graph)
 
 
-def build_graph(data: pd.DataFrame) -> nx.Graph:
-    node_a: np.array = data.from_address.to_numpy()
-    node_b: np.array = data.to_address.to_numpy()
-    edge_ab: List[Tuple[str, str]] = list(zip(node_a, node_b))
+def build_graph(data: pd.DataFrame) -> UndirectedGraph:
+    node_a: List[int] = data.from_address.to_numpy().tolist()
+    node_b: List[int] = data.to_address.to_numpy().tolist()
+    edge_ab: List[Tuple[int, int]] = list(zip(node_a, node_b))
 
-    graph: nx.Graph = nx.Graph()
+    graph: UndirectedGraph = UndirectedGraph()
     graph.add_nodes_from(node_a)
     graph.add_nodes_from(node_b)
     graph.add_edges_from(edge_ab)
 
     return graph
-
-
-# def build_graph(data: pd.DataFrame) -> UndirectedGraph:
-#     breakpoint()
-#     node_a: List[int] = data.from_address.to_numpy().tolist()
-#     node_b: List[int] = data.to_address.to_numpy().tolist()
-#     edge_ab: List[Tuple[int, int]] = list(zip(node_a, node_b))
-
-#     graph: UndirectedGraph = UndirectedGraph()
-#     graph.add_nodes_from(node_a)
-#     graph.add_nodes_from(node_b)
-#     graph.add_edges_from(edge_ab)
-
-#     return graph
 
 
 
