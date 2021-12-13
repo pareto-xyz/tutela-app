@@ -3,7 +3,7 @@ NetworkX does not run within 10 hours. We may need to make our own lightweight
 Graph library. 
 """
 from collections import defaultdict
-from typing import List, Set, Tuple, Dict
+from typing import List, Set, Tuple, Dict, Union
 
 
 class UndirectedGraph:
@@ -19,7 +19,7 @@ class UndirectedGraph:
         self._edges[node_a].append(node_b)
         self._edges[node_b].append(node_a)
 
-    def add_nodes_from(self, nodes: List[int]):
+    def add_nodes_from(self, nodes: Union[List[int], Set[int]]):
         nodes: Set[int] = set(nodes)
         self._nodes = self._nodes.union(nodes)
 

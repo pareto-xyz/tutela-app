@@ -8,6 +8,7 @@ from src.diff2vec.graph import UndirectedGraph
 
 
 def main(args: Any):
+    print('Loading data from CSV')
     data: pd.DataFrame = pd.read_csv(args.data_csv)
     graph: UndirectedGraph = build_graph(data)
 
@@ -24,6 +25,7 @@ def main(args: Any):
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
+    breakpoint()
     node_a: List[int] = data.from_address.to_numpy().tolist()
     node_b: List[int] = data.to_address.to_numpy().tolist()
     edge_ab: List[Tuple[int, int]] = list(itertools.product(node_a, node_b))
