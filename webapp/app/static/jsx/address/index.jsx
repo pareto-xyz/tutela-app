@@ -9,6 +9,7 @@ import TornadoInfo from './TornadoInfo';
 import schemaResponse from '../../data/schema';
 import TpoolOverall from './TpoolOverall';
 import TpoolStats from './TpoolStats'
+import { QueryObjContext } from '../components/Contexts';
 
 import ClusterResults from './ClusterResults';
 
@@ -16,7 +17,7 @@ function ClusterPage(props) {
     const { params } = props;
     const inputEl = useRef(null);
 
-    let [queryObj, setQuery] = useState({});
+    let [queryObj, setQuery] = useState({}); //sorts and filters 
     const [inputAddress, setInputAddress] = useState('');
     const [pageResults, setPageResults] = useState([]);
     const [invalid, setInvalid] = useState(false);
@@ -24,7 +25,7 @@ function ClusterPage(props) {
     const [showResultsSection, setShowResultsSection] = useState(false);
     const [loadingCluster, setLoadingCluster] = useState(false);
     const [loadingQuery, setLoadingQuery] = useState(false);
-    const [queryInfo, setQueryInfo] = useState({});
+    const [queryInfo, setQueryInfo] = useState({}); //info about the input 
     const [tornado, setTornado] = useState({});
     const [aliases, setAliases] = useState({});
     const [schema, setSchema] = useState({});
@@ -79,7 +80,7 @@ function ClusterPage(props) {
             .then(function (response) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
-                // response = schemaResponse;
+                // response = example;
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;
@@ -188,22 +189,26 @@ function ClusterPage(props) {
                             </div>}
                         </>}
                     {searchType === 'other' && <>
-                    {showResultsSection && <div className="results-section">
+                        {showResultsSection && <div className="results-section">
 
-                        <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
-                        <TornadoInfo data={tornado} aliases={aliases} />
+                            <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                            <TornadoInfo data={tornado} aliases={aliases} />
 
-                    </div>}
+                        </div>}
                         {showResultsSection &&
-                            <ClusterResults
-                                paginationData={paginationData}
-                                setSort={setSort}
-                                sortBy={queryObj.sort} descendingSort={queryObj.descending} schema={schema}
-                                results={pageResults}
-                                loading={loadingCluster}
-                                getNewResults={getNewResults}
-                                aliases={aliases}
-                            />}
+                            <QueryObjContext.Provider value={queryObj}>
+                                <ClusterResults
+                                    paginationData={paginationData}
+                                    setSort={setSort}
+                                    schema={schema}
+                                    results={pageResults}
+                                    loading={loadingCluster}
+                                    getNewResults={getNewResults}
+                                    aliases={aliases}
+                                />
+                            </QueryObjContext.Provider>
+
+                        }
                     </>}
 
                 </div >
