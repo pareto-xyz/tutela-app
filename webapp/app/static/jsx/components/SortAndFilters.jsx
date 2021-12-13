@@ -198,7 +198,7 @@ export default function SortAndFilters({ schema, setSort, getNewResults }) {
     const getSortOption = (key, idx) => {
         const sortBy = useContext(QueryObjContext).sort;
         return (
-            <Dropdown.Item eventKey={key} className={sortBy === key ? 'selected-dropdown' : ''} key={idx}>{key}</Dropdown.Item>
+            <Dropdown.Item eventKey={key} className={sortBy === key ? 'selected-dropdown' : ''} key={idx}>{key === 'conf' ? 'confidence' : key}</Dropdown.Item>
         );
     }
 
