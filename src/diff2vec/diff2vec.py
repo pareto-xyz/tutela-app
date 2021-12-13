@@ -3,10 +3,10 @@ Helper functions to run Diff2Vec on a NetworkX graph.
 """
 
 import numpy as np
-import networkx as nx
-from typing import List, Tuple
+from typing import List
 from gensim.models import Word2Vec
 
+from src.diff2vec.graph import UndirectedGraph
 from src.diff2vec.euler import SubGraphSequences
 
 
@@ -42,7 +42,7 @@ class Diff2Vec:
         self.min_count = min_count
         self.seed = seed
 
-    def fit(self, graph: nx.Graph):
+    def fit(self, graph: UndirectedGraph):
         """
         Fitting a Diff2Vec model.
         Arg types:
@@ -63,7 +63,7 @@ class Diff2Vec:
             seed = self.seed,
         )
 
-        num_nodes: int = graph.number_of_nodes()
+        num_nodes: int = len(graph)
         self._embedding = [model.wv[str(n)] for n in range(num_nodes)]
 
     def get_embedding(self) -> np.array:

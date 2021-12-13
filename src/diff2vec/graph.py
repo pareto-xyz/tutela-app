@@ -17,6 +17,9 @@ class UndirectedGraph:
         self._nodes: Set[int] = set()
         self._edges: Dict[int, List[int]] =  defaultdict(lambda: [])
 
+    def add_node(self, node: int):
+        self._nodes.add(node)
+
     def add_edge(self, node_a: int, node_b: int):
         self._edges[node_a].append(node_b)
         self._edges[node_b].append(node_a)
@@ -32,7 +35,12 @@ class UndirectedGraph:
             pbar.update()
         pbar.close()
 
-    def _dfs(self, path: List[int], node: int, visited: Dict[int, bool]) -> List[int]:
+    def _dfs(
+        self,
+        path: List[int],
+        node: int,
+        visited: Dict[int, bool]
+    ) -> List[int]:
         visited[node] = True  # mark current vertex as visited
         path.append(node)     # add vertex to path
 
@@ -43,7 +51,19 @@ class UndirectedGraph:
 
         return path
 
-    def connected_components(self):
+    def has_node(self, node: int) -> bool:
+        return node in self._nodes
+
+    def nodes(self) -> Set[int]:
+        return self._nodes
+
+    def neighbors(self, node: int) -> List[int]:
+        assert self.has_node(node), "Graph does not contain node"
+        # since we always add backwards connections, we can just fetch
+        # all the connections frmo this node.
+        return self._edges[node]
+
+    def connected_components(self) -> List[Set[int]]:
         sys.setrecursionlimit(len(self._nodes))
         visited: Dict[int, bool] = defaultdict(lambda: False)
         components: List[Set[int]] = []
@@ -67,8 +87,9 @@ class UndirectedGraph:
         """
         subgraph: UndirectedGraph = UndirectedGraph()
         subgraph.add_nodes_from(component)
+        # TODO
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         Method to check if all non-zero degree vertices are connected. It 
         mainly does DFS traversal starting from node with non-zero degree.
@@ -94,7 +115,7 @@ class UndirectedGraph:
 
         return True
 
-    def is_eulerian(self):
+    def is_eulerian(self) -> bool:
         """The function returns one of the following values:
         0 --> If graph is not Eulerian
         1 --> If graph has an Euler path (Semi-Eulerian)
@@ -122,5 +143,5 @@ class UndirectedGraph:
         else: 
             return 0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._nodes)
