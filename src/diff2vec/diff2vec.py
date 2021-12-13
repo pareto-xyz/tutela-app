@@ -48,9 +48,11 @@ class Diff2Vec:
         Arg types:
             * **graph** *(NetworkX graph)* - The graph to be embedded.
         """
+        print('Computing subgraph sequences')
         sequencer: SubGraphSequences = SubGraphSequences(graph, self.cover_size)
         sequences: List[str] = sequencer.get_sequences()
 
+        print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(
             sequences,
             vector_size = self.dimensions,
@@ -64,6 +66,8 @@ class Diff2Vec:
         )
 
         num_nodes: int = len(graph)
+
+        print('Fetching embeddings')
         self._embedding = [model.wv[str(n)] for n in range(num_nodes)]
 
     def get_embedding(self) -> np.array:

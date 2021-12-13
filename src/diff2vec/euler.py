@@ -2,8 +2,9 @@
 Eulerian Diffusion.
 """
 import numpy as np
+from tqdm import tqdm
 import networkx as nx
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Set
 from src.diff2vec.graph import UndirectedGraph
 
 
@@ -82,6 +83,7 @@ class SubGraphSequences:
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
         paths: Dict[str, List[str]] = dict() 
 
+        pbar = tqdm(total=len(subgraphs))
         for subgraph in subgraphs:
             card: int = len(subgraph)  # cardinality
             if card < self.vertex_card:
@@ -92,7 +94,9 @@ class SubGraphSequences:
             circuits: Dict[str, List[str]] = euler.diffuse()
 
             paths.update(circuits)
+            pbar.update()
 
+        pbar.close()
         paths = [v for _, v in paths.items()]
         return paths
 

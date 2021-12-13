@@ -1,5 +1,3 @@
-import itertools
-import numpy as np
 import pandas as pd
 from typing import Any, List, Tuple
 
@@ -14,16 +12,16 @@ def main(args: Any):
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
 
-    # model: Diff2Vec = Diff2Vec(
-    #     dimensions = args.dim,
-    #     window_size = args.window,
-    #     cover_size = args.cover,
-    #     epochs = args.epochs,
-    #     learning_rate = args.lr,
-    #     workers = args.workers,
-    #     seed = args.seed,
-    # )
-    # model.fit(graph)
+    model: Diff2Vec = Diff2Vec(
+        dimensions = args.dim,
+        window_size = args.window,
+        cover_size = args.cover,
+        epochs = args.epochs,
+        learning_rate = args.lr,
+        workers = args.workers,
+        seed = args.seed,
+    )
+    model.fit(graph)
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
