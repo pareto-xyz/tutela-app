@@ -5,21 +5,20 @@ import os, json
 import itertools
 import pandas as pd
 from tqdm import tqdm
+from collections import defaultdict
 from typing import Any, Tuple, List, Set, Dict, Optional
 from pandas import Timestamp, Timedelta
-from src.utils.utils import from_json, to_json, to_pickle
+from src.utils.utils import from_json, to_json, from_pickle, to_pickle
 from src.utils.utils import Entity, Heuristic
 
 pd.options.mode.chained_assignment = None
 
-MIN_CONF: float = 0.1
-_MAX_TIME_DIFF: int = 24
-MAX_TIME_DIFF: float = Timedelta(_MAX_TIME_DIFF, 'hours').total_seconds()
+MAX_NUM_DAYS: int = 1
 
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    appendix: str = f'_exact_{_MAX_TIME_DIFF}hr' if args.exact else f'_{_MAX_TIME_DIFF}hr'
+    appendix: str = f'_exact_{MAX_NUM_DAYS}days'
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
@@ -28,7 +27,7 @@ def main(args: Any):
    
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
-        deposit_df, withdraw_df, tornado_df, args.data_dir, exact=args.exact)
+        deposit_df, withdraw_df, tornado_df, MAX_NUM_DAYS, args.data_dir)
     
     # save some stuff before continuing
     to_json(clusters, clusters_file)
@@ -63,23 +62,6 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # Load Tornado data
     tornado_df: pd.DataFrame = pd.read_csv(args.tornado_csv)
 
-    withdraw_counts: Dict[str, int] = \
-        withdraw_df.recipient_address.value_counts().to_dict()
-    deposit_counts: Dict[str, int] = \
-        deposit_df.from_address.value_counts().to_dict()
-
-    withdraw_counts: pd.Series = \
-        withdraw_df.recipient_address.apply(lambda x: withdraw_counts[x])
-    deposit_counts: pd.Series = \
-        deposit_df.from_address.apply(lambda x: deposit_counts[x])
-
-    withdraw_df['tx_counts'] = withdraw_counts
-    deposit_df['tx_counts'] = deposit_counts
-
-    # Remove withdraw and deposit transactions with only 1 or 2 transactions
-    withdraw_df: pd.DataFrame = withdraw_df[withdraw_df.tx_counts > 2]
-    deposit_df: pd.DataFrame = deposit_df[deposit_df.tx_counts > 2]
-
     return withdraw_df, deposit_df, tornado_df
 
 
@@ -87,8 +69,8 @@ def get_same_num_transactions_clusters(
     deposit_df: pd.DataFrame, 
     withdraw_df: pd.DataFrame, 
     tornado_df: pd.DataFrame,
+    max_num_days: int,
     data_dir: str,
-    exact: bool = False
 ):
     """
     Same Number of Transactions Heuristic.
@@ -100,31 +82,52 @@ def get_same_num_transactions_clusters(
     """
     tornado_addresses: Dict[str, int] = \
         dict(zip(tornado_df.address, tornado_df.tags))
-
-    cached_addr2deposit: str =  os.path.join(data_dir, 'same_num_txs_addr2deposit.json')
-    if os.path.isfile(cached_addr2deposit):
-        print('Found cached deposit mapping: loading...')
-        addr2deposit: Dict[str, Dict[str, List[str]]] = from_json(cached_addr2deposit)
-    else:
-        addr2deposit = get_address_deposits(deposit_df, tornado_addresses)
-        to_json(addr2deposit, cached_addr2deposit)
-
-    withdraw_hash2time: Dict[str, int] = dict(zip(withdraw_df.hash, withdraw_df.block_timestamp))
-    deposit_hash2time: Dict[str, int] = dict(zip(deposit_df.hash, deposit_df.block_timestamp))
-    hash2time: Dict[str, int] = {**withdraw_hash2time, **deposit_hash2time}
+    tornado_tags: List[str] = tornado_df.tags.to_list()
 
     tx_clusters: List[Set[str]] = []
     tx2addr: Dict[str, str] = {}
     address_sets: List[Set[str]] = []
     addr2conf: Dict[Tuple[str, str], float] = {}
 
+    cache_window_file: str = os.path.join(
+        data_dir, f'deposit_windows_{max_num_days}days.pickle')
+    cache_portfolio_file: str = os.path.join(
+        data_dir, f'deposit_portfolio_{max_num_days}days.csv')
+
+    if os.path.isfile(cache_window_file):
+        print('Loading deposit windows')
+        deposit_windows: pd.DataFrame = from_pickle(cache_window_file)
+        raw_portfolios: pd.DataFrame = pd.read_csv(cache_portfolio_file)
+    else:
+        print('Precomputing deposit windows')
+        time_window: Timestamp = Timedelta(max_num_days, 'days')
+        deposit_df['tornado_pool'] = deposit_df.tornado_cash_address.map(
+            lambda x: tornado_addresses[x])
+        deposit_windows: pd.Series = deposit_df.apply(lambda x: deposit_df[
+            # find all deposits made before current one
+            (deposit_df.block_timestamp <= x.block_timestamp) & 
+            # find all deposits made at most 24 hr before current one
+            (deposit_df.block_timestamp >= (x.block_timestamp - time_window)) &
+            # only consider those with same address as current one
+            (deposit_df.from_address == x.from_address) &
+            # ignore the current one from returned set
+            (deposit_df.hash != x.hash)
+        ], axis=1)
+        deposit_windows: pd.DataFrame = pd.DataFrame(deposit_windows)
+        to_pickle(deposit_windows, cache_window_file)
+
+        raw_portfolios: pd.DataFrame = deposit_windows.apply(
+            lambda x: x.iloc[0].groupby('tornado_pool').count()['hash'].to_dict(), axis=1)
+        raw_portfolios.to_csv(cache_portfolio_file, index=False)
+
+    deposit_portfolios: pd.DataFrame = make_portfolio_df(raw_portfolios, tornado_tags)
+
     print('Processing withdraws')
     pbar = tqdm(total=len(withdraw_df))
 
     for withdraw_row in withdraw_df.itertuples():
         results = same_num_of_transactions_heuristic(
-            withdraw_row, withdraw_df, addr2deposit, tornado_addresses, 
-            hash2time, exact = exact)
+            withdraw_row, withdraw_df, deposit_windows, deposit_portfolios, tornado_addresses)
 
         if results[0]:
             response_dict = results[1]
@@ -207,168 +210,132 @@ def get_metadata(
 def same_num_of_transactions_heuristic(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
-    addr2deposit: Dict[str, str], 
+    deposit_windows: pd.DataFrame,
+    deposit_portfolios: pd.DataFrame,
     tornado_addresses: Dict[str, int],
-    hash2time: Dict[str, int],
-    exact: bool = False,
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
     # Calculate the number of withdrawals of the address 
     # from the withdraw_tx given as input.
     withdraw_counts, withdraw_set = get_num_of_withdraws(
-        withdraw_tx, withdraw_df, tornado_addresses)
+        withdraw_tx, withdraw_df, tornado_addresses, max_num_days = MAX_NUM_DAYS)
 
     # remove entries that only give to one pool, we are taking 
     # multi-denominational deposits only
     if len(withdraw_counts) == 1:
         return (False, None)
 
-    withdraw_addr: str = withdraw_tx.from_address
+    # if there are only 1 or 2 txs, ignore
+    if sum(withdraw_counts.values()) < 2:
+        return (False, None)
+
+    withdraw_addr: str = withdraw_tx.recipient_address  # who's gets the withdrawn
     withdraw_txs: List[str] = list(itertools.chain(*list(withdraw_set.values())))
     withdraw_tx2addr = dict(zip(withdraw_txs, 
         [withdraw_addr for _ in range(len(withdraw_txs))]))
 
-    # find block timestamps of all withdraw transactions
-    withdraw_times: List[Timestamp] = [hash2time[tx] for tx in withdraw_txs]
-    max_withdraw_time_diff: float = get_max_time_diff(withdraw_times)
+    matched_deposits: List[pd.Dataframe] = get_same_num_of_deposits(
+        withdraw_counts, deposit_windows, deposit_portfolios)
 
-    # if withdraws span too much time, ignore address
-    if max_withdraw_time_diff > MAX_TIME_DIFF:
+    if len(matched_deposits) == 0:  # no matched deposits by heuristic
         return (False, None)
 
-    # Based on withdraw_counts, the set of the addresses that have 
-    # the same number of deposits is calculated.
-    if exact:
-        addresses, conf_map = get_same_num_of_deposits(
-            withdraw_counts, addr2deposit)
-    else:
-        addresses, conf_map = get_same_or_more_num_of_deposits(
-            withdraw_counts, addr2deposit)
-
-    deposit_addrs: List[str] = list(set(addresses))
-    deposit_confs: List[float] = [conf_map[addr] for addr in deposit_addrs]
-
+    deposit_addrs: List[str] = []
     deposit_txs: List[str] = []
+    deposit_confs: List[float] = []
     deposit_tx2addr: Dict[str, str] = {}
 
-    for address in deposit_addrs:
-        deposit_set: Dict[str, List[str]] = addr2deposit[address]
-        assert set(withdraw_set.keys()) == set(deposit_set.keys()), \
-            "Set of keys do not match."
+    for match in matched_deposits:
+        deposit_addrs.append(match.from_address.iloc[0])
+        txs: List[str] = match.hash.to_list()
+        deposit_txs.extend(txs)
+        deposit_confs.extend([1.0] * len(txs))
+        deposit_tx2addr.update(dict(zip(match.hash, match.from_address)))
 
-        address_conf: float = conf_map[address]
+    deposit_addrs: List[str] = list(set(deposit_addrs))
 
-        if address_conf >= MIN_CONF:  # must be bigger than 1/2 sure
-            # list of all txs for withdraws and deposits regardless of pool
-            cur_deposit_txs: List[str] = list(itertools.chain(*list(deposit_set.values())))
-
-            # dictionary from transaction to address
-            cur_deposit_tx2addr = dict(zip(cur_deposit_txs, 
-                [address for _ in range(len(cur_deposit_txs))]))
-            deposit_txs.extend(cur_deposit_txs)
-            deposit_tx2addr.update(cur_deposit_tx2addr)
-
-    if len(deposit_txs) > 0:
-        # find block timestamps of all deposit transactions
-        deposit_times: List[Timestamp] = [hash2time[tx] for tx in deposit_txs]
-        max_deposit_time_diff: float = get_max_time_diff(deposit_times)
-
-        # if deposits span too much time, ignore address
-        if max_deposit_time_diff > MAX_TIME_DIFF:
-            return (False, None)
-
-        privacy_score: float = 1. - 1. / len(deposit_addrs)
-        response_dict: Dict[str, Any] = dict(
-            withdraw_txs = withdraw_txs,
-            deposit_txs = deposit_txs,
-            deposit_confs = deposit_confs,
-            withdraw_addr = withdraw_addr,
-            deposit_addrs = deposit_addrs,
-            withdraw_tx2addr = withdraw_tx2addr,
-            deposit_tx2addr = deposit_tx2addr,
-            privacy_score = privacy_score,
-        )
-        return (True, response_dict)
-
-    return (False, None)
+    privacy_score: float = 1. - 1. / len(matched_deposits)
+    response_dict: Dict[str, Any] = dict(
+        withdraw_txs = withdraw_txs,
+        deposit_txs = deposit_txs,
+        deposit_confs = deposit_confs,
+        withdraw_addr = withdraw_addr,
+        deposit_addrs = deposit_addrs,
+        withdraw_tx2addr = withdraw_tx2addr,
+        deposit_tx2addr = deposit_tx2addr,
+        privacy_score = privacy_score,
+    )
+    return (True, response_dict)
 
 
 def get_same_num_of_deposits(
     withdraw_counts: pd.DataFrame, 
-    addr2deposit: Dict[str, Dict[str, List[str]]], 
-) -> Tuple[List[str], Dict[str, float]]:
-    conf_mapping: Dict[str, float] = dict()
-    for address, deposits in addr2deposit.items():
-        if compare_transactions_exact(withdraw_counts, deposits):
-            conf_mapping[address] = 1.0
+    deposit_windows: pd.DataFrame,
+    deposit_portfolios: pd.DataFrame,
+) -> List[pd.DataFrame]:
+    # simple assertion that the number of non-zero currencies must be the same
+    mask: Optional[pd.DataFrame] = \
+        (deposit_portfolios > 0).sum(axis=1) == len(withdraw_counts)
+    for k, v in withdraw_counts.items():
+        if mask is None:
+            mask: pd.DataFrame = (deposit_portfolios[k] == v)
+        else:
+            mask: pd.DataFrame = mask & (deposit_portfolios[k] == v)
+    return [x[0] for x in deposit_windows[mask].values]
 
-    addresses: List[str] = list(conf_mapping.keys())
-    return addresses, conf_mapping
 
-
-def get_same_or_more_num_of_deposits(
-    withdraw_counts: pd.DataFrame, 
-    addr2deposit: Dict[str, Dict[str, List[str]]], 
-) -> Tuple[List[str], Dict[str, float]]:
-    conf_mapping: Dict[str, float] = dict()
-    for address, deposits in addr2deposit.items():
-        if compare_transactions(withdraw_counts, deposits):
-            num_diff: int = diff_transactions(withdraw_counts, deposits)
-            if num_diff == 0:
-                conf: float = 1.0
+def make_portfolio_df(raw_portfolios: pd.DataFrame, pools: List[str]) -> pd.DataFrame:
+    raw_portfolios: List[Dict[str, int]] = \
+        [eval(x) for x in raw_portfolios['0'].values]
+    deposit_portfolios: Dict[str, List[str]] = defaultdict(lambda: [])
+    for portfolio in raw_portfolios:
+        for k in pools:
+            if k in portfolio:
+                deposit_portfolios[k].append(portfolio[k])
             else:
-                conf: float = 1. / num_diff
-            conf_mapping[address] = conf
-
-    addresses: List[str] = list(conf_mapping.keys())
-    return addresses, conf_mapping
+                deposit_portfolios[k].append(0)
+    deposit_portfolios: Dict[str, List[str]] = dict(deposit_portfolios)
+    return pd.DataFrame.from_dict(deposit_portfolios)
 
 
-def diff_transactions(
-    withdraw_counts_dict: pd.DataFrame, 
-    deposit_dict: pd.DataFrame,
-) -> int:
-    num_diff: int = 0
-    for currency in withdraw_counts_dict.keys():
-        num_diff += abs(len(deposit_dict[currency]) - withdraw_counts_dict[currency])
-    return num_diff
+def make_deposit_df(
+    deposits: Dict[str, List[str]],
+    hash2time: Dict[str, Timestamp],
+) -> pd.DataFrame:
+    transactions: List[str] = []
+    pools: List[str] = []
+    timestamps: List[Timestamp] = []
+    for pool, txs in deposits.items():
+        transactions.extend(txs)
+        pools.extend([pool] * len(txs))
+        timestamps.extend([hash2time[tx] for tx in txs])
+    out: Dict[str, Any] = {
+        'transaction': transactions,
+        'pool': pools,
+        'timestamp': timestamps,
+    }
+    out: pd.DataFrame = pd.DataFrame.from_dict(out)
+    return out
 
 
-def compare_transactions(
-    withdraw_counts_dict: pd.DataFrame, 
-    deposit_dict: pd.DataFrame,
-) -> bool:
-    """
-    Given two dictionaries, withdraw_dict and deposit_dict representing 
-    the total deposits and withdraws made by an address to each TCash pool, 
-    respectively, compares if the set of keys of both are equal and when 
-    they are, checks if all values in the deposit dictionary are equal or 
-    greater than each of the corresponding values of the withdraw 
-    dicionary. If this is the case, returns True, if not, False.
-    """
-    if set(withdraw_counts_dict.keys()) != set(deposit_dict.keys()):
-        return False
-    for currency in withdraw_counts_dict.keys():
-        if not (len(deposit_dict[currency]) >= withdraw_counts_dict[currency]):
-            return False
-    return True
-
-
-def compare_transactions_exact(
-    withdraw_counts_dict: pd.DataFrame, 
-    deposit_dict: pd.DataFrame,
-) -> bool:
-    if set(withdraw_counts_dict.keys()) != set(deposit_dict.keys()):
-        return False
-    for currency in withdraw_counts_dict.keys():
-        if not (len(deposit_dict[currency]) == withdraw_counts_dict[currency]):
-            return False
-    return True
+def make_address_deposit_df(
+    addr2deposit: Dict[str, Dict[str, List[str]]],
+    hash2time: Dict[str, Timestamp],
+) -> pd.DataFrame:
+    addr_deposit_df: List[pd.DataFrame] = []
+    for address, deposits in addr2deposit.items():
+        deposit_df: pd.DataFrame = make_deposit_df(deposits, hash2time)
+        deposit_df['address'] = address
+        addr_deposit_df.append(deposit_df)
+    addr_deposit_df: pd.DataFrame = pd.concat(addr_deposit_df)
+    addr_deposit_df: pd.DataFrame = addr_deposit_df.reset_index()
+    return addr_deposit_df
 
 
 def get_num_of_withdraws(
     withdraw_tx: pd.Series, 
     withdraw_df: pd.DataFrame, 
     tornado_addresses: Dict[str, str],
+    max_num_days: int,
 ) -> Tuple[Dict[str, int], Dict[str, List[str]]]:
     """
     Given a particular withdraw transaction and the withdraw transactions 
@@ -381,9 +348,16 @@ def get_num_of_withdraws(
     withdraw_txs: Dict[str, List[str]] = {
         tornado_addresses[withdraw_tx.tornado_cash_address]: []}
 
+    time_window: Timestamp = Timedelta(max_num_days, 'days')
+
     subset_df: pd.DataFrame = withdraw_df[
+        # ignore txs made by others
         (withdraw_df.recipient_address == withdraw_tx.recipient_address) & 
-        (withdraw_df.block_timestamp <= withdraw_tx.block_timestamp) & 
+        # ignore future transactions
+        (withdraw_df.block_timestamp <= withdraw_tx.block_timestamp) &
+        # ignore other withdraw transactions not within the last MAX_TIME_DIFF  
+        (withdraw_df.block_timestamp >= (withdraw_tx.block_timestamp - time_window)) &
+        # ignore the query row
         (withdraw_df.hash != withdraw_tx.hash)
     ]
     subset_df['tornado_pool'] = subset_df.tornado_cash_address.map(
@@ -477,8 +451,6 @@ if __name__ == "__main__":
     parser.add_argument('data_dir', type=str, help='path to tornado cash data')
     parser.add_argument('tornado_csv', type=str, help='path to tornado cash pool addresses')
     parser.add_argument('save_dir', type=str, help='folder to save matches')
-    parser.add_argument('--exact', action='store_true', default=False,
-                        help='stricter matching policy')
     args: Any = parser.parse_args()
 
     main(args)
