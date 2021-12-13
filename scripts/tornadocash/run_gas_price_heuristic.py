@@ -61,7 +61,8 @@ def get_same_gas_price_clusters(
     by_pool: bool = False,
 ) -> Tuple[List[Set[str]], Dict[str, str]]:
     # get deposit transactions with unique gas prices
-    unique_gas_deposit_df: pd.DataFrame = filter_by_unique_gas_price(deposit_df)
+    filter_fn = filter_by_unique_gas_price_by_pool if by_pool else filter_by_unique_gas_price
+    unique_gas_deposit_df: pd.DataFrame = filter_fn(deposit_df)
 
     # initialize an empty dictionary to store the linked transactions.
     tx2addr: Dict[str, str] = {}
@@ -166,12 +167,31 @@ def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
 
 def filter_by_unique_gas_price(transactions_df: pd.DataFrame) -> pd.DataFrame:
     # count the appearances of each gas price in the transactions df
-    gas_prices_count = transactions_df['gas_price'].value_counts()
+    gas_prices_count: pd.DataFrame = transactions_df['gas_price'].value_counts()
 
     # filter the gas prices that are unique, i.e., the ones with a count equal to 1
-    unique_gas_prices = gas_prices_count[gas_prices_count == 1].keys()
+    unique_gas_prices: pd.DataFrame = gas_prices_count[gas_prices_count == 1].keys()
 
     return transactions_df[transactions_df['gas_price'].isin(unique_gas_prices)]
+
+
+def filter_by_unique_gas_price_by_pool(transactions_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Unlike the non-pool version, we check for unique gas price BY POOL (this
+    is a weaker constraint).
+    """
+    gas_prices_count: pd.DataFrame = transactions_df[['gas_price', 'tornado_cash_address']].value_counts()
+    unique_gas_prices: pd.DataFrame = pd.DataFrame(gas_prices_count[gas_prices_count == 1])
+
+    # tuple set with the values (gas_price, tornado_cash_address) is made to filter efficiently
+    tuple_set: Set[Any] = set([(row.Index[0], row.Index[1]) for row in unique_gas_prices.itertuples()])
+
+    output_df: pd.DataFrame = pd.DataFrame(
+        filter(lambda iter_tuple: \
+            (iter_tuple.gas_price, iter_tuple.tornado_cash_address) 
+            in tuple_set, transactions_df.itertuples()))
+
+    return output_df
 
 
 def same_gas_price_heuristic(
