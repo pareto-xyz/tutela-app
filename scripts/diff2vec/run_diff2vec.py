@@ -20,6 +20,7 @@ def main(args: Any):
         learning_rate = args.lr,
         workers = args.workers,
         seed = args.seed,
+        cache_dir = args.cache_dir,
     )
     model.fit(graph)
 
@@ -42,6 +43,7 @@ if __name__ == "__main__":
     from argparse import ArgumentParser
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('data_csv', type=str, help='path to save data')
+    parser.add_argument('cache_dir', type=str, help='path to cache')
     parser.add_argument('--epochs', type=int, default=10, help='epochs (default: 10)')
     parser.add_argument('--workers', type=int, default=4, help='workers (default: 4)')
     parser.add_argument('--lr', type=float, default=0.05, help='learning rate (default: 0.05)')

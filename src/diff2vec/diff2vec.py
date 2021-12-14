@@ -1,8 +1,9 @@
 """
 Helper functions to run Diff2Vec on a NetworkX graph.
 """
+import os
 import numpy as np
-from typing import List, Optional 
+from typing import Optional 
 from gensim.models import Word2Vec
 
 from src.diff2vec.graph import UndirectedGraph
