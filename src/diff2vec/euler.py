@@ -4,7 +4,7 @@ Eulerian Diffusion.
 import random
 from tqdm import tqdm
 import networkx as nx
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from src.diff2vec.graph import UndirectedGraph
 
 
