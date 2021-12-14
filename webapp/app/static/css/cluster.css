@@ -191,15 +191,22 @@ RESULTS
     display: none;
 }
 
+input.form-control.rounded {
+    border-radius: 0.25rem;
+}
+
 /* results list ------------------ */
 
 .results-section {
     display: flex;
+    margin-top: 20px;
+    margin-bottom: 10px;
 }
 
 .tornado-results-section {
     display: flex;
     margin-top: 20px;
+    margin-bottom: 30px;
 }
 
 .results-section:not(:first-child) {
@@ -216,7 +223,6 @@ RESULTS
     background-color: var(--fadedgrey);
     max-height: 80vh;
     overflow: scroll;
-    flex: 1;
     border-radius: 5px;
     padding: 15px;
     margin-top: 10px;
