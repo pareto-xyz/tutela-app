@@ -21,6 +21,8 @@ export default function Header(props) {
                 <a className="nav-link" href="/cluster">{getDisplayText('address', current)}</a>
                 <a className="nav-link" href="/#about">{getDisplayText('about', current)}</a>
                 <a className="nav-link" href="/#reveals">{getDisplayText('reveals', current)}</a>
+                <a className="nav-link"
+                    href="https://etherscan.io/address/0xFca529E4Fd732C6a94FDEbE3Ad32FC2975e759b3/">donations <i className="fas fa-heart"></i></a>
             </div>
         </header>
     )
