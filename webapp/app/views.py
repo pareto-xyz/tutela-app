@@ -315,7 +315,7 @@ def search_address(request: Request) -> Response:
         withdraw_txs: Set[str] = set([w.hash for w in withdraws])
         num_withdraw: int = len(withdraw_txs)
 
-        all_txs: Set[str] = reveal_txs.union(withdraw_txs)
+        all_txs: Set[str] = deposit_txs.union(withdraw_txs)
         num_all: int = num_deposit + num_withdraw
 
         num_remain: int = len(all_txs - reveal_txs)
