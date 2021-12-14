@@ -11,8 +11,34 @@ import schemaResponse from '../../data/schema';
 import TpoolOverall from './TpoolOverall';
 import TpoolStats from './TpoolStats';
 import { QueryObjContext } from '../components/Contexts';
+import SortAndFilters from '../components/SortAndFilters';
+import Pagination from '../components/Pagination';
+import aliasesResponse from '../../data/aliases';
 
-import ClusterResults from './ClusterResults';
+import AccordionOfResults from '../components/AccordionOfResults';
+import HaveIBeenCompromised from './HaveIBeenCompromised';
+
+
+//to be displayed instead of listed cluster, if no clusters were found. 
+const NoClusters = (
+    <div>
+        <div className="center-inside">
+            No clusters found.
+            <br />
+            <img width="200" src="/static/img/spy.png" />
+            <br />
+            <div>you're anonymous, harry!</div>
+        </div>
+    </div>
+)
+
+const AddressClusterHeader = (
+    <div className="results">
+        <div className="panel-title">
+            LINKED ADDRESSES
+        </div>
+    </div>
+)
 
 function ClusterPage(props) {
     const { params } = props;
@@ -35,6 +61,7 @@ function ClusterPage(props) {
 
     const getAliases = () => {
         axios.get('/utils/aliases').then(response => {
+            // response = aliasesResponse;
             setAliases(response.data);
         }).catch(err => console.log(err));
     }
@@ -182,12 +209,18 @@ function ClusterPage(props) {
 
                     {searchType === 'tornadoPool' &&
                         <>
-                            {showResultsSection && <div className="tornado-results-section">
+                            {showResultsSection &&
+                                <div>
+                                    <div className="tornado-results-section ">
 
-                                <TpoolOverall data={queryInfo} loading={loadingQuery} />
-                                {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
+                                        <TpoolOverall data={queryInfo} loading={loadingQuery} />
+                                        {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
 
-                            </div>}
+                                    </div>
+                                    <HaveIBeenCompromised aliases={aliases} tcashAddr={inputAddress} />
+                                </div>
+                            }
+
                         </>}
                     {searchType === 'other' && <>
                         {showResultsSection && <div className="results-section">
@@ -198,14 +231,17 @@ function ClusterPage(props) {
                         </div>}
                         {showResultsSection &&
                             <QueryObjContext.Provider value={queryObj}>
-                                <ClusterResults
-                                    paginationData={paginationData}
-                                    setSort={setSort}
-                                    schema={schema}
+
+                                <AccordionOfResults
+                                    sectionHeader={AddressClusterHeader}
+                                    rowTitle='address'
+                                    rowBadge='entity'
+                                    Pagination={<Pagination paginationData={paginationData} getNewResults={getNewResults} />}
                                     results={pageResults}
                                     loading={loadingCluster}
-                                    getNewResults={getNewResults}
                                     aliases={aliases}
+                                    noDataComponent={NoClusters}
+                                    SortAndFilters={<SortAndFilters schema={schema} setSort={setSort} getNewResults={getNewResults} />}
                                 />
                             </QueryObjContext.Provider>
 

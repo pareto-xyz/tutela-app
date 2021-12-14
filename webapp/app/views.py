@@ -125,11 +125,8 @@ def haveibeencompromised():
         'success': 0,
     }
 
-    if not is_valid_address(address):
-        return Response(output)
-
-    if not is_valid_address(pool):
-        return Response(output)
+    if not is_valid_address(address) or not is_valid_address(pool):
+        return Response(json.dumps(output))
 
     # find all the deposit transactions made by user for this pool
     deposits: Optional[List[TornadoDeposit]] = \
