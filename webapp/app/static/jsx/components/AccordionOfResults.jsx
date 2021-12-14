@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Accordion } from 'react-bootstrap';
+import { Accordion, Toast,} from 'react-bootstrap';
 import AgnosticTable from './AgnosticTable';
-
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
-            noDataComponent, SortAndFilters, Pagination } = props;
+        noDataComponent, SortAndFilters, Pagination } = props;
     const noResults = results.length == 0;
 
     function Row({ result, idx }) {
@@ -14,29 +14,42 @@ export default function AccordionOfResults(props) {
         if (aliases[badge]) {
             badge = aliases[badge];
         }
+
+        // const [copied, setCopied] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+
         const [selected, setSelected] = useState(false);
         const expandable = Object.keys(result).length > 2;
         return (
             <Accordion.Item eventKey={idx} className={selected && 'selected-result'} key={idx}>
                 <Accordion.Header className="my-accordion-header" onClick={() => setSelected(!selected)}>
-                    <div>{title}</div>
+                    <div className="first-part-accordion-header">{title}&nbsp;
+                        <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
+                        &nbsp;&nbsp;<Toast className="copied-badge" width="100" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
+                                    Copied!
+                            </Toast>
+                    </div>
+                            
                     <div className="squashed-row">
                         <div className="accordion-badge">{badge}</div>
                         {expandable && <div className="expand-symbol">&#x25BC;</div>}
                     </div>
+
                 </Accordion.Header>
-                {expandable && 
-                <Accordion.Body className="my-accordion-body">
-                    <div className="panel-sub">result #{idx + 1}</div>
-                    <AgnosticTable keyValues={Object.entries(result)} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
-                </Accordion.Body>}
+                {expandable &&
+                    <Accordion.Body className="my-accordion-body">
+                        <div className="panel-sub">result #{idx + 1}</div>
+                        <AgnosticTable keyValues={Object.entries(result)} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
+                    </Accordion.Body>}
             </Accordion.Item>
         );
     }
 
-    return ( 
+    return (
         <div >
-            {sectionHeader && sectionHeader} 
+
+
+            {sectionHeader && sectionHeader}
             {SortAndFilters && SortAndFilters}
             {!noResults && Pagination && Pagination}
 
