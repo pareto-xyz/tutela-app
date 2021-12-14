@@ -42,7 +42,7 @@ class EulerianDiffusion:
                 counter += 1
                 infected.append(u)
                 # double graph
-                subgraph.add_edge(u, w)
+                subgraph.add_edges_from([(u, w), (w, u)])
 
                 if counter == self.subgraph_size:
                     break
@@ -87,6 +87,10 @@ class SubGraphSequences:
         pbar = tqdm(total=len(subgraphs))
         for subgraph in subgraphs:
             card: int = len(subgraph)  # cardinality
+
+            if card == 1:  # skip components of size 1
+                continue
+
             if card < self.vertex_card:
                 self.vertex_card: int = card
 
