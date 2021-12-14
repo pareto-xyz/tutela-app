@@ -191,6 +191,10 @@ RESULTS
     display: none;
 }
 
+input.form-control.rounded {
+    border-radius: 0.25rem;
+}
+
 /* results list ------------------ */
 
 .results-section {

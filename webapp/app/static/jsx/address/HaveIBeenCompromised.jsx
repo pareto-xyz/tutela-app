@@ -38,7 +38,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
                 YOUR COMPROMISED TXNS IN THIS POOL
             </div>
             <InputGroup  >
-                <FormControl
+                <FormControl className="rounded"
                     placeholder="enter deposit address to check for compromised txns"
                     onChange={(e) => {
                         e.preventDefault();
@@ -53,8 +53,10 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
                     ref={inputEl}
                     isInvalid={invalid}
                 />
-                <Form.Control.Feedback type='invalid'>Please input a valid deposit address.</Form.Control.Feedback>
+            <Form.Control.Feedback type='invalid'>Please input a valid deposit address.</Form.Control.Feedback>
+
             </InputGroup>
+
 
             {compromisedTxns && <AccordionOfResults
                 sectionHeader={numCompromised !== null && <div className="results-section">Total deposits compromised: {numCompromised}</div>}

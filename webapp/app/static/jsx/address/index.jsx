@@ -61,7 +61,6 @@ function ClusterPage(props) {
 
     const getAliases = () => {
         axios.get('/utils/aliases').then(response => {
-            // response = aliasesResponse;
             setAliases(response.data);
         }).catch(err => console.log(err));
     }
@@ -108,7 +107,7 @@ function ClusterPage(props) {
             .then(function (response) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
-                // response = example;
+                // response = schemaResponse;
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;
