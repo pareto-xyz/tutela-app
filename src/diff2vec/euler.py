@@ -1,7 +1,7 @@
 """
 Eulerian Diffusion.
 """
-import numpy as np
+import random
 from tqdm import tqdm
 import networkx as nx
 from typing import List, Dict, Set
@@ -22,30 +22,36 @@ class EulerianDiffusion:
     def __init__(self, graph: UndirectedGraph, subgraph_size: int):
         self.graph: UndirectedGraph = graph
         self.subgraph_size: int = subgraph_size
-        self.rs = np.random.RandomState(42)
 
     def _diffuse(self, node: int) -> List[int]:
         """
         Generate diffusion tree from source node.
         """
-        infected: List[int] = [node]
+        infected: Set[int] = {node}
 
         subgraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
         subgraph.add_node(node)  # start with such this node
         counter: int = 1
 
         while counter < self.subgraph_size:
-            w: int = self.rs.choice(infected)
-            neighbors: List[int] = self.graph.neighbors(w)
-            u: int = self.rs.choice(neighbors)
-            if u not in infected:
-                counter += 1
-                infected.append(u)
-                # double graph
-                subgraph.add_edges_from([(u, w), (w, u)])
+            w: int = random.sample(infected, 1)[0]
+            neighbors: Set[int] = self.graph.neighbors(w)
+            neighbors: Set[int] = neighbors - infected
 
-                if counter == self.subgraph_size:
-                    break
+            if len(neighbors) == 0:  # nothing to do!
+                break
+
+            # set subtract so we always sample a new node 
+            # rather than rejection sample
+            u: int = random.sample(neighbors, 1)[0]
+            
+            counter += 1
+            infected.add(u)
+            # double graph
+            subgraph.add_edges_from([(u, w), (w, u)])
+
+            if counter == self.subgraph_size:
+                break
 
         euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
         return euler
@@ -79,7 +85,7 @@ class SubGraphSequences:
         components: List[UndirectedGraph] = sorted(components, key=len, reverse=True)
         return components
 
-    def get_sequences(self) -> List[List[int]]:
+    def get_sequences(self) -> Tuple[List[int], List[List[int]]]:
         print('Computing connected components')
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
         paths: Dict[int, List[int]] = dict() 
@@ -102,8 +108,11 @@ class SubGraphSequences:
             pbar.update()
 
         pbar.close()
-        paths = [v for _, v in paths.items()]
-        return paths
+        
+        nodes: List[int] = list(paths.keys())
+        sequences: List[List[int]] = list(paths.values())
+
+        return nodes, sequences
 
     def get_count(self):
         return len(self.graph) + 1

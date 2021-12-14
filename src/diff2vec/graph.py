@@ -57,11 +57,11 @@ class UndirectedGraph:
     def nodes(self) -> Set[int]:
         return self._nodes
 
-    def neighbors(self, node: int) -> List[int]:
+    def neighbors(self, node: int) -> Set[int]:
         assert self.has_node(node), "Graph does not contain node"
         # since we always add backwards connections, we can just fetch
         # all the connections frmo this node.
-        return self._edges[node]
+        return set(self._edges[node])
 
     def connected_components(self) -> List[Set[int]]:
         sys.setrecursionlimit(len(self._nodes))

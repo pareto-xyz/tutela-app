@@ -1,13 +1,13 @@
 """
 Helper functions to run Diff2Vec on a NetworkX graph.
 """
-
 import numpy as np
-from typing import List
+from typing import List, Optional 
 from gensim.models import Word2Vec
 
 from src.diff2vec.graph import UndirectedGraph
 from src.diff2vec.euler import SubGraphSequences
+from src.utils.utils import to_pickle
 
 
 class Diff2Vec:
@@ -31,6 +31,7 @@ class Diff2Vec:
         workers: int = 4,             # Number of workers
         min_count: int = 1,           # Ignores all words with total frequency lower than this.
         seed: int = 42,               # Seed for the random number generator.
+        cache_dir: Optional[str] = None,
     ):
         self.window_size = window_size
         self.cover_size = cover_size
@@ -41,6 +42,7 @@ class Diff2Vec:
         self.learning_rate = learning_rate
         self.min_count = min_count
         self.seed = seed
+        self.cache_dir = cache_dir
 
     def fit(self, graph: UndirectedGraph):
         """
@@ -50,7 +52,11 @@ class Diff2Vec:
         """
         print('Computing subgraph sequences')
         sequencer: SubGraphSequences = SubGraphSequences(graph, self.cover_size)
-        sequences: List[List[int]] = sequencer.get_sequences()
+        nodes, sequences = sequencer.get_sequences()
+
+        if self.cache_dir is not None:
+            cache_file: str = os.path.join(self.cache_dir, 'cached_seqs.pickle')
+            to_pickle({'nodes': nodes, 'sequences': sequences}, cache_file) 
 
         print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(
