@@ -321,10 +321,12 @@ def search_address(request: Request) -> Response:
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
-            num_compromised = num_compromised,
-            num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
-            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
-            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            num_compromised = dict(all_reveals = num_compromised,
+                                    num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
+                                    num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
+                                    num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            ),
+            num_uncompromised = num_deposit - num_compromised
         )
         return stats
 

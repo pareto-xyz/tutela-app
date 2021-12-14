@@ -9,7 +9,7 @@ export default function TpoolOverall({data, loading}) {
         <div className="query-info ">
             <div className="panel-sub">about your input</div>
             {!loading && <div className="panel-title">
-                OVERALL INFO ON "{amount} {currency}" TORNADO CASH POOL
+                OVERALL INFO ON THE {amount} {currency} TORNADO CASH POOL
             </div>}
 
 
