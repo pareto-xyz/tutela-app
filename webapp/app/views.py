@@ -315,15 +315,18 @@ def search_address(request: Request) -> Response:
         withdraw_txs: Set[str] = set([w.hash for w in withdraws])
         num_withdraw: int = len(withdraw_txs)
 
-        num_remain: int = len(deposit_txs + withdraw_txs - reveal_txs)
-        num_remain_exact_match: int = len(deposit_txs + withdraw_txs - exact_match_txs)
-        num_remain_gas_price: int = len(deposit_txs + withdraw_txs - gas_price_txs)
-        num_remain_multi_denom: int = len(deposit_txs + withdraw_txs - multi_denom_txs)
+        all_txs: Set[str] = reveal_txs.union(withdraw_txs)
+        num_all: int = num_deposit + num_withdraw
 
-        num_compromised: int = num_deposit + num_withdraw - num_remain
-        num_compromised_exact_match = num_deposit + num_withdraw - num_remain_exact_match
-        num_compromised_gas_price = num_deposit + num_withdraw - num_remain_gas_price
-        num_compromised_multi_denom = num_deposit + num_withdraw - num_remain_multi_denom
+        num_remain: int = len(all_txs - reveal_txs)
+        num_remain_exact_match: int = len(all_txs - exact_match_txs)
+        num_remain_gas_price: int = len(all_txs - gas_price_txs)
+        num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
+
+        num_compromised: int = num_all - num_remain
+        num_compromised_exact_match = num_all - num_remain_exact_match
+        num_compromised_gas_price = num_all - num_remain_gas_price
+        num_compromised_multi_denom = num_all - num_remain_multi_denom
 
         # compute number of txs compromised by TCash heuristics
         stats: Dict[str, int] = dict(
@@ -335,7 +338,7 @@ def search_address(request: Request) -> Response:
                 num_compromised_gas_price = num_compromised_gas_price,
                 num_compromised_multi_denom = num_compromised_multi_denom,
             ),
-            num_uncompromised = num_deposit + num_withdraw - num_compromised
+            num_uncompromised = num_all - num_compromised
         )
         return stats
 
