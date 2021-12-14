@@ -315,19 +315,27 @@ def search_address(request: Request) -> Response:
         # find all txs where the recipient_address is the current user
         withdraws: Optional[List[TornadoWithdraw]] = \
             TornadoWithdraw.query.filter_by(recipient_address = address).all()
-        num_withdraw: int = len(set([w.hash for w in withdraws]))
+        withdraw_txs: Set[str] = set([w.hash for w in withdraws])
+        num_withdraw: int = len(withdraw_txs)
 
-        num_remain: int = len(deposit_txs - reveal_txs)
-        num_compromised: int = num_deposit - num_remain
+        num_remain: int = len(deposit_txs + withdraw_txs - reveal_txs)
+        num_remain_exact_match: int = len(deposit_txs + withdraw_txs - exact_match_txs)
+        num_remain_gas_price: int = len(deposit_txs + withdraw_txs - gas_price_txs)
+        num_remain_multi_denom: int = len(deposit_txs + withdraw_txs - multi_denom_txs)
+
+        num_compromised: int = num_deposit + num_withdraw - num_remain
+        num_compromised_exact_match = num_deposit + num_withdraw - num_remain_exact_match
+        num_compromised_gas_price = num_deposit + num_withdraw - num_remain_gas_price
+        num_compromised_multi_denom = num_deposit + num_withdraw - num_remain_multi_denom
 
         # compute number of txs compromised by TCash heuristics
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
             num_compromised = num_compromised,
-            num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
-            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
-            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            num_compromised_exact_match = num_compromised_exact_match,
+            num_compromised_gas_price = num_compromised_gas_price,
+            num_compromised_multi_denom = num_compromised_multi_denom,
         )
         return stats
 
