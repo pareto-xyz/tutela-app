@@ -7,7 +7,7 @@ from src.diff2vec.diff2vec import Diff2Vec
 
 def main(args: Any):
     print('Loading data from CSV')
-    data: pd.DataFrame = pd.read_csv(args.data_csv, nrows=1000000)
+    data: pd.DataFrame = pd.read_csv(args.data_csv)
     print('Building graph')
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
