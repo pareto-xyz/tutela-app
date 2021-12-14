@@ -83,11 +83,18 @@ class UndirectedGraph:
     def subgraph(self, component: Set[int]):
         """
         Produce a UndirectedGraph instance with only the nodes in the component.
-        Any outward edges are removed. We preserve the names in original graph.
+        We preserve the names in original graph. 
         """
         subgraph: UndirectedGraph = UndirectedGraph()
         subgraph.add_nodes_from(component)
-        # TODO
+
+        for node in component:
+            links: Set[int] = set(self._edges[node])
+            links: Set[int] = links.intersection(component)
+            subgraph._edges[node] = list(links) 
+
+        return subgraph
+
 
     def is_connected(self) -> bool:
         """
