@@ -321,10 +321,12 @@ def search_address(request: Request) -> Response:
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
-            num_compromised = num_compromised,
-            num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
-            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
-            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            num_compromised = dict(all_reveals = num_compromised,
+                                    num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
+                                    num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
+                                    num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            ),
+            num_uncompromised = num_deposit - num_compromised
         )
         return stats
 
@@ -543,10 +545,13 @@ def search_tornado(request: Request) -> Response:
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
-        'num_compromised': num_compromised,
-        'exact_match': num_exact_match_reveals,
-        'gas_price': num_gas_price_reveals,
-        'multi_denom': num_multi_denom_reveals,
+        'num_compromised': {
+            'all_reveals': num_compromised,
+            'exact_match': num_exact_match_reveals,
+            'gas_price': num_gas_price_reveals,
+            'multi_denom': num_multi_denom_reveals,
+        },
+        'num_uncompromised': num_deposits - num_compromised
     }
 
     output['data']['query']['metadata']['amount'] = int(amount)

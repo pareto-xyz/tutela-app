@@ -229,6 +229,22 @@ input.form-control.rounded {
     margin-bottom: 10px;
 }
 
+.first-part-accordion-header {
+    display: flex;
+}
+
+.etherscan-link {
+    display: flex;
+    width: 100%;
+    justify-content: end;
+    padding-right: 10px;
+}
+
+.copied-badge {
+    color: var(--lightgrey);
+    background-color: transparent;
+}
+
 #results-table {
     width: 100%;
 }

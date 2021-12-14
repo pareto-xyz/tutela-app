@@ -7,7 +7,7 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
             <tbody>
                 {keyValues.map((entry, idx) => {
                     let [k, value] = entry;
-                    if (toIgnore.has(k) || typeof(value) === 'object' || typeof(k) === 'object') return < ></>;
+                    if (toIgnore.has(k) || typeof(k) === 'object' || value === null) return < ></>;
                     if (aliases[k]) {
                         k = aliases[k];
                     }
@@ -17,7 +17,7 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                     return (
                         <tr className="detail-row" key={idx}>
                             <td>{k}</td>
-                            <td>{value}</td>
+                            <td>{typeof(value) === 'object' ? <AgnosticTable keyValues={Object.entries(value)} aliases={aliases} /> : value}</td>
                         </tr>)
                 }
                 )}
