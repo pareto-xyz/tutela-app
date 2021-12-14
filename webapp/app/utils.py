@@ -10,7 +10,7 @@ from sqlalchemy import or_, and_
 # CONSTS for schema
 ADDRESS_COL: str = 'address'
 ENTITY_COL: str = 'entity'
-CONF_COL: str = 'confidence'
+CONF_COL: str = 'conf'
 NAME_COL: str = 'name'
 HEURISTIC_COL: str = 'heuristic'
 # --

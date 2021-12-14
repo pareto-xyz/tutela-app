@@ -20,7 +20,7 @@ function NoClusters() {
 
 
 export default function ClusterResults(props) {
-    const { results, loading, sortBy, descendingSort, schema, setSort, getNewResults, paginationData, aliases } = props;
+    const { results, loading, schema, setSort, getNewResults, paginationData, aliases } = props;
     const noResults = results.length == 0;
 
     function Row({ result, idx }) {
@@ -50,7 +50,7 @@ export default function ClusterResults(props) {
                     LINKED ADDRESSES
                 </div>
             </div>
-            <SortAndFilters schema={schema} setSort={setSort} sortBy={sortBy} descendingSort={descendingSort} getNewResults={getNewResults} />
+            <SortAndFilters schema={schema} setSort={setSort} getNewResults={getNewResults} />
             {!noResults && <Pagination paginationData={paginationData} getNewResults={getNewResults} />}
 
             <div >
