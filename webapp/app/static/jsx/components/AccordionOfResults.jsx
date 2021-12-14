@@ -71,6 +71,7 @@ export default function AccordionOfResults(props) {
                     {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
                 </Accordion>
             </div>
+            {!noResults && Pagination && Pagination}
         </div>
     )
 }
