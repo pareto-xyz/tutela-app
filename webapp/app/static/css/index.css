@@ -245,6 +245,5 @@ footer {
     padding-top: 30px;
     height: 100px;
     display: flex;
-    flex-direction: column;
     align-items: start;
 }

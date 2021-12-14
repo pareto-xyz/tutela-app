@@ -108,6 +108,7 @@ function ClusterPage(props) {
                 setLoadingQuery(false);
                 setLoadingCluster(false);
                 // response = schemaResponse;
+                // response = example;
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;
@@ -178,7 +179,7 @@ function ClusterPage(props) {
         <div>
             <Header current={'address'} />
 
-            <div className="container halved-bar">
+            <div className="container ">
                 <div>
                     {firstView && <div id="instructions">
                         Enter an ethereum address to see likely connected ethereum addresses (ie. its cluster)
@@ -250,7 +251,7 @@ function ClusterPage(props) {
                 </div >
 
             </div>
-            <Footer />
+                <Footer />
 
         </div>
     )
