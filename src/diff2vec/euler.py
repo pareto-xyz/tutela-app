@@ -24,7 +24,7 @@ class EulerianDiffusion:
         self.subgraph_size: int = subgraph_size
         self.rs = np.random.RandomState(42)
 
-    def _diffuse(self, node: str) -> List[str]:
+    def _diffuse(self, node: int) -> List[int]:
         """
         Generate diffusion tree from source node.
         """
@@ -35,9 +35,9 @@ class EulerianDiffusion:
         counter: int = 1
 
         while counter < self.subgraph_size:
-            w: str = self.rs.choice(infected)
+            w: int = self.rs.choice(infected)
             neighbors: List[int] = self.graph.neighbors(w)
-            u: str = self.rs.choice(neighbors)
+            u: int = self.rs.choice(neighbors)
             if u not in infected:
                 counter += 1
                 infected.append(u)
@@ -47,13 +47,13 @@ class EulerianDiffusion:
                 if counter == self.subgraph_size:
                     break
 
-        euler: List[str] = [u for u,_ in nx.eulerian_circuit(subgraph, node)]
+        euler: List[int] = [u for u,_ in nx.eulerian_circuit(subgraph, node)]
         return euler
 
-    def diffuse(self) -> Dict[str, List[str]]:
-        circuit: Dict[str, List[str]] = {}
+    def diffuse(self) -> Dict[int, List[int]]:
+        circuit: Dict[int, List[int]] = {}
         for node in self.graph.nodes():
-            seq: List[str] = self._diffuse(node)
+            seq: List[int] = self._diffuse(node)
             circuit[node] = seq
 
         return circuit
@@ -79,10 +79,10 @@ class SubGraphSequences:
         components: List[UndirectedGraph] = sorted(components, key=len, reverse=True)
         return components
 
-    def get_sequences(self):
+    def get_sequences(self) -> List[List[int]]:
         print('Computing connected components')
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
-        paths: Dict[str, List[str]] = dict() 
+        paths: Dict[int, List[int]] = dict() 
 
         pbar = tqdm(total=len(subgraphs))
         for subgraph in subgraphs:
@@ -92,7 +92,7 @@ class SubGraphSequences:
 
             euler: EulerianDiffusion = \
                 EulerianDiffusion(subgraph, self.vertex_card)
-            circuits: Dict[str, List[str]] = euler.diffuse()
+            circuits: Dict[int, List[int]] = euler.diffuse()
 
             paths.update(circuits)
             pbar.update()

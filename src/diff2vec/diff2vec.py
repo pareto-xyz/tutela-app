@@ -50,7 +50,7 @@ class Diff2Vec:
         """
         print('Computing subgraph sequences')
         sequencer: SubGraphSequences = SubGraphSequences(graph, self.cover_size)
-        sequences: List[str] = sequencer.get_sequences()
+        sequences: List[List[int]] = sequencer.get_sequences()
 
         print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(
