@@ -125,11 +125,8 @@ def haveibeencompromised():
         'success': 0,
     }
 
-    if not is_valid_address(address):
-        return Response(output)
-
-    if not is_valid_address(pool):
-        return Response(output)
+    if not is_valid_address(address) or not is_valid_address(pool):
+        return Response(json.dumps(output))
 
     # find all the deposit transactions made by user for this pool
     deposits: Optional[List[TornadoDeposit]] = \
@@ -332,10 +329,13 @@ def search_address(request: Request) -> Response:
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
-            num_compromised = num_compromised,
-            num_compromised_exact_match = num_compromised_exact_match,
-            num_compromised_gas_price = num_compromised_gas_price,
-            num_compromised_multi_denom = num_compromised_multi_denom,
+            num_compromised = dict(
+                all_reveals = num_compromised,
+                num_compromised_exact_match = num_compromised_exact_match,
+                num_compromised_gas_price = num_compromised_gas_price,
+                num_compromised_multi_denom = num_compromised_multi_denom,
+            ),
+            num_uncompromised = num_deposit + num_withdraw - num_compromised
         )
         return stats
 
@@ -554,10 +554,13 @@ def search_tornado(request: Request) -> Response:
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
-        'num_compromised': num_compromised,
-        'exact_match': num_exact_match_reveals,
-        'gas_price': num_gas_price_reveals,
-        'multi_denom': num_multi_denom_reveals,
+        'num_compromised': {
+            'all_reveals': num_compromised,
+            'exact_match': num_exact_match_reveals,
+            'gas_price': num_gas_price_reveals,
+            'multi_denom': num_multi_denom_reveals,
+        },
+        'num_uncompromised': num_deposits - num_compromised
     }
 
     output['data']['query']['metadata']['amount'] = int(amount)
