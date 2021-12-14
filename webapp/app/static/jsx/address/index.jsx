@@ -61,7 +61,6 @@ function ClusterPage(props) {
 
     const getAliases = () => {
         axios.get('/utils/aliases').then(response => {
-            // response = aliasesResponse;
             setAliases(response.data);
         }).catch(err => console.log(err));
     }
