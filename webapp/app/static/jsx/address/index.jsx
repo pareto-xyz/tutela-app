@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { Form, FormControl, InputGroup } from 'react-bootstrap';
 import { isValid, buildQueryString } from '../components/utils';
 import axios from 'axios';
@@ -8,7 +9,7 @@ import QueryInfo from './QueryInfo';
 import TornadoInfo from './TornadoInfo';
 import schemaResponse from '../../data/schema';
 import TpoolOverall from './TpoolOverall';
-import TpoolStats from './TpoolStats'
+import TpoolStats from './TpoolStats';
 import { QueryObjContext } from '../components/Contexts';
 
 import ClusterResults from './ClusterResults';
@@ -212,7 +213,10 @@ function ClusterPage(props) {
                     </>}
 
                 </div >
+
             </div>
+            <Footer />
+
         </div>
     )
 }
