@@ -20,7 +20,7 @@ def query_web3(address: str, w3: Web3, ns: ENS) -> Dict[str, Any]:
     )
 
 
-def get_ens_address(name: str, ns: ENS) -> str:
+def get_ens_address(name: str, ns: ENS) -> Optional[str]:
     return ns.address(name)
 
 
