@@ -28,6 +28,7 @@ GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
 SAME_ADDR_HEUR: str = 'address_match'
+LINKED_TX_HEUR: str = 'linked_transaction'
 
 
 def safe_int(x, default=0):
@@ -75,6 +76,7 @@ def get_anonymity_score(
     slope is a hyperparameter controlling the slope of the TanH.
     """
     return 1 - np.tanh(slope * np.dot(cluster_confs, cluster_sizes))
+
 
 def get_display_aliases() -> Dict[str, str]:
     return {
@@ -174,6 +176,8 @@ def heuristic_to_str(s: int) -> str:
         return GAS_PRICE_HEUR
     elif s == 3:
         return SAME_NUM_TX_HEUR
+    elif s == 4:
+        return LINKED_TX_HEUR
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -187,6 +191,8 @@ def heuristic_to_int(s: str) -> int:
         return 2
     elif s == SAME_NUM_TX_HEUR:
         return 3
+    elif s == LINKED_TX_HEUR:
+        return 4
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -300,6 +306,7 @@ def default_tornado_response() -> Dict[str, Any]:
                         'exact_match': 0,
                         'gas_price': 0,
                         'multi_denom': 0,
+                        'linked_tx': 0,
                     }
                 },
             },
@@ -321,6 +328,7 @@ def default_tornado_response() -> Dict[str, Any]:
                             SAME_ADDR_HEUR, 
                             GAS_PRICE_HEUR, 
                             SAME_NUM_TX_HEUR,
+                            LINKED_TX_HEUR,
                         ],
                     },
                 },
