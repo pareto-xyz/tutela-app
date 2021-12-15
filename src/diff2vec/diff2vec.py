@@ -1,7 +1,7 @@
 """
 Helper functions to run Diff2Vec on a NetworkX graph.
 """
-import os
+import os, sys
 import numpy as np
 from typing import Optional 
 from gensim.models import Word2Vec
@@ -58,6 +58,8 @@ class Diff2Vec:
         if self.cache_dir is not None:
             cache_file: str = os.path.join(self.cache_dir, 'cached_seqs.pickle')
             to_pickle({'nodes': nodes, 'sequences': sequences}, cache_file) 
+        
+        sys.exit(0)  # remove me
 
         print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(

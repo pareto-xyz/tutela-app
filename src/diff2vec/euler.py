@@ -56,12 +56,14 @@ class EulerianDiffusion:
         euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
         return euler
 
-    def diffuse(self) -> Dict[int, List[int]]:
+    def diffuse(self, verbose: bool = False) -> Dict[int, List[int]]:
         circuit: Dict[int, List[int]] = {}
+        if verbose: pbar = tqdm(total=len(self.graph))
         for node in self.graph.nodes():
             seq: List[int] = self._diffuse(node)
             circuit[node] = seq
-
+            if verbose: pbar.update()
+        if verbose: pbar.close()
         return circuit
 
 
@@ -102,7 +104,7 @@ class SubGraphSequences:
 
             euler: EulerianDiffusion = \
                 EulerianDiffusion(subgraph, self.vertex_card)
-            circuits: Dict[int, List[int]] = euler.diffuse()
+            circuits: Dict[int, List[int]] = euler.diffuse(verbose=len(subgraph) > 10000)
 
             paths.update(circuits)
             pbar.update()
