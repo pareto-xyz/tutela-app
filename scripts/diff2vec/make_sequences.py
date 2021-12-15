@@ -9,13 +9,13 @@ from src.utils.utils import to_pickle
 
 def main(args: Any):
     print('Loading data from CSV')
-    data: pd.DataFrame = pd.read_csv(args.data_csv)
+    data: pd.DataFrame = pd.read_csv(args.data_csv, nrows=10000)
     print('Building graph')
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
 
     sequence_file: str = os.path.join(
-        args.cache_dir, 'sequences_{args.cover_size}.jsonl')
+        args.cache_dir, f'sequences-{args.cover_size}.jsonl')
 
     print('Computing subgraph sequences')
     sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)

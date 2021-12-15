@@ -61,7 +61,7 @@ class EulerianDiffusion:
         if verbose: pbar = tqdm(total=len(self.graph))
         for node in self.graph.nodes():
             seq: List[int] = self._diffuse(node)
-            writer.write(json.dumps((node, seq)))
+            writer.write(json.dumps(seq))
             if verbose: pbar.update()
         if verbose: pbar.close()
 
@@ -105,8 +105,8 @@ class SubGraphSequences:
                     EulerianDiffusion(subgraph, self.vertex_card)
                 euler.diffuse(writer, verbose=len(subgraph) > 10000)
 
-            pbar.update()
-        pbar.close()
+                pbar.update()
+            pbar.close()
 
     def get_count(self):
         return len(self.graph) + 1
