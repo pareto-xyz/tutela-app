@@ -25,7 +25,9 @@ def get_ens_address(name: str, ns: ENS) -> Optional[str]:
 
 
 def resolve_address(input_: str, ns: ENS) -> str:
-    address: Optional[str] = get_ens_address(input_, ns)
-    if address is None:
-        address: str = input_
+    address: str = input_
+    if '.ens' in input_:  # only waste compute it .ens is in it
+        address: Optional[str] = get_ens_address(input_, ns)
+        if address is None:
+            address: str = input_  # punt
     return address
