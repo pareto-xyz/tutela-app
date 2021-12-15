@@ -11,7 +11,7 @@ const Spinner = (<div id="spinner" className="justify-content-center">
 
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
-        noDataComponent, SortAndFilters, Pagination } = props;
+        noDataComponent, SortAndFilters, Pagination, startIndex=0 } = props;
     const noResults = results.length == 0;
     
     function Row({ result, idx }) {
@@ -45,7 +45,7 @@ export default function AccordionOfResults(props) {
                 </Accordion.Header>
                 {expandable &&
                     <Accordion.Body className="my-accordion-body">
-                        <div className="panel-sub">result #{idx + 1}</div>
+                        <div className="panel-sub">result #{startIndex + idx + 1}</div>
                         <AgnosticTable keyValues={Object.entries(result)} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
                         <div className="etherscan-link">
                             {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}

@@ -241,6 +241,7 @@ function ClusterPage(props) {
                                     loading={loadingCluster}
                                     aliases={aliases}
                                     noDataComponent={NoClusters}
+                                    startIndex={paginationData.page * paginationData.limit}
                                     SortAndFilters={<SortAndFilters schema={schema} setSort={setSort} getNewResults={getNewResults} />}
                                 />
                             </QueryObjContext.Provider>
