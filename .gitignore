@@ -14,7 +14,6 @@ notebooks/
 **.wsgi
 webapp/app/static/node_modules/
 webapp/app/migrations/
-webapp/app/static/dist/bundle.js
 dump.rdb
 **/bundle.js
 **.log
