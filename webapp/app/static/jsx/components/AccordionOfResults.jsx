@@ -3,11 +3,17 @@ import { Accordion, Toast, } from 'react-bootstrap';
 import AgnosticTable from './AgnosticTable';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
+const Spinner = (<div id="spinner" className="justify-content-center">
+    <div className="spinner-border" role="status">
+        <span className="sr-only">Loading...</span>
+    </div>
+</div>)
+
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
         noDataComponent, SortAndFilters, Pagination } = props;
     const noResults = results.length == 0;
-
+    
     function Row({ result, idx }) {
         const title = result[rowTitle];
         let badge = result[rowBadge];
@@ -58,18 +64,19 @@ export default function AccordionOfResults(props) {
             {!noResults && Pagination && Pagination}
 
             <div >
-                {(loading || noResults) && <div className="results">
+                {(loading || noResults) && <div className="results loading">
 
-                    {loading ? <div id="spinner" className="justify-content-center">
-                        <div className="spinner-border" role="status">
-                            <span className="sr-only">Loading...</span>
-                        </div>
-                    </div> : (noResults && noDataComponent)
+                    {loading ? Spinner : (noResults && noDataComponent)
                     }
                 </div>}
                 <Accordion className="overall-accordion" >
                     {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
+
                 </Accordion>
+
+            </div>
+            <div className="results loading">
+                {loading && Spinner }
             </div>
             {!noResults && Pagination && Pagination}
         </div>
