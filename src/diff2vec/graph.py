@@ -2,12 +2,13 @@
 NetworkX does not run within 10 hours. We may need to make our own lightweight 
 Graph library. 
 """
+import os
 import sys
 import json
 import h5py
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Set, Tuple, Dict, Union
+from typing import List, Set, Tuple, Dict, Union, Any
 
 
 class UndirectedGraph:
@@ -63,7 +64,7 @@ class UndirectedGraph:
         assert self.has_node(node), "Graph does not contain node"
         # since we always add backwards connections, we can just fetch
         # all the connections frmo this node.
-        return set(self._edges[node])
+        return set(self._edges[node]) - {node}
 
     def connected_components(self) -> List[Set[int]]:
         sys.setrecursionlimit(len(self._nodes))
@@ -91,7 +92,7 @@ class UndirectedGraph:
         subgraph.add_nodes_from(component)
 
         for node in component:
-            links: Set[int] = set(self._edges[node])
+            links: Set[int] = self.neighbors(node)
             links: Set[int] = links.intersection(component)
             subgraph._edges[node] = list(links) 
 
@@ -161,6 +162,62 @@ class UndirectedGraph:
 
         with open(key_file, 'w') as fp:
             json.dump(self._nodes, fp)
+
+    def __len__(self) -> int:
+        return len(self._nodes)
+
+
+class UndirectedGraphH5:
+    """
+    Like UndirectedGraph but memory efficient so only works from an h5 file.
+    Nodes must be integers! We do not assume contiguous nodes.
+    """
+    def __init__(self, nodes_file: str, edges_file: str):
+        self._nodes_file: str = nodes_file
+        self._edges_file: str = edges_file
+
+        self._nodes: Set[int] = set(json.load(open(nodes_file)))
+        self._edges_fp: Any = h5py.File(edges_file, 'r')
+
+    def has_node(self, node: int) -> bool:
+        return node in self._nodes
+
+    def nodes(self) -> Set[int]:
+        return self._nodes
+
+    def neighbors(self, node: int) -> Set[int]:
+        assert self.has_node(node), "Graph does not contain node"
+        return set(self._edges_fp[str(node)]) - {node}  # no self loops
+
+    def connected_components(self, out_dir: str) -> List[Set[int]]:
+        sys.setrecursionlimit(len(self._nodes))
+        visited: Dict[int, bool] = defaultdict(lambda: False)
+        count: int = 0
+
+        pbar = tqdm(total=len(self._nodes))
+        for node in self._nodes:
+            if not visited[node]:
+                component: List[int] = self._dfs([], node, visited)
+                component: Set[int] = set(component)
+                subgraph: UndirectedGraph = self.subgraph(component)
+                sub_nodes_file: str = os.path.join(out_dir, 'subgraph{count}.nodes.json')
+                sub_edges_file: str = os.path.join(out_dir, 'subgraph{count}.edges.h5')
+                subgraph.to_h5(sub_nodes_file, sub_edges_file)
+                count += 1
+
+            pbar.update()
+        pbar.close()
+
+    def subgraph(self, component: Set[int]):
+        subgraph: UndirectedGraph = UndirectedGraph()
+        subgraph.add_nodes_from(component)
+
+        for node in component:
+            links: Set[int] = self.neighbors(node)
+            links: Set[int] = links.intersection(component)
+            subgraph._edges[node] = list(links) 
+
+        return subgraph
 
     def __len__(self) -> int:
         return len(self._nodes)
