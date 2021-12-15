@@ -1,14 +1,9 @@
 """
 Helper functions to run Diff2Vec on a NetworkX graph.
 """
-import os, sys
 import numpy as np
-from typing import Optional 
+from typing import List 
 from gensim.models import Word2Vec
-
-from src.diff2vec.graph import UndirectedGraph
-from src.diff2vec.euler import SubGraphSequences
-from src.utils.utils import to_pickle
 
 
 class Diff2Vec:
@@ -26,16 +21,13 @@ class Diff2Vec:
         self,
         dimensions: int = 128,        # Dimensionality of the word vectors.
         window_size: int = 10,        # Maximum distance between the current and predicted word within a sentence.
-        cover_size: int = 80,         # Number of nodes in diffusion.
         epochs: int = 1,              # Number of iterations (epochs) over the corpus.
         learning_rate: float = 0.05,  # The initial learning rate.
         workers: int = 4,             # Number of workers
         min_count: int = 1,           # Ignores all words with total frequency lower than this.
         seed: int = 42,               # Seed for the random number generator.
-        cache_dir: Optional[str] = None,
     ):
         self.window_size = window_size
-        self.cover_size = cover_size
         self.dimensions = dimensions
         self.workers = workers
         self.window_size = window_size
@@ -43,24 +35,13 @@ class Diff2Vec:
         self.learning_rate = learning_rate
         self.min_count = min_count
         self.seed = seed
-        self.cache_dir = cache_dir
 
-    def fit(self, graph: UndirectedGraph):
+    def fit(self, sequences: List[List[int]]):
         """
         Fitting a Diff2Vec model.
         Arg types:
             * **graph** *(NetworkX graph)* - The graph to be embedded.
         """
-        print('Computing subgraph sequences')
-        sequencer: SubGraphSequences = SubGraphSequences(graph, self.cover_size)
-        nodes, sequences = sequencer.get_sequences()
-
-        if self.cache_dir is not None:
-            cache_file: str = os.path.join(self.cache_dir, 'cached_seqs.pickle')
-            to_pickle({'nodes': nodes, 'sequences': sequences}, cache_file) 
-        
-        sys.exit(0)  # remove me
-
         print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(
             sequences,
@@ -74,7 +55,7 @@ class Diff2Vec:
             seed = self.seed,
         )
 
-        num_nodes: int = len(graph)
+        num_nodes: int = len(sequences)
 
         print('Fetching embeddings')
         self._embedding = [model.wv[str(n)] for n in range(num_nodes)]
