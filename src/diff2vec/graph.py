@@ -10,6 +10,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from typing import List, Set, Tuple, Dict, Union, Any
 
+from src.utils.utils import to_json
+
 
 class UndirectedGraph:
     """
@@ -160,9 +162,7 @@ class UndirectedGraph:
                 pbar.update()
             pbar.close()
 
-        breakpoint()
-        with open(key_file, 'w') as fp:
-            json.dump(self._nodes, fp)
+        to_json(self._nodes, key_file)
 
     def __len__(self) -> int:
         return len(self._nodes)
@@ -179,6 +179,7 @@ class UndirectedGraphH5:
 
         self._nodes: Set[int] = set(json.load(open(nodes_file)))
         self._edges_fp: Any = h5py.File(edges_file, 'r')
+        self._component_dir = None
 
     def has_node(self, node: int) -> bool:
         return node in self._nodes
@@ -194,6 +195,7 @@ class UndirectedGraphH5:
         sys.setrecursionlimit(len(self._nodes))
         visited: Dict[int, bool] = defaultdict(lambda: False)
         count: int = 0
+        sizes: List[int] = []
 
         pbar = tqdm(total=len(self._nodes))
         for node in self._nodes:
@@ -201,13 +203,17 @@ class UndirectedGraphH5:
                 component: List[int] = self._dfs([], node, visited)
                 component: Set[int] = set(component)
                 subgraph: UndirectedGraph = self.subgraph(component)
-                sub_nodes_file: str = os.path.join(out_dir, 'subgraph{count}.nodes.json')
-                sub_edges_file: str = os.path.join(out_dir, 'subgraph{count}.edges.h5')
+                sub_nodes_file: str = os.path.join(out_dir, f'component{count}-nodes.json')
+                sub_edges_file: str = os.path.join(out_dir, f'component{count}-edges.h5')
                 subgraph.to_h5(sub_nodes_file, sub_edges_file)
+                sizes[count] = len(component)
                 count += 1
 
             pbar.update()
         pbar.close()
+
+        to_json(sizes, os.path.join(out_dir, 'component-sizes.json'))
+        self._component_dir: str = out_dir
 
     def subgraph(self, component: Set[int]):
         subgraph: UndirectedGraph = UndirectedGraph()

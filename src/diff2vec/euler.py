@@ -1,12 +1,14 @@
 """
 Eulerian Diffusion.
 """
-import random
+import os, random
+import numpy as np
 import json, jsonlines
 from tqdm import tqdm
 import networkx as nx
-from typing import List, Dict, Set, Tuple
-from src.diff2vec.graph import UndirectedGraph
+from typing import List, Dict, Set, Union
+from src.diff2vec.graph import UndirectedGraph, UndirectedGraphH5
+from src.utils.utils import from_json
 
 
 class EulerianDiffusion:
@@ -14,15 +16,18 @@ class EulerianDiffusion:
     Algorithm 1 in https://arxiv.org/pdf/2001.07463.pdf.
 
     This computes an Eulerian sequence from a Graph object. 
-    The parameter `subgraph_size` represents the size of subgraph 
+    The parameter `cover_size` represents the size of subgraph 
     to be created; also denoted by `l` in the paper.
 
     Assumes all nodes in the graph are integers.
     """
 
-    def __init__(self, graph: UndirectedGraph, subgraph_size: int):
-        self.graph: UndirectedGraph = graph
-        self.subgraph_size: int = subgraph_size
+    def __init__(
+        self,
+        graph: Union[UndirectedGraph, UndirectedGraphH5],
+        cover_size: int):
+        self.graph: Union[UndirectedGraph, UndirectedGraphH5] = graph
+        self.cover_size: int = cover_size
 
     def _diffuse(self, node: int) -> List[int]:
         """
@@ -30,11 +35,11 @@ class EulerianDiffusion:
         """
         infected: Set[int] = {node}
 
-        subgraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
+        subgraph: nx.DiGraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
         subgraph.add_node(node)  # start with such this node
         counter: int = 1
 
-        while counter < self.subgraph_size:
+        while counter < self.cover_size:
             w: int = random.sample(infected, 1)[0]
             neighbors: Set[int] = self.graph.neighbors(w)
             neighbors: Set[int] = neighbors - infected
@@ -51,13 +56,16 @@ class EulerianDiffusion:
             # double graph
             subgraph.add_edges_from([(u, w), (w, u)])
 
-            if counter == self.subgraph_size:
+            if counter == self.cover_size:
                 break
 
         euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
         return euler
 
-    def diffuse(self, writer: jsonlines.Writer, verbose: bool = False) -> Dict[int, List[int]]:
+    def diffuse(
+        self,
+        writer: jsonlines.Writer,
+        verbose: bool = False) -> Dict[int, List[int]]:
         if verbose: pbar = tqdm(total=len(self.graph))
         for node in self.graph.nodes():
             seq: List[int] = self._diffuse(node)
@@ -77,7 +85,7 @@ class SubGraphSequences:
         self.graph: UndirectedGraph = graph
         self.vertex_card: int = vertex_card  # number of nodes per sample
 
-    def extract_components(self, graph) -> List[UndirectedGraph]:
+    def extract_components(self, graph: UndirectedGraph) -> List[UndirectedGraph]:
         # find subgraphs of network as separate graphs
         components: List[Set[int]] = graph.connected_components()
         components: List[UndirectedGraph] = \
@@ -86,13 +94,65 @@ class SubGraphSequences:
         components: List[UndirectedGraph] = sorted(components, key=len, reverse=True)
         return components
 
-    def get_sequences(self, out_file: str) -> Tuple[List[int], List[List[int]]]:
+    def get_sequences(self, out_file: str):
         print('Computing connected components')
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
 
         pbar = tqdm(total=len(subgraphs))
         with jsonlines.open(out_file, mode='w') as writer:
             for subgraph in subgraphs:
+                card: int = len(subgraph)  # cardinality
+
+                if card == 1:  # skip components of size 1
+                    continue
+
+                if card < self.vertex_card:
+                    self.vertex_card: int = card
+
+                euler: EulerianDiffusion = \
+                    EulerianDiffusion(subgraph, self.vertex_card)
+                euler.diffuse(writer, verbose=len(subgraph) > 10000)
+
+                pbar.update()
+            pbar.close()
+
+    def get_count(self):
+        return len(self.graph) + 1
+
+
+class SubGraphSequencesH5:
+    """
+    Like SubGraphSequences but uses h5 files rather than memory.
+    """
+    def __init__(self, graph: UndirectedGraphH5, vertex_card: int):
+        self.graph: UndirectedGraphH5 = graph
+        self.vertex_card: int = vertex_card  # number of nodes per sample
+
+    def extract_components(
+        self, graph: UndirectedGraphH5, component_dir: str) -> List[int]:
+        graph.connected_components(component_dir)
+        assert graph._component_dir is not None, "how is this possible?"
+
+        component_sizes: List[int] = \
+            from_json(os.path.join(component_dir, 'component-sizes.json'))
+        return component_sizes
+
+    def get_sequences(self, out_file: str):
+        print('Computing connected components')
+        component_sizes: List[int] = self.extract_components(self.graph)
+        component_order: List[int] = np.argsort(component_sizes)[::-1].tolist()
+        num_components: int = len(component_sizes)
+
+        pbar = tqdm(total=num_components)
+        with jsonlines.open(out_file, mode='w') as writer:
+            for i in range(num_components):
+                index: int = component_order[i]
+                nodes_file: str = f'component{index}-nodes.json'
+                edges_file: str = f'component{index}-edges.h5'
+
+                subgraph: UndirectedGraphH5 = \
+                    UndirectedGraphH5(nodes_file, edges_file)
+
                 card: int = len(subgraph)  # cardinality
 
                 if card == 1:  # skip components of size 1
