@@ -182,7 +182,7 @@ function ClusterPage(props) {
             <div className="container ">
                 <div>
                     {firstView && <div id="instructions">
-                        Enter an ethereum address (or ens name) to see likely connected ethereum addresses (ie. its cluster)
+                        Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
                         based on public data on previous transactions.
                     </div>}
 
@@ -194,7 +194,7 @@ function ClusterPage(props) {
                             submitInputAddress();
                         }}
                             onChange={onChangeInputAddress}
-                            placeholder='eg. 0x000000000000000.......... or ___.eth '
+                            placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
                             className="search-bar"
                             isInvalid={invalid}
                             ref={inputEl}
