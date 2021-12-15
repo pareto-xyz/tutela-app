@@ -9,7 +9,7 @@ from src.utils.utils import to_pickle
 
 def main(args: Any):
     print('Loading data from CSV')
-    data: pd.DataFrame = pd.read_csv(args.data_csv, nrows=10000)
+    data: pd.DataFrame = pd.read_csv(args.data_csv)
     print('Building graph')
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
