@@ -125,11 +125,8 @@ def haveibeencompromised():
         'success': 0,
     }
 
-    if not is_valid_address(address):
-        return Response(output)
-
-    if not is_valid_address(pool):
-        return Response(output)
+    if not is_valid_address(address) or not is_valid_address(pool):
+        return Response(json.dumps(output))
 
     # find all the deposit transactions made by user for this pool
     deposits: Optional[List[TornadoDeposit]] = \
@@ -315,19 +312,33 @@ def search_address(request: Request) -> Response:
         # find all txs where the recipient_address is the current user
         withdraws: Optional[List[TornadoWithdraw]] = \
             TornadoWithdraw.query.filter_by(recipient_address = address).all()
-        num_withdraw: int = len(set([w.hash for w in withdraws]))
+        withdraw_txs: Set[str] = set([w.hash for w in withdraws])
+        num_withdraw: int = len(withdraw_txs)
 
-        num_remain: int = len(deposit_txs - reveal_txs)
-        num_compromised: int = num_deposit - num_remain
+        all_txs: Set[str] = deposit_txs.union(withdraw_txs)
+        num_all: int = num_deposit + num_withdraw
+
+        num_remain: int = len(all_txs - reveal_txs)
+        num_remain_exact_match: int = len(all_txs - exact_match_txs)
+        num_remain_gas_price: int = len(all_txs - gas_price_txs)
+        num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
+
+        num_compromised: int = num_all - num_remain
+        num_compromised_exact_match = num_all - num_remain_exact_match
+        num_compromised_gas_price = num_all - num_remain_gas_price
+        num_compromised_multi_denom = num_all - num_remain_multi_denom
 
         # compute number of txs compromised by TCash heuristics
         stats: Dict[str, int] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
-            num_compromised = num_compromised,
-            num_compromised_exact_match = num_deposit - len(deposit_txs - exact_match_txs),
-            num_compromised_gas_price = num_deposit - len(deposit_txs - gas_price_txs),
-            num_compromised_multi_denom = num_deposit - len(deposit_txs - multi_denom_txs),
+            num_compromised = dict(
+                all_reveals = num_compromised,
+                num_compromised_exact_match = num_compromised_exact_match,
+                num_compromised_gas_price = num_compromised_gas_price,
+                num_compromised_multi_denom = num_compromised_multi_denom,
+            ),
+            num_uncompromised = num_all - num_compromised
         )
         return stats
 
@@ -546,10 +557,13 @@ def search_tornado(request: Request) -> Response:
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
-        'num_compromised': num_compromised,
-        'exact_match': num_exact_match_reveals,
-        'gas_price': num_gas_price_reveals,
-        'multi_denom': num_multi_denom_reveals,
+        'num_compromised': {
+            'all_reveals': num_compromised,
+            'exact_match': num_exact_match_reveals,
+            'gas_price': num_gas_price_reveals,
+            'multi_denom': num_multi_denom_reveals,
+        },
+        'num_uncompromised': num_deposits - num_compromised
     }
 
     output['data']['query']['metadata']['amount'] = int(amount)
