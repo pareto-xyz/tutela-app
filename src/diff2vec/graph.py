@@ -156,10 +156,11 @@ class UndirectedGraph:
         with h5py.File(h5_file, 'w') as fp:
             pbar = tqdm(total=len(self._nodes))
             for node in self._edges:
-                fp.create_dataset(node, data = self._edges[node])
+                fp.create_dataset(str(node), data = self._edges[node])
                 pbar.update()
             pbar.close()
 
+        breakpoint()
         with open(key_file, 'w') as fp:
             json.dump(self._nodes, fp)
 
