@@ -1,19 +1,23 @@
+"""
+The graph is huge: we need to break it up into chunks.
+"""
 import os
 import h5py
 import pandas as pd
 from typing import Any, List, Tuple
-
 from src.diff2vec.graph import UndirectedGraph
-from src.diff2vec.euler import SubGraphSequences
 
 
 def main(args: Any):
-    sequence_file: str = os.path.join(
-        args.cache_dir, f'sequences-{args.cover_size}.jsonl')
+    print('Loading data from CSV')
+    data: pd.DataFrame = pd.read_csv(args.data_csv)
+    print('Building graph')
+    graph: UndirectedGraph = build_graph(data)
+    print(f'Made graph with {len(graph)} nodes')
 
-    print('Computing subgraph sequences')
-    sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)
-    sequencer.get_sequences(sequence_file)
+    node_file: str = os.path.join(args.cache_dir, f'nodes.json')
+    edge_file: str = os.path.join(args.cache_dir, f'edges.h5')
+    graph.to_h5(node_file, edge_file)
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
@@ -32,11 +36,8 @@ def build_graph(data: pd.DataFrame) -> UndirectedGraph:
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser: ArgumentParser = ArgumentParser()
-    parser.add_argument('node_file', type=str, help='path to json file containing nodes')
-    parser.add_argument('edge_file', type=str, help='path to h5 file containing edges')
+    parser.add_argument('data_csv', type=str, help='path to save data')
     parser.add_argument('cache_dir', type=str, help='path to cache')
-    parser.add_argument('--cover-size', type=int, default=80, 
-                        help='size of subgraph (default: 80)')
     args: Any = parser.parse_args()
 
     main(args)

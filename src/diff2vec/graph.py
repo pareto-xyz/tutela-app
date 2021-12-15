@@ -3,6 +3,8 @@ NetworkX does not run within 10 hours. We may need to make our own lightweight
 Graph library. 
 """
 import sys
+import json
+import h5py
 from tqdm import tqdm
 from collections import defaultdict
 from typing import List, Set, Tuple, Dict, Union
@@ -95,7 +97,6 @@ class UndirectedGraph:
 
         return subgraph
 
-
     def is_connected(self) -> bool:
         """
         Method to check if all non-zero degree vertices are connected. It 
@@ -149,6 +150,17 @@ class UndirectedGraph:
             return 1
         else: 
             return 0
+
+    def to_h5(self, key_file, h5_file):
+        with h5py.File(h5_file, 'w') as fp:
+            pbar = tqdm(total=len(self._nodes))
+            for node in self._edges:
+                fp.create_dataset(node, data = self._edges[node])
+                pbar.update()
+            pbar.close()
+
+        with open(key_file, 'w') as fp:
+            json.dump(self._nodes, fp)
 
     def __len__(self) -> int:
         return len(self._nodes)
