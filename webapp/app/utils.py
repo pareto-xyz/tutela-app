@@ -5,7 +5,8 @@ from copy import copy
 from typing import Dict, Any, List, Tuple, Optional, Union, Set
 from sqlalchemy import desc, cast, Float
 from app.models import Address, TornadoPool
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
+
 
 # CONSTS for schema
 ADDRESS_COL: str = 'address'

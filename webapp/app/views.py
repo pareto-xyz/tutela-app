@@ -17,7 +17,7 @@ from app.utils import \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
-from app.lib.w3 import query_web3, get_ens_name
+from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
 from flask import render_template
@@ -49,6 +49,8 @@ def alias():
 @app.route('/utils/istornado', methods=['GET'])
 def istornado():
     address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+
     output: Dict[str, Any] = {
         'data': {
             'address': address,
@@ -84,6 +86,8 @@ def transaction():
 @app.route('/search', methods=['GET'])
 def search():
     address: str = request.args.get('address', '')
+    # after this call, we should expect address to be an address
+    address: str = resolve_address(address, ns)
 
     # do a simple check that the address is valid
     if not is_valid_address(address):
@@ -114,6 +118,7 @@ def search():
 def haveibeencompromised():
     address: str = request.args.get('address', '')
     pool: str = request.args.get('pool', '')  # tornado pool address
+    address: str = resolve_address(address, ns)
 
     output: Dict[str, Any] = {
         'data': {
