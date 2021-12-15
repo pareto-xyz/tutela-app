@@ -76,7 +76,7 @@ def get_exact_matches(
                 graph.add_edge(withdraw_row.hash, deposit_row.hash)
 
                 # save transaction -> address map
-                tx2addr[withdraw_row.hash] = withdraw_row.from_address
+                tx2addr[withdraw_row.hash] = withdraw_row.recipient_address
                 tx2addr[deposit_row.hash] = deposit_row.from_address
 
     clusters: List[Set[str]] = [  # ignore singletons

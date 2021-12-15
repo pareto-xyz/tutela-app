@@ -20,6 +20,7 @@ class Heuristic(Enum):
     SAME_ADDR = 1
     GAS_PRICE = 2
     SAME_NUM_TX = 3
+    LINKED_TX = 4
 
 
 class JSONSetEncoder(json.JSONEncoder):

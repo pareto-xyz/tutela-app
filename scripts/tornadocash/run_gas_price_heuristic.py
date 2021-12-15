@@ -93,7 +93,7 @@ def get_same_gas_price_clusters(
             graph.add_node(deposit_row.hash)
             graph.add_edge(withdraw_row.hash, deposit_row.hash)
 
-            tx2addr[withdraw_row.hash] = withdraw_row.from_address
+            tx2addr[withdraw_row.hash] = withdraw_row.recipient_address
             tx2addr[deposit_row.hash] = deposit_row.from_address
 
             all_withdraws.append(withdraw_row.hash)
