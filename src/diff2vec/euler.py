@@ -2,6 +2,7 @@
 Eulerian Diffusion.
 """
 import random
+import json, jsonlines
 from tqdm import tqdm
 import networkx as nx
 from typing import List, Dict, Set, Tuple
@@ -56,15 +57,13 @@ class EulerianDiffusion:
         euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
         return euler
 
-    def diffuse(self, verbose: bool = False) -> Dict[int, List[int]]:
-        circuit: Dict[int, List[int]] = {}
+    def diffuse(self, writer: jsonlines.Writer, verbose: bool = False) -> Dict[int, List[int]]:
         if verbose: pbar = tqdm(total=len(self.graph))
         for node in self.graph.nodes():
             seq: List[int] = self._diffuse(node)
-            circuit[node] = seq
+            writer.write(json.dumps((node, seq)))
             if verbose: pbar.update()
         if verbose: pbar.close()
-        return circuit
 
 
 class SubGraphSequences:
@@ -87,34 +86,27 @@ class SubGraphSequences:
         components: List[UndirectedGraph] = sorted(components, key=len, reverse=True)
         return components
 
-    def get_sequences(self) -> Tuple[List[int], List[List[int]]]:
+    def get_sequences(self, out_file: str) -> Tuple[List[int], List[List[int]]]:
         print('Computing connected components')
         subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
-        paths: Dict[int, List[int]] = dict() 
 
         pbar = tqdm(total=len(subgraphs))
-        for subgraph in subgraphs:
-            card: int = len(subgraph)  # cardinality
+        with jsonlines.open(out_file, mode='w') as writer:
+            for subgraph in subgraphs:
+                card: int = len(subgraph)  # cardinality
 
-            if card == 1:  # skip components of size 1
-                continue
+                if card == 1:  # skip components of size 1
+                    continue
 
-            if card < self.vertex_card:
-                self.vertex_card: int = card
+                if card < self.vertex_card:
+                    self.vertex_card: int = card
 
-            euler: EulerianDiffusion = \
-                EulerianDiffusion(subgraph, self.vertex_card)
-            circuits: Dict[int, List[int]] = euler.diffuse(verbose=len(subgraph) > 10000)
+                euler: EulerianDiffusion = \
+                    EulerianDiffusion(subgraph, self.vertex_card)
+                euler.diffuse(writer, verbose=len(subgraph) > 10000)
 
-            paths.update(circuits)
             pbar.update()
-
         pbar.close()
-        
-        nodes: List[int] = list(paths.keys())
-        sequences: List[List[int]] = list(paths.values())
-
-        return nodes, sequences
 
     def get_count(self):
         return len(self.graph) + 1

@@ -14,14 +14,12 @@ def main(args: Any):
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
 
+    sequence_file: str = os.path.join(
+        args.cache_dir, 'sequences_{args.cover_size}.jsonl')
+
     print('Computing subgraph sequences')
     sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)
-    nodes, sequences = sequencer.get_sequences()
-
-    if args.cache_dir is not None:
-        cache_file: str = os.path.join(
-            args.cache_dir, 'sequences_cover{args.cover_size}.pickle')
-        to_pickle({'nodes': nodes, 'sequences': sequences}, cache_file) 
+    sequencer.get_sequences(sequence_file)
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
