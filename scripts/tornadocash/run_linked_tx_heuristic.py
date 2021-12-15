@@ -28,8 +28,8 @@ def main(args: Any):
         .apply(lambda addr: tornado_addresses[addr])
 
     all_tx2addr: Dict[str, str] = {
-        **dict(deposit_txs.hash, deposit_txs.from_address),
-        **dict(withdraw_txs.hash, withdraw_txs.recipient_address),
+        **dict(zip(deposit_txs.hash, deposit_txs.from_address)),
+        **dict(zip(withdraw_txs.hash, withdraw_txs.recipient_address)),
     }
 
     addr_pool_to_deposit: Dict[Tuple[str, str], str] = \
@@ -78,7 +78,7 @@ def build_clusters(
     graph: nx.DiGraph = nx.DiGraph()
     tx2addr: Dict[str, str] = {}
 
-    for withdraw, deposits in links:
+    for withdraw, deposits in links.items():
         graph.add_node(withdraw)
         graph.add_nodes_from(deposits)
 
