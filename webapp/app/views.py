@@ -50,6 +50,7 @@ def alias():
 def istornado():
     address: str = request.args.get('address', '')
     address: str = resolve_address(address, ns)
+    address: str = address.lower()
 
     output: Dict[str, Any] = {
         'data': {
@@ -88,6 +89,7 @@ def search():
     address: str = request.args.get('address', '')
     # after this call, we should expect address to be an address
     address: str = resolve_address(address, ns)
+    address: str = address.lower()
 
     # do a simple check that the address is valid
     if not is_valid_address(address):
@@ -96,6 +98,10 @@ def search():
     # check if address is a tornado pool or not
     is_tornado: bool = is_tornado_address(address)
 
+    # change request object
+    request.args: Dict[str, Any] = dict(request.args)
+    request.args['address'] = address
+    
     if is_tornado:
         # ---------------------------------------------------------
         # MODE #1
@@ -200,7 +206,7 @@ def search_address(request: Request) -> Response:
     if not is_valid_request:   # if not, bunt
         return Response(output)
 
-    address: str = checker.get('address')
+    address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
     sort_by: str = checker.get('sort_by')
@@ -533,7 +539,7 @@ def search_tornado(request: Request) -> Response:
         response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
-    address: str = checker.get('address')
+    address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
 
