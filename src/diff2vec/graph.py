@@ -4,8 +4,10 @@ Graph library.
 """
 import os
 import sys
+import csv
 import json
 import h5py
+import pandas as pd
 from tqdm import tqdm
 from collections import defaultdict
 from typing import List, Set, Tuple, Dict, Union, Any
@@ -154,15 +156,28 @@ class UndirectedGraph:
         else: 
             return 0
 
-    def to_h5(self, key_file, h5_file):
-        with h5py.File(h5_file, 'w') as fp:
+    def to_h5(self, nodes_file, edges_file):
+        with h5py.File(edges_file, 'w') as fp:
             pbar = tqdm(total=len(self._nodes))
             for node in self._edges:
                 fp.create_dataset(str(node), data = self._edges[node])
                 pbar.update()
             pbar.close()
 
-        to_json(self._nodes, key_file)
+        to_json(self._nodes, nodes_file)
+
+    def to_csv(self, nodes_file, edges_file):
+        with open(edges_file, 'a') as fp:
+            writer = csv.writer(fp)
+            writer.writerow(['nodes', 'edges'])
+            pbar = tqdm(total=len(self._nodes))
+            for node in self._edges:
+                edges: str = json.dump(self._edges[node])
+                node: str = str(node)
+                writer.writerow([node, edges])
+                pbar.update()
+            pbar.close()
+        to_json(self._nodes, nodes_file)
 
     def __len__(self) -> int:
         return len(self._nodes)
