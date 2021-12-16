@@ -245,6 +245,12 @@ input.form-control.rounded {
     background-color: transparent;
 }
 
+.results.loading { 
+    display: flex;
+    justify-content: center;
+    padding: 0px;
+}
+
 #results-table {
     width: 100%;
 }

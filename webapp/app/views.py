@@ -7,7 +7,7 @@ from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
-    Address, ExactMatch, GasPrice, MultiDenom, \
+    Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
     TornadoDeposit, TornadoWithdraw
 from app.utils import \
     get_anonymity_score, get_order_command, \
@@ -17,7 +17,7 @@ from app.utils import \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
-from app.lib.w3 import query_web3, get_ens_name
+from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
 from flask import render_template
@@ -49,6 +49,9 @@ def alias():
 @app.route('/utils/istornado', methods=['GET'])
 def istornado():
     address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
     output: Dict[str, Any] = {
         'data': {
             'address': address,
@@ -84,6 +87,9 @@ def transaction():
 @app.route('/search', methods=['GET'])
 def search():
     address: str = request.args.get('address', '')
+    # after this call, we should expect address to be an address
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
 
     # do a simple check that the address is valid
     if not is_valid_address(address):
@@ -92,6 +98,10 @@ def search():
     # check if address is a tornado pool or not
     is_tornado: bool = is_tornado_address(address)
 
+    # change request object
+    request.args = dict(request.args)
+    request.args['address'] = address
+    
     if is_tornado:
         # ---------------------------------------------------------
         # MODE #1
@@ -114,6 +124,7 @@ def search():
 def haveibeencompromised():
     address: str = request.args.get('address', '')
     pool: str = request.args.get('pool', '')  # tornado pool address
+    address: str = resolve_address(address, ns)
 
     output: Dict[str, Any] = {
         'data': {
@@ -141,11 +152,13 @@ def haveibeencompromised():
     exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
     gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
     multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
+    linked_tx_reveals: Set[str] = find_reveals(deposit_txs_list, LinkedTransaction)
 
     def format_compromised(
         exact_match_reveals: Set[str],
         gas_price_reveals: Set[str],
         multi_denom_reveals: Set[str],
+        linked_tx_reveals: Set[str],
     ) -> List[Dict[str, Any]]:
         compromised: List[Dict[str, Any]] = []
         for reveal in exact_match_reveals:
@@ -154,11 +167,13 @@ def haveibeencompromised():
             compromised.append({'heuristic': heuristic_to_str(2), 'transaction': reveal})
         for reveal in multi_denom_reveals:
             compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
+        for reveal in linked_tx_reveals:
+            compromised.append({'heuristic': heuristic_to_str(4), 'transaction': reveal})
         return compromised
 
     # add compromised sets to response
     compromised: List[Dict[str, Any]] = format_compromised(
-        exact_match_reveals, gas_price_reveals, multi_denom_reveals)
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
     output['data']['compromised'] = compromised
     output['data']['compromised_size'] = len(compromised)
     output['success'] = 1
@@ -195,7 +210,7 @@ def search_address(request: Request) -> Response:
     if not is_valid_request:   # if not, bunt
         return Response(output)
 
-    address: str = checker.get('address')
+    address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
     sort_by: str = checker.get('sort_by')
@@ -299,9 +314,10 @@ def search_address(request: Request) -> Response:
         exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
         gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
         multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
+        linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
 
-        reveal_txs: Set[str] = exact_match_txs.union(gas_price_txs)
-        reveal_txs: Set[str] = reveal_txs.union(multi_denom_txs)
+        reveal_txs: Set[str] = set().union(
+            exact_match_txs, gas_price_txs, multi_denom_txs, linked_txs)
 
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
@@ -322,11 +338,13 @@ def search_address(request: Request) -> Response:
         num_remain_exact_match: int = len(all_txs - exact_match_txs)
         num_remain_gas_price: int = len(all_txs - gas_price_txs)
         num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
+        num_remain_linked_tx: int = len(all_txs - linked_txs)
 
         num_compromised: int = num_all - num_remain
         num_compromised_exact_match = num_all - num_remain_exact_match
         num_compromised_gas_price = num_all - num_remain_gas_price
         num_compromised_multi_denom = num_all - num_remain_multi_denom
+        num_compromised_linked_tx = num_all - num_remain_linked_tx
 
         # compute number of txs compromised by TCash heuristics
         stats: Dict[str, int] = dict(
@@ -337,6 +355,7 @@ def search_address(request: Request) -> Response:
                 num_compromised_exact_match = num_compromised_exact_match,
                 num_compromised_gas_price = num_compromised_gas_price,
                 num_compromised_multi_denom = num_compromised_multi_denom,
+                num_compromised_linked_tx = num_compromised_linked_tx,
             ),
             num_uncompromised = num_all - num_compromised
         )
@@ -528,7 +547,7 @@ def search_tornado(request: Request) -> Response:
         response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
-    address: str = checker.get('address')
+    address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
 
@@ -546,14 +565,17 @@ def search_tornado(request: Request) -> Response:
     exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
     gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
     multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
+    linked_tx_reveals: Set[str] = find_reveals(deposit_txs_list, LinkedTransaction)
+
+    reveal_txs: Set[str] = set().union(
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
 
     num_exact_match_reveals: int = len(exact_match_reveals.intersection(deposit_txs))
     num_gas_price_reveals: int = len(gas_price_reveals.intersection(deposit_txs))
     num_multi_denom_reveals: int = len(multi_denom_reveals.intersection(deposit_txs))
+    num_linked_tx_reveals: int = len(linked_tx_reveals.intersection(deposit_txs))
 
-    num_compromised: int = \
-        num_exact_match_reveals + num_gas_price_reveals + num_multi_denom_reveals
-
+    num_compromised: int = len(reveal_txs)
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
@@ -562,6 +584,7 @@ def search_tornado(request: Request) -> Response:
             'exact_match': num_exact_match_reveals,
             'gas_price': num_gas_price_reveals,
             'multi_denom': num_multi_denom_reveals,
+            'linked_tx': num_linked_tx_reveals,
         },
         'num_uncompromised': num_deposits - num_compromised
     }

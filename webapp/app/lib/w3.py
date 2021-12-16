@@ -1,7 +1,6 @@
-import os
 from ens import ENS
 from web3 import Web3
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 def get_balance(address: str, w3: Web3) -> float:
@@ -20,3 +19,15 @@ def query_web3(address: str, w3: Web3, ns: ENS) -> Dict[str, Any]:
         ens_name=get_ens_name(address, ns),
     )
 
+
+def get_ens_address(name: str, ns: ENS) -> Optional[str]:
+    return ns.address(name)
+
+
+def resolve_address(input_: str, ns: ENS) -> str:
+    address: str = input_
+    if '.eth' in input_:  # only waste compute it .ens is in it
+        address: Optional[str] = get_ens_address(input_, ns)
+        if address is None:
+            address: str = input_  # punt
+    return address
