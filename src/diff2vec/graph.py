@@ -166,18 +166,24 @@ class UndirectedGraph:
 
         to_json(self._nodes, nodes_file)
 
-    def to_csv(self, nodes_file, edges_file):
+    def to_csv(self, edges_file: str):
         with open(edges_file, 'a') as fp:
             writer = csv.writer(fp)
             writer.writerow(['nodes', 'edges'])
             pbar = tqdm(total=len(self._nodes))
-            for node in self._edges:
-                edges: str = json.dump(self._edges[node])
+            max_node: int = max(self._nodes)
+            missing: int = 0
+            for node in range(max_node): 
+                if node in self._edges:
+                    edges: List[str] = json.dumps(self._edges[node])
+                else:
+                    edges: List[str] = json.dumps([])
+                    missing += 1
                 node: str = str(node)
                 writer.writerow([node, edges])
                 pbar.update()
             pbar.close()
-        to_json(self._nodes, nodes_file)
+        print(f'{missing} missing.')
 
     def __len__(self) -> int:
         return len(self._nodes)

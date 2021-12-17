@@ -2,7 +2,6 @@
 The graph is huge: we need to break it up into chunks.
 """
 import os
-import h5py
 import pandas as pd
 from typing import Any, List, Tuple
 from src.diff2vec.graph import UndirectedGraph
@@ -15,9 +14,8 @@ def main(args: Any):
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
 
-    node_file: str = os.path.join(args.cache_dir, f'nodes.json')
     edge_file: str = os.path.join(args.cache_dir, f'edges.csv')
-    graph.to_csv(node_file, edge_file)
+    graph.to_csv(edge_file)
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
