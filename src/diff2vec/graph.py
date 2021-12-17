@@ -10,7 +10,7 @@ import h5py
 import pandas as pd
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Set, Tuple, Dict, Union, Any
+from typing import List, Set, Tuple, Dict, Union
 
 from src.utils.utils import to_json
 
@@ -156,16 +156,6 @@ class UndirectedGraph:
         else: 
             return 0
 
-    def to_h5(self, nodes_file, edges_file):
-        with h5py.File(edges_file, 'w') as fp:
-            pbar = tqdm(total=len(self._nodes))
-            for node in self._edges:
-                fp.create_dataset(str(node), data = self._edges[node])
-                pbar.update()
-            pbar.close()
-
-        to_json(self._nodes, nodes_file)
-
     def to_csv(self, edges_file: str):
         with open(edges_file, 'a') as fp:
             writer = csv.writer(fp)
@@ -189,52 +179,53 @@ class UndirectedGraph:
         return len(self._nodes)
 
 
-class UndirectedGraphH5:
-    """
-    Like UndirectedGraph but memory efficient so only works from an h5 file.
-    Nodes must be integers! We do not assume contiguous nodes.
-    """
-    def __init__(self, nodes_file: str, edges_file: str):
-        self._nodes_file: str = nodes_file
+class UndirectedGraphCSV:
+
+    def __init__(self, edges_file: str):
         self._edges_file: str = edges_file
+        self._edges_df: pd.DataFrame = pd.read_csv(edges_file)
+        self._size: int = len(self._edges_df)
 
-        self._nodes: Set[int] = set(json.load(open(nodes_file)))
-        self._edges_fp: Any = h5py.File(edges_file, 'r')
-        self._component_dir = None
+    def _dfs(
+        self,
+        path: List[int],
+        node: int,
+        visited: Dict[int, bool]
+    ) -> List[int]:
+        visited[node] = True  # mark current vertex as visited
+        path.append(node)     # add vertex to path
 
-    def has_node(self, node: int) -> bool:
-        return node in self._nodes
+        # repeat for all vertices adjacent to current vertex
+        for v in self.neighbors(node):
+            if not visited[v]:
+                path: List[int] = self._dfs(path, v, visited)
 
-    def nodes(self) -> Set[int]:
-        return self._nodes
+        return path
 
     def neighbors(self, node: int) -> Set[int]:
-        assert self.has_node(node), "Graph does not contain node"
-        return set(self._edges_fp[str(node)]) - {node}  # no self loops
+        edges: str = self._edges_df.iloc[str(node)]
+        edges: List[int] = json.loads(edges)
+        return set(edges) - {node}
 
     def connected_components(self, out_dir: str) -> List[Set[int]]:
-        sys.setrecursionlimit(len(self._nodes))
+        sys.setrecursionlimit(self._size)
         visited: Dict[int, bool] = defaultdict(lambda: False)
-        count: int = 0
         sizes: List[int] = []
+        components: List[Set[str]] = []
 
         pbar = tqdm(total=len(self._nodes))
         for node in self._nodes:
             if not visited[node]:
                 component: List[int] = self._dfs([], node, visited)
                 component: Set[int] = set(component)
-                subgraph: UndirectedGraph = self.subgraph(component)
-                sub_nodes_file: str = os.path.join(out_dir, f'component{count}-nodes.json')
-                sub_edges_file: str = os.path.join(out_dir, f'component{count}-edges.h5')
-                subgraph.to_h5(sub_nodes_file, sub_edges_file)
-                sizes[count] = len(component)
-                count += 1
+                if len(component) > 1:
+                    components.append(component)
+                    sizes.append(len(component))
 
             pbar.update()
         pbar.close()
 
-        to_json(sizes, os.path.join(out_dir, 'component-sizes.json'))
-        self._component_dir: str = out_dir
+        return components
 
     def subgraph(self, component: Set[int]):
         subgraph: UndirectedGraph = UndirectedGraph()
@@ -248,4 +239,4 @@ class UndirectedGraphH5:
         return subgraph
 
     def __len__(self) -> int:
-        return len(self._nodes)
+        return self._size

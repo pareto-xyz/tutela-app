@@ -1,9 +1,9 @@
 import os
 import h5py
 import pandas as pd
-from typing import Any, List, Tuple
+from typing import Any, List, Set
 
-from src.diff2vec.graph import UndirectedGraphH5
+from src.diff2vec.graph import UndirectedGraphCSV
 from src.diff2vec.euler import SubGraphSequences
 
 
@@ -11,11 +11,14 @@ def main(args: Any):
     sequence_file: str = os.path.join(
         args.cache_dir, f'sequences-{args.cover_size}.jsonl')
 
-    graph: UndirectedGraphH5 = UndirectedGraphH5(args.nodes_file, args.edges_file)
+    graph: UndirectedGraphCSV = \
+        UndirectedGraphCSV(args.nodes_file, args.edges_file)
 
-    print('Computing subgraph sequences')
-    sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)
-    sequencer.get_sequences(sequence_file)
+    components: List[Set[str]] = graph.connected_components
+    breakpoint()
+    # print('Computing subgraph sequences')
+    # sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)
+    # sequencer.get_sequences(sequence_file)
 
 
 if __name__ == "__main__":
