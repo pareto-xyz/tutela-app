@@ -7,7 +7,7 @@ import json, jsonlines
 from tqdm import tqdm
 import networkx as nx
 from typing import List, Dict, Set, Union
-from src.diff2vec.graph import UndirectedGraph, UndirectedGraphH5
+from src.diff2vec.graph import UndirectedGraph, UndirectedGraphCSV
 from src.utils.utils import from_json
 
 
@@ -24,9 +24,9 @@ class EulerianDiffusion:
 
     def __init__(
         self,
-        graph: Union[UndirectedGraph, UndirectedGraphH5],
+        graph: Union[UndirectedGraph, UndirectedGraphCSV],
         cover_size: int):
-        self.graph: Union[UndirectedGraph, UndirectedGraphH5] = graph
+        self.graph: Union[UndirectedGraph, UndirectedGraphCSV] = graph
         self.cover_size: int = cover_size
 
     def _diffuse(self, node: int) -> List[int]:
@@ -124,12 +124,12 @@ class SubGraphSequencesH5:
     """
     Like SubGraphSequences but uses h5 files rather than memory.
     """
-    def __init__(self, graph: UndirectedGraphH5, vertex_card: int):
-        self.graph: UndirectedGraphH5 = graph
+    def __init__(self, graph: UndirectedGraphCSV, vertex_card: int):
+        self.graph: UndirectedGraphCSV = graph
         self.vertex_card: int = vertex_card  # number of nodes per sample
 
     def extract_components(
-        self, graph: UndirectedGraphH5, component_dir: str) -> List[int]:
+        self, graph: UndirectedGraphCSV, component_dir: str) -> List[int]:
         graph.connected_components(component_dir)
         assert graph._component_dir is not None, "how is this possible?"
 
@@ -150,8 +150,8 @@ class SubGraphSequencesH5:
                 nodes_file: str = f'component{index}-nodes.json'
                 edges_file: str = f'component{index}-edges.h5'
 
-                subgraph: UndirectedGraphH5 = \
-                    UndirectedGraphH5(nodes_file, edges_file)
+                subgraph: UndirectedGraphCSV = \
+                    UndirectedGraphCSV(nodes_file, edges_file)
 
                 card: int = len(subgraph)  # cardinality
 

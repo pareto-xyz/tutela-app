@@ -203,18 +203,19 @@ class UndirectedGraphCSV:
         return path
 
     def neighbors(self, node: int) -> Set[int]:
-        edges: str = self._edges_df.iloc[str(node)]
+        edges: str = self._edges_df.iloc[node].edges
         edges: List[int] = json.loads(edges)
         return set(edges) - {node}
 
-    def connected_components(self, out_dir: str) -> List[Set[int]]:
-        sys.setrecursionlimit(self._size)
+    def connected_components(self) -> List[Set[int]]:
+        sys.setrecursionlimit(100000)
         visited: Dict[int, bool] = defaultdict(lambda: False)
         sizes: List[int] = []
         components: List[Set[str]] = []
 
-        pbar = tqdm(total=len(self._nodes))
-        for node in self._nodes:
+        breakpoint()
+        pbar = tqdm(total=self._size)
+        for node in range(self._size):
             if not visited[node]:
                 component: List[int] = self._dfs([], node, visited)
                 component: Set[int] = set(component)
