@@ -80,13 +80,6 @@ TOP
 }
 
 .help-circle {
-    border: 50%;
-    width: 25px;
-    height: 25px;
-    font-size: 0.8em;
-    border: 1px solid var(--lightgrey);
-    -moz-border-radius: 50%;
-    -webkit-border-radius: 50%;
     text-align: center;
     margin: 0px 10px;
     color: var(--lightgrey);
@@ -471,6 +464,10 @@ ul.dropdown-menu {
     text-overflow: ellipsis;
     color: white;
     border-top: transparent;
+}
+
+.detail-row > td:first-child {
+    display: flex;
 }
 
 .detail-row > td:last-child {
