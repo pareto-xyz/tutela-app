@@ -435,9 +435,11 @@ class AddressRequestChecker:
         if not self._request.args.get('sort'):
             desc_sort = False  # default is entity asc
         else:
-            desc_sort: bool = bool(
-                self._request.args.get(
-                    'descending', False, type=lambda v: v.lower() != 'false'))
+            is_desc = self._request.args.get('descending', False)
+            if type(is_desc) == str:
+                desc_sort = is_desc.lower() != 'false'
+            else:
+                desc_sort = False
 
         self._params['sort_by'] = sort_by
         self._params['desc_sort'] = desc_sort
@@ -474,10 +476,10 @@ class AddressRequestChecker:
                 filter_by.append(Address.entity == entity_to_int(filter_entity))
             if filter_name != '*': # search either
                 filter_by.append(
-                    or_(
-                        Address.name.ilike('%'+filter_name.lower()+'%'), 
+                    # or_(
+                    #     Address.name.ilike('%'+filter_name.lower()+'%'), 
                         Address.address.ilike(filter_name.lower()),
-                    ),
+                    # ),
                 )
 
         self._params['filter_by'] = filter_by
