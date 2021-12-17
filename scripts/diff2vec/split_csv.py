@@ -1,9 +1,10 @@
 """
 Split giant CSV into many small csvs
 """
-import os
-import csv
+import os, sys, csv
 from typing import List
+
+csv.field_size_limit(sys.maxsize)
 
 
 def split(file_loc: str, out_dir: str, file_size=100000):
@@ -11,7 +12,7 @@ def split(file_loc: str, out_dir: str, file_size=100000):
         count: int = 0
         curr_split: int = 0
         reader = csv.reader(fp)
-        header: List[str] = reader.next()
+        for header in reader: break
         writer = None
 
         for row in reader:
@@ -33,3 +34,5 @@ if __name__ == "__main__":
     parser.add_argument('split_dir', type=str, help='path to dump split files')
     parser.add_argument('--file-size', type=int, default=100000)
     args = parser.parse_args()
+
+    split(args.edges_file, args.split_dir, file_size=args.file_size)
