@@ -43,6 +43,7 @@ class UndirectedGraph:
 
     def _dfs(
         self,
+        path: List[int],
         node: int,
         visited: Dict[int, bool]
     ) -> List[int]:
@@ -52,7 +53,7 @@ class UndirectedGraph:
         # repeat for all vertices adjacent to current vertex
         for v in self._edges[node]:
             if not visited[v]:
-                path: List[int] = self._dfs(path, v, visited)
+                path: List[int] = self._dfs([], path, v, visited)
 
         return path
 
@@ -189,7 +190,6 @@ class UndirectedGraphCSV:
 
     def _dfs(
         self,
-        path: List[int],
         node: int,
         visited: Dict[int, bool]
     ) -> List[int]:
@@ -210,6 +210,8 @@ class UndirectedGraphCSV:
                 if not visited[v]:
                     path.append(v)
 
+            print(len(path))
+
         return path
 
     def neighbors(self, node: int) -> Set[int]:
@@ -227,7 +229,7 @@ class UndirectedGraphCSV:
             pbar = tqdm(total=self._size)
             for node in range(self._size):
                 if not visited[node]:
-                    component: List[int] = self._dfs([], node, visited)
+                    component: List[int] = self._dfs(node, visited)
                     component: Set[int] = set(component)
                     if len(component) > 1:
                         writer.write(list(component))
