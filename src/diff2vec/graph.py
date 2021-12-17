@@ -43,7 +43,6 @@ class UndirectedGraph:
 
     def _dfs(
         self,
-        path: List[int],
         node: int,
         visited: Dict[int, bool]
     ) -> List[int]:
@@ -77,7 +76,7 @@ class UndirectedGraph:
         pbar = tqdm(total=len(self._nodes))
         for node in self._nodes:
             if not visited[node]:
-                component: List[int] = self._dfs([], node, visited)
+                component: List[int] = self._dfs(node, visited)
                 component: Set[int] = set(component)
                 components.append(component)
 
@@ -194,13 +193,22 @@ class UndirectedGraphCSV:
         node: int,
         visited: Dict[int, bool]
     ) -> List[int]:
+        """
+        Iterative DFS because recursive ones are more storage costly
+        """
+        path: List[int] = []  # create stack for DFS
         visited[node] = True  # mark current vertex as visited
         path.append(node)     # add vertex to path
 
-        # repeat for all vertices adjacent to current vertex
-        for v in self.neighbors(node):
-            if not visited[v]:
-                path: List[int] = self._dfs(path, v, visited)
+        while len(path) > 0:
+            vertex: int = path.pop()
+
+            if not visited[vertex]:
+                visited[vertex] = True
+            
+            for v in self.neighbors(vertex):
+                if not visited[v]:
+                    path.append(v)
 
         return path
 
