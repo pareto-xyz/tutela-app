@@ -6,6 +6,7 @@ import os
 import sys
 import csv
 import json
+import pickle
 import jsonlines
 import pandas as pd
 from glob import glob
@@ -154,6 +155,10 @@ class UndirectedGraph:
             return 1
         else: 
             return 0
+
+    def to_pickle(self, edges_file: str):
+        with open(edges_file, 'wb') as fp:
+            pickle.dump(self._edges, fp)
 
     def to_csv(self, edges_file: str):
         with open(edges_file, 'a') as fp:
