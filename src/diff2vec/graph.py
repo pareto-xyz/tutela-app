@@ -222,7 +222,7 @@ class UndirectedGraphCSV:
                     component: List[int] = self._dfs([], node, visited)
                     component: Set[int] = set(component)
                     if len(component) > 1:
-                        writer.write(component)
+                        writer.write(list(component))
                 pbar.update()
             pbar.close()
 
