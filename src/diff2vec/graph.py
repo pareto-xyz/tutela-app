@@ -11,7 +11,7 @@ import pandas as pd
 from glob import glob
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Set, Tuple, Dict, Union
+from typing import Optional, List, Set, Tuple, Dict, Union
 
 
 class UndirectedGraph:
@@ -178,7 +178,7 @@ class UndirectedGraph:
         return len(self._nodes)
 
 
-class UndirectedGraphCSV:
+class UndirectedGraphCSVSplits:
 
     def __init__(self, edges_dir: str):
         _edges_files: List[str] = glob(os.path.join(edges_dir, '*.csv'))
@@ -218,6 +218,72 @@ class UndirectedGraphCSV:
         index: int = node // self._split_size
         df: pd.DataFrame = pd.read_csv(os.path.join(self._edges_dir, f'edges-{index}.csv'))
         edges: str = df.iloc[node % self._split_size].edges
+        edges: List[int] = json.loads(edges)
+        return set(edges) - {node}
+
+    def connected_components(self, component_file: str) -> List[Set[int]]:
+        sys.setrecursionlimit(self._size)
+        visited: Dict[int, bool] = defaultdict(lambda: False)
+
+        with jsonlines.open(component_file, mode='w') as writer:
+            pbar = tqdm(total=self._size)
+            for node in range(self._size):
+                if not visited[node]:
+                    component: List[int] = self._dfs(node, visited)
+                    component: Set[int] = set(component)
+                    if len(component) > 1:
+                        writer.write(list(component))
+                pbar.update()
+            pbar.close()
+
+    def subgraph(self, component: Set[int]):
+        subgraph: UndirectedGraph = UndirectedGraph()
+        subgraph.add_nodes_from(component)
+
+        for node in component:
+            links: Set[int] = self.neighbors(node)
+            links: Set[int] = links.intersection(component)
+            subgraph._edges[node] = list(links) 
+
+        return subgraph
+
+    def __len__(self) -> int:
+        return self._size
+
+
+class UndirectedGraphCSV:
+
+    def __init__(self, edges_file: str):
+        self._edges: pd.DataFrame = pd.read_csv(edges_file)
+
+    def _dfs(
+        self,
+        node: int,
+        visited: Dict[int, bool]
+    ) -> List[int]:
+        """
+        Iterative DFS because recursive ones are more storage costly
+        """
+        path: List[int] = []  # create stack for DFS
+        visited[node] = True  # mark current vertex as visited
+        path.append(node)     # add vertex to path
+
+        while len(path) > 0:
+            vertex: int = path.pop()
+
+            if not visited[vertex]:
+                visited[vertex] = True
+            
+            for v in self.neighbors(vertex):
+                if not visited[v]:
+                    path.append(v)
+
+            print(len(path))
+
+        return path
+
+    def neighbors(self, node: int) -> Set[int]:
+        edges: str = self._edges.iloc[node].edges
         edges: List[int] = json.loads(edges)
         return set(edges) - {node}
 
