@@ -183,7 +183,7 @@ class UndirectedGraphCSV:
     def __init__(self, edges_dir: str):
         _edges_files: List[str] = glob(os.path.join(edges_dir, '*.csv'))
         _edges_files: List[str] = sorted(
-            _edges_files, key=lambda x: int(x.split('.')[-2].split('-')[1]))[-1]
+            _edges_files, key=lambda x: int(x.split('.')[-2].split('-')[1]))
         self._size: int = pd.read_csv(_edges_files[-1]).nodes.max()
         self._split_size: int = len(pd.read_csv(_edges_files[0]))
         self._edges_dir: str = edges_dir
