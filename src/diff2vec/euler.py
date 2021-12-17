@@ -25,8 +25,10 @@ class EulerianDiffusion:
     def __init__(
         self,
         graph: Union[UndirectedGraph, UndirectedGraphCSV],
+        component: Set[int],
         cover_size: int):
         self.graph: Union[UndirectedGraph, UndirectedGraphCSV] = graph
+        self.component: Set[int] = component
         self.cover_size: int = cover_size
 
     def _diffuse(self, node: int) -> List[int]:
@@ -66,8 +68,8 @@ class EulerianDiffusion:
         self,
         writer: jsonlines.Writer,
         verbose: bool = False) -> Dict[int, List[int]]:
-        if verbose: pbar = tqdm(total=len(self.graph))
-        for node in self.graph.nodes():
+        if verbose: pbar = tqdm(total=len(self.component))
+        for node in self.component:
             seq: List[int] = self._diffuse(node)
             writer.write(json.dumps(seq))
             if verbose: pbar.update()
@@ -88,20 +90,18 @@ class SubGraphSequences:
     def extract_components(self, graph: UndirectedGraph) -> List[UndirectedGraph]:
         # find subgraphs of network as separate graphs
         components: List[Set[int]] = graph.connected_components()
-        components: List[UndirectedGraph] = \
-            [graph.subgraph(c) for c in components]
         # sort from biggest component to smallest
-        components: List[UndirectedGraph] = sorted(components, key=len, reverse=True)
+        components: List[Set[int]] = sorted(components, key=len, reverse=True)
         return components
 
     def get_sequences(self, out_file: str):
         print('Computing connected components')
-        subgraphs: List[UndirectedGraph] = self.extract_components(self.graph)
+        components: List[Set[int]] = self.extract_components(self.graph)
 
-        pbar = tqdm(total=len(subgraphs))
+        pbar = tqdm(total=len(components))
         with jsonlines.open(out_file, mode='w') as writer:
-            for subgraph in subgraphs:
-                card: int = len(subgraph)  # cardinality
+            for component in components:
+                card: int = len(component)  # cardinality
 
                 if card == 1:  # skip components of size 1
                     continue
@@ -110,14 +110,11 @@ class SubGraphSequences:
                     self.vertex_card: int = card
 
                 euler: EulerianDiffusion = \
-                    EulerianDiffusion(subgraph, self.vertex_card)
-                euler.diffuse(writer, verbose=len(subgraph) > 10000)
+                    EulerianDiffusion(self.graph, component, self.vertex_card)
+                euler.diffuse(writer)
 
                 pbar.update()
             pbar.close()
-
-    def get_count(self):
-        return len(self.graph) + 1
 
 
 class SubGraphSequencesCSV:
@@ -130,30 +127,25 @@ class SubGraphSequencesCSV:
 
     def extract_components(self, component_file: str) -> List[Set[int]]:
         with jsonlines.open(component_file) as reader:
-            components: List[Set[int]] = [obj for obj in reader]
+            components: List[Set[int]] = [set(obj) for obj in reader]
             sizes: List[int] = [len(c) for c in components]
             order: List[int] = np.argsort(sizes)[::-1].tolist()
             components: List[Set[int]] = [components[i] for i in order]
 
         return components
 
+    def make_subgraph_from_component(self, component: Set[int]) -> UndirectedGraphCSV:
+        pass
+
     def get_sequences(self, component_file: str, out_file: str):
-        print('Computing connected components')
-        components: List[int] = self.extract_components(
-            self.graph, component_file)
+        components: List[int] = self.extract_components(component_file)
         num_components: int = len(components)
 
         pbar = tqdm(total=num_components)
         with jsonlines.open(out_file, mode='w') as writer:
             for i in range(num_components):
-                index: int = component_order[i]
-                nodes_file: str = f'component{index}-nodes.json'
-                edges_file: str = f'component{index}-edges.h5'
-
-                subgraph: UndirectedGraphCSV = \
-                    UndirectedGraphCSV(nodes_file, edges_file)
-
-                card: int = len(subgraph)  # cardinality
+                component_i: Set[int] = components[i]
+                card: int = len(component_i)  # cardinality
 
                 if card == 1:  # skip components of size 1
                     continue
@@ -162,8 +154,8 @@ class SubGraphSequencesCSV:
                     self.vertex_card: int = card
 
                 euler: EulerianDiffusion = \
-                    EulerianDiffusion(subgraph, self.vertex_card)
-                euler.diffuse(writer, verbose=len(subgraph) > 10000)
+                    EulerianDiffusion(self.graph, component_i, self.vertex_card)
+                euler.diffuse(writer)
 
                 pbar.update()
             pbar.close()
