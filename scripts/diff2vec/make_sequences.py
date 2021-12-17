@@ -14,6 +14,7 @@ def main(args: Any):
     graph: UndirectedGraphCSV = UndirectedGraphCSV(args.edges_dir)
 
     components: List[Set[str]] = graph.connected_components()
+    breakpoint()
     # print('Computing subgraph sequences')
     # sequencer: SubGraphSequences = SubGraphSequences(graph, args.cover_size)
     # sequencer.get_sequences(sequence_file)
