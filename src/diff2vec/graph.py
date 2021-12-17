@@ -6,13 +6,11 @@ import os
 import sys
 import csv
 import json
-import h5py
 import pandas as pd
+from glob import glob
 from tqdm import tqdm
 from collections import defaultdict
 from typing import List, Set, Tuple, Dict, Union
-
-from src.utils.utils import to_json
 
 
 class UndirectedGraph:
@@ -181,10 +179,13 @@ class UndirectedGraph:
 
 class UndirectedGraphCSV:
 
-    def __init__(self, edges_file: str):
-        self._edges_file: str = edges_file
-        self._edges_df: pd.DataFrame = pd.read_csv(edges_file)
-        self._size: int = len(self._edges_df)
+    def __init__(self, edges_dir: str):
+        _edges_files: List[str] = glob(os.path.join(edges_dir, '*.csv'))
+        _edges_files: List[str] = sorted(
+            _edges_files, key=lambda x: int(x.split('.')[-2].split('-')[1]))[-1]
+        self._size: int = pd.read_csv(_edges_files[-1]).nodes.max()
+        self._split_size: int = len(pd.read_csv(_edges_files[0]))
+        self._edges_dir: str = edges_dir
 
     def _dfs(
         self,
@@ -203,12 +204,14 @@ class UndirectedGraphCSV:
         return path
 
     def neighbors(self, node: int) -> Set[int]:
-        edges: str = self._edges_df.iloc[node].edges
+        index: int = node // self._split_size
+        df: pd.DataFrame = pd.read_csv(os.path.join(self._edges_dir, f'edges-{index}.csv'))
+        edges: str = df.iloc[node % self._split_size].edges
         edges: List[int] = json.loads(edges)
         return set(edges) - {node}
 
     def connected_components(self) -> List[Set[int]]:
-        sys.setrecursionlimit(100000)
+        sys.setrecursionlimit(self._size)
         visited: Dict[int, bool] = defaultdict(lambda: False)
         sizes: List[int] = []
         components: List[Set[str]] = []
