@@ -168,7 +168,7 @@ th {
 .input-adress {
   height: auto;
   font-size: 1.2rem;
-  padding: 0.8rem 20px;
+  padding: 0.5rem 20px;
   border: transparent;
 }
 #address-form {
@@ -201,7 +201,6 @@ th {
     padding: 10px; */
   min-width: 200px;
   font-size: 1.2rem;
-  padding: 0.5rem 20px;
   border: transparent;
 }
 
