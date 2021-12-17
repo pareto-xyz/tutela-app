@@ -135,7 +135,7 @@ const FilterByName = ({ ogVal, getNewResults }) => {
     return (
         <InputGroup  >
             <FormControl className="specific-result"
-                placeholder="search specific address or name"
+                placeholder="search specific address" // or name"
                 onChange={(e) => {
                     e.preventDefault();
                     setVal(e.target.value);
