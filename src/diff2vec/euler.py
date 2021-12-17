@@ -120,7 +120,7 @@ class SubGraphSequences:
         return len(self.graph) + 1
 
 
-class SubGraphSequencesH5:
+class SubGraphSequencesCSV:
     """
     Like SubGraphSequences but uses h5 files rather than memory.
     """
@@ -128,20 +128,20 @@ class SubGraphSequencesH5:
         self.graph: UndirectedGraphCSV = graph
         self.vertex_card: int = vertex_card  # number of nodes per sample
 
-    def extract_components(
-        self, graph: UndirectedGraphCSV, component_dir: str) -> List[int]:
-        graph.connected_components(component_dir)
-        assert graph._component_dir is not None, "how is this possible?"
+    def extract_components(self, component_file: str) -> List[Set[int]]:
+        with jsonlines.open(component_file) as reader:
+            components: List[Set[int]] = [obj for obj in reader]
+            sizes: List[int] = [len(c) for c in components]
+            order: List[int] = np.argsort(sizes)[::-1].tolist()
+            components: List[Set[int]] = [components[i] for i in order]
 
-        component_sizes: List[int] = \
-            from_json(os.path.join(component_dir, 'component-sizes.json'))
-        return component_sizes
+        return components
 
-    def get_sequences(self, out_file: str):
+    def get_sequences(self, component_file: str, out_file: str):
         print('Computing connected components')
-        component_sizes: List[int] = self.extract_components(self.graph)
-        component_order: List[int] = np.argsort(component_sizes)[::-1].tolist()
-        num_components: int = len(component_sizes)
+        components: List[int] = self.extract_components(
+            self.graph, component_file)
+        num_components: int = len(components)
 
         pbar = tqdm(total=num_components)
         with jsonlines.open(out_file, mode='w') as writer:

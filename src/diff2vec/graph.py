@@ -6,6 +6,7 @@ import os
 import sys
 import csv
 import json
+import jsonlines
 import pandas as pd
 from glob import glob
 from tqdm import tqdm
@@ -210,26 +211,20 @@ class UndirectedGraphCSV:
         edges: List[int] = json.loads(edges)
         return set(edges) - {node}
 
-    def connected_components(self) -> List[Set[int]]:
+    def connected_components(self, component_file: str) -> List[Set[int]]:
         sys.setrecursionlimit(self._size)
         visited: Dict[int, bool] = defaultdict(lambda: False)
-        sizes: List[int] = []
-        components: List[Set[str]] = []
 
-        breakpoint()
-        pbar = tqdm(total=self._size)
-        for node in range(self._size):
-            if not visited[node]:
-                component: List[int] = self._dfs([], node, visited)
-                component: Set[int] = set(component)
-                if len(component) > 1:
-                    components.append(component)
-                    sizes.append(len(component))
-
-            pbar.update()
-        pbar.close()
-
-        return components
+        with jsonlines.open(component_file, mode='w') as writer:
+            pbar = tqdm(total=self._size)
+            for node in range(self._size):
+                if not visited[node]:
+                    component: List[int] = self._dfs([], node, visited)
+                    component: Set[int] = set(component)
+                    if len(component) > 1:
+                        writer.write(component)
+                pbar.update()
+            pbar.close()
 
     def subgraph(self, component: Set[int]):
         subgraph: UndirectedGraph = UndirectedGraph()
