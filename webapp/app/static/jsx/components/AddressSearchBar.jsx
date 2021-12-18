@@ -62,6 +62,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
         <>
             <OverlayTrigger
                 show={tornadoTooltip}
+                delay={4000}
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
