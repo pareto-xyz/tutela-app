@@ -1,10 +1,10 @@
 from typing import Any, List
-from src.utils.utils import from_pickle
+from src.utils.utils import from_jsonlines
 from src.diff2vec.diff2vec import Diff2Vec
 
 
 def main(args: Any):
-    sequences: List[List[int]] = from_pickle(args.sequences_file)
+    sequences: List[List[int]] = from_jsonlines(args.sequences_file)
     model: Diff2Vec = Diff2Vec(
         dimensions = args.dim,
         window_size = args.window,

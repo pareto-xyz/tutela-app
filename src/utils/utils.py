@@ -41,6 +41,11 @@ def from_json(path):
         return json.load(fp)
 
 
+def from_jsonlines(path):
+     with jsonlines.open(path) as reader:
+        return [row for row in reader]
+
+
 def to_pickle(obj, path):
     with open(path, 'wb') as fp:
         pickle.dump(obj, fp)
