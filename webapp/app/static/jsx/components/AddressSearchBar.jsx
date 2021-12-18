@@ -37,7 +37,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
         e.preventDefault();
         setInputAddress(addr);
         axios.get('/utils/istornado?address=' + addr).then(response => {
-            response = isTornado;
+            // response = isTornado;
             const { data, success } = response.data;
             if (success === 0) return;
             const { is_tornado, amount, currency } = data;
