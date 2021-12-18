@@ -20,10 +20,6 @@ export default function IndexPage() {
                 <AddressSearchBar onSubmit={onAddressSubmit} inputAddress={inputAddress} setInputAddress={setInputAddress}/>
                 <div className="main-desc">Enter an ethereum address or ENS name to see likely connected ethereum addresses (ie. its cluster)
                     based on public data on previous transactions. </div>
-                <div className="results">
-                    <table id="results-table">
-                    </table>
-                </div>
             </div>
             <div className="full-page container" id="about">
                 <h3 className="left-section-header">
