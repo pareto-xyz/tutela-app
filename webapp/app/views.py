@@ -564,6 +564,7 @@ def search_tornado(request: Request) -> Response:
 
     reveal_txs: Set[str] = set().union(
         exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
+    reveal_txs: Set[str] = reveal_txs.intersection(deposit_txs)
 
     num_exact_match_reveals: int = len(exact_match_reveals.intersection(deposit_txs))
     num_gas_price_reveals: int = len(gas_price_reveals.intersection(deposit_txs))
