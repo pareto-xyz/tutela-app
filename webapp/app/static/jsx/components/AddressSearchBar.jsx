@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, Overlay, Tooltip } from 'react-bootstrap';
 import { isValid } from './utils';
+// import isTornado from '../../data/istornado';
 
 export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress }) {
 
@@ -36,7 +37,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
         e.preventDefault();
         setInputAddress(addr);
         axios.get('/utils/istornado?address=' + addr).then(response => {
-            const { data, success } = response;
+            const { data, success } = response.data;
             if (success === 0) return;
             const { is_tornado, amount, currency } = data;
             if (is_tornado ) {
