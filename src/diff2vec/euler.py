@@ -89,9 +89,9 @@ class SubGraphSequences:
 
         return components
 
-    def get_sequences(self, out_file: str):
+    def get_sequences(self, components_file: str, out_file: str):
         print('Computing connected components')
-        components: List[Set[int]] = self.extract_components(self.graph)
+        components: List[Set[int]] = self.extract_components(components_file)
 
         with jsonlines.open(out_file, mode='w') as writer:
             pbar = tqdm(total=len(components))
