@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { isValid } from './utils';
-// import isTornado from '../../data/istornado';
+import isTornado from '../../data/istornado';
 
 export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress }) {
 
@@ -37,12 +37,15 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
         e.preventDefault();
         setInputAddress(addr);
         axios.get('/utils/istornado?address=' + addr).then(response => {
-            // response = isTornado;
+            response = isTornado;
             const { data, success } = response.data;
             if (success === 0) return;
             const { is_tornado, amount, currency } = data;
             if (is_tornado) {
                 setTornadoTooltip(`This corresponds to the ${amount} ${currency} Tornado Cash pool.`)
+                const timer = setTimeout(() => {
+                    setTornadoTooltip('');
+                }, 4000);
             } else {
                 if (tornadoTooltip.length > 0) {
                     //was previously a tornado tooltip
@@ -62,7 +65,6 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
         <>
             <OverlayTrigger
                 show={tornadoTooltip}
-                delay={4000}
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
