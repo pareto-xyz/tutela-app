@@ -165,7 +165,7 @@ class UndirectedGraph:
             writer = csv.writer(fp)
             writer.writerow(['nodes', 'edges'])
             pbar = tqdm(total=len(self._nodes))
-            max_node: int = max(self._nodes)
+            max_node: int = max(self._nodes) + 1
             missing: int = 0
             for node in range(max_node): 
                 if node in self._edges:
