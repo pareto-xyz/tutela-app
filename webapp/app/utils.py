@@ -82,8 +82,10 @@ def get_display_aliases() -> Dict[str, str]:
     return {
         'num_deposit': 'deposits',
         'num_withdraw': 'withdraws',
-        'num_compromised': 'compromised deposits',
-        'num_uncompromised': 'uncompromised deposits',
+        'tcash_num_compromised': 'compromised deposits',
+        'tcash_num_uncompromised': 'uncompromised deposits',
+        'num_compromised': 'compromised transactions',
+        'num_uncompromised': 'uncompromised transactions',
         'num_compromised_exact_match': 'address match',
         'num_compromised_gas_price': 'unique gas price',
         'num_compromised_multi_denom': 'multi-denom',

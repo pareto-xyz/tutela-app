@@ -586,14 +586,14 @@ def search_tornado(request: Request) -> Response:
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
-        'num_compromised': {
+        'tcash_num_compromised': {
             'all_reveals': num_compromised,
             'exact_match': num_exact_match_reveals,
             'gas_price': num_gas_price_reveals,
             'multi_denom': num_multi_denom_reveals,
             'linked_tx': num_linked_tx_reveals,
         },
-        'num_uncompromised': num_deposits - num_compromised
+        'tcash_num_uncompromised': num_deposits - num_compromised
     }
 
     output['data']['query']['metadata']['amount'] = int(amount)
