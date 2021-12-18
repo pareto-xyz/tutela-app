@@ -23,6 +23,7 @@ class UndirectedGraph:
     def __init__(self):
         self._nodes: Set[int] = set()
         self._edges: Dict[int, List[int]] =  defaultdict(lambda: [])
+        self._size: int = 0
 
     def add_node(self, node: int):
         self._nodes.add(node)
@@ -44,17 +45,28 @@ class UndirectedGraph:
 
     def _dfs(
         self,
-        path: List[int],
         node: int,
         visited: Dict[int, bool]
     ) -> List[int]:
+        """
+        Iterative DFS because recursive ones are more storage costly
+        due to local copies.
+        """
+        path: List[int] = []  # create stack for DFS
         visited[node] = True  # mark current vertex as visited
         path.append(node)     # add vertex to path
 
-        # repeat for all vertices adjacent to current vertex
-        for v in self._edges[node]:
-            if not visited[v]:
-                path: List[int] = self._dfs([], path, v, visited)
+        while len(path) > 0:
+            vertex: int = path.pop()
+
+            if not visited[vertex]:
+                visited[vertex] = True
+            
+            for v in self.neighbors(vertex):
+                if not visited[v]:
+                    path.append(v)
+
+            print(len(path))
 
         return path
 
@@ -65,27 +77,24 @@ class UndirectedGraph:
         return self._nodes
 
     def neighbors(self, node: int) -> Set[int]:
-        assert self.has_node(node), "Graph does not contain node"
         # since we always add backwards connections, we can just fetch
         # all the connections frmo this node.
         return set(self._edges[node]) - {node}
 
-    def connected_components(self) -> List[Set[int]]:
-        sys.setrecursionlimit(len(self._nodes))
+    def connected_components(self, component_file: str) -> List[Set[int]]:
         visited: Dict[int, bool] = defaultdict(lambda: False)
-        components: List[Set[int]] = []
 
-        pbar = tqdm(total=len(self._nodes))
-        for node in self._nodes:
-            if not visited[node]:
-                component: List[int] = self._dfs(node, visited)
-                component: Set[int] = set(component)
-                components.append(component)
+        with jsonlines.open(component_file, mode='w') as writer:
+            pbar = tqdm(total=len(self._nodes))
+            for node in self._nodes:
+                if not visited[node]:
+                    component: List[int] = self._dfs(node, visited)
+                    component: Set[int] = set(component)
+                    if len(component) > 1:
+                        writer.write(list(component))
+                pbar.update()
+            pbar.close()
 
-            pbar.update()
-        pbar.close()
-
-        return components
 
     def subgraph(self, component: Set[int]):
         """
@@ -156,6 +165,12 @@ class UndirectedGraph:
         else: 
             return 0
 
+    def from_pickle(self, edges_file: str):
+        with open(edges_file, 'rb') as fp:
+            self._edges: Dict[int, List[int]] = pickle.load(fp)
+        self._nodes: Set[int] = set(list(self._edges.keys()))
+        self._size: int = len(self._nodes)
+
     def to_pickle(self, edges_file: str):
         with open(edges_file, 'wb') as fp:
             pickle.dump(self._edges, fp)
@@ -180,7 +195,7 @@ class UndirectedGraph:
         print(f'{missing} missing.')
 
     def __len__(self) -> int:
-        return len(self._nodes)
+        return self._size
 
 
 class UndirectedGraphCSVSplits:
@@ -227,7 +242,6 @@ class UndirectedGraphCSVSplits:
         return set(edges) - {node}
 
     def connected_components(self, component_file: str) -> List[Set[int]]:
-        sys.setrecursionlimit(self._size)
         visited: Dict[int, bool] = defaultdict(lambda: False)
 
         with jsonlines.open(component_file, mode='w') as writer:
@@ -293,7 +307,6 @@ class UndirectedGraphCSV:
         return set(edges) - {node}
 
     def connected_components(self, component_file: str) -> List[Set[int]]:
-        sys.setrecursionlimit(self._size)
         visited: Dict[int, bool] = defaultdict(lambda: False)
 
         with jsonlines.open(component_file, mode='w') as writer:

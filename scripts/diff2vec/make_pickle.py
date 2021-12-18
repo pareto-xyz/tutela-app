@@ -14,8 +14,8 @@ def main(args: Any):
     graph: UndirectedGraph = build_graph(data)
     print(f'Made graph with {len(graph)} nodes')
 
-    edge_file: str = os.path.join(args.cache_dir, f'edges.csv')
-    graph.to_csv(edge_file)
+    edge_file: str = os.path.join(args.cache_dir, f'edges-raw.pickle')
+    graph.to_pickle(edge_file)
 
 
 def build_graph(data: pd.DataFrame) -> UndirectedGraph:
