@@ -13,6 +13,7 @@
 
     <!-- Custom styles for this template -->
     <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/cluster.css">
     <link rel="stylesheet" type="text/css" href="/static/css/fonts.css">
 
     <!-- favicon -->
@@ -34,22 +35,11 @@
 
 
 <body class="container">
-    <div id="index-page">
+    <div id="root">
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-        // $(function () {
-
-        //     var form = $('#address-form');
-        //     form.submit(e => {
-        //         e.preventDefault();
-        //         const a = $("#input-address").first().val()
-        //         window.location.href = "/cluster?address=" + a;
-        //     })
-        // });
-    </script>
     <script src="{{ url_for('static', filename='dist/bundle.js') }}"></script>
 
 

@@ -31,14 +31,9 @@ HARD_MAX: int = 1000
 
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
+@app.route('/cluster', methods=['GET'])
 def index():
     return render_template('index.html')
-
-
-@app.route('/cluster', methods=['GET'])
-def cluster():
-    return render_template('cluster.html')
-
 
 @app.route('/utils/aliases', methods=['GET'])
 def alias():

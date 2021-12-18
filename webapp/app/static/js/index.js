@@ -12,13 +12,14 @@ import HomePage from "../jsx/home";
 
 let url = new URL(window.location.href.toLowerCase());
 const params = url.searchParams;
+const root = document.getElementById('root');
 if (url.pathname === '/' || url.pathname === '/index') {
-    ReactDOM.render(<HomePage params={params} />, document.getElementById('index-page'));
+    ReactDOM.render(<HomePage params={params} />, root);
 }
 else if (url.pathname === '/cluster') {
-    ReactDOM.render(<ClusterPage params={params} />, document.getElementById('address-page'));
+    ReactDOM.render(<ClusterPage params={params} />, root);
 }
 else if (url.pathname === "/transaction") {
-    ReactDOM.render(<TransactionPage params={params} />, document.getElementById("root"));
+    ReactDOM.render(<TransactionPage params={params} />, root);
 }
 
