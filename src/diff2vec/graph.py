@@ -52,21 +52,24 @@ class UndirectedGraph:
         Iterative DFS because recursive ones are more storage costly
         due to local copies.
         """
-        path: List[int] = []  # create stack for DFS
-        visited[node] = True  # mark current vertex as visited
-        path.append(node)     # add vertex to path
+        path: List[int] = []  
+        stack: List[int] = []  # create stack for DFS
+        visited[node] = True   # mark current vertex as visited
+        path.append(node)      # add vertex to path
+        stack.append(node)
 
-        while len(path) > 0:
-            vertex: int = path.pop()
+        while len(stack) > 0:
+            vertex: int = stack.pop()
 
             if not visited[vertex]:
                 visited[vertex] = True
+                path.append(vertex)
             
             for v in self.neighbors(vertex):
                 if not visited[v]:
-                    path.append(v)
+                    stack.append(v)
 
-            print(len(path))
+            print(len(stack), len(path))
 
         return path
 
@@ -166,8 +169,10 @@ class UndirectedGraph:
             return 0
 
     def from_pickle(self, edges_file: str):
+        print('loading edges...')
         with open(edges_file, 'rb') as fp:
             self._edges: Dict[int, List[int]] = pickle.load(fp)
+        print('loading nodes...')
         self._nodes: Set[int] = set(list(self._edges.keys()))
         self._size: int = len(self._nodes)
 

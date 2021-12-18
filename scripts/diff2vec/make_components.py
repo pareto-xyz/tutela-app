@@ -5,6 +5,7 @@ from src.diff2vec.graph import UndirectedGraph
 def main(args: Any):
     graph: UndirectedGraph = UndirectedGraph()
     graph.from_pickle(args.edges_file)
+    breakpoint()
     graph.connected_components(args.out_file)
 
 
