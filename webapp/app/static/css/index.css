@@ -107,7 +107,7 @@ td, th {
     padding: 5px;
 }
 
-#input-address.fixed-width {
+.fixed-width {
     width: 600px;
     border: transparent;
 }

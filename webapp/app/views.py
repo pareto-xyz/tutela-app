@@ -63,7 +63,7 @@ def istornado():
     }
 
     if not is_valid_address(address):
-        return Response(output)
+        return Response(json.dumps(output))
 
     is_tornado: bool = int(is_tornado_address(address))
     pool: pd.DataFrame = \
