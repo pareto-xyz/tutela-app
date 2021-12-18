@@ -9,7 +9,7 @@ export default function IndexPage() {
     const [inputAddress, setInputAddress] = useState('');
 
     const onAddressSubmit = (addr) => {
-        window.history.pushState(null, null, "?address=" + addr);
+        window.location.href = "/cluster?address=" + addr;
     }
 
     return (
