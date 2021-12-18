@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { Form, FormControl, InputGroup } from 'react-bootstrap';
-import { isValid, buildQueryString } from '../components/utils';
+import { buildQueryString } from '../components/utils';
 import axios from 'axios';
 import example from '../../data/example';
 import QueryInfo from './QueryInfo';
@@ -13,7 +12,7 @@ import TpoolStats from './TpoolStats';
 import { QueryObjContext } from '../components/Contexts';
 import SortAndFilters from '../components/SortAndFilters';
 import Pagination from '../components/Pagination';
-import aliasesResponse from '../../data/aliases';
+import AddressSearchBar from '../components/AddressSearchBar';
 
 import AccordionOfResults from '../components/AccordionOfResults';
 import HaveIBeenCompromised from './HaveIBeenCompromised';
@@ -42,12 +41,10 @@ const AddressClusterHeader = (
 
 function ClusterPage(props) {
     const { params } = props;
-    const inputEl = useRef(null);
 
     let [queryObj, setQuery] = useState({}); //sorts and filters 
     const [inputAddress, setInputAddress] = useState('');
     const [pageResults, setPageResults] = useState([]);
-    const [invalid, setInvalid] = useState(false);
     const [firstView, setFirstView] = useState(true);
     const [showResultsSection, setShowResultsSection] = useState(false);
     const [loadingCluster, setLoadingCluster] = useState(false);
@@ -71,7 +68,6 @@ function ClusterPage(props) {
 
         const addr = params.get('address');
         if (addr !== null) {
-            inputEl.current.value = addr;
             setInputAddress(addr);
             submitInputAddress(addr);
         }
@@ -152,28 +148,16 @@ function ClusterPage(props) {
 
     const submitInputAddress = addr => {
         //param is optional. otherwise, use the inputAddress var
-        if (!addr) {
-            addr = inputAddress;
-            setInputAddress(addr);
-        }
-        if (!isValid(addr)) {
-            setInvalid(true);
-            return;
-        }
-        setInvalid(false);
+
         queryObj = {
             address: addr
         }; // clears all the sort, filters, page, etc.
         setQuery(queryObj);
         getNewResults(true);
-        window.history.replaceState(null, null, "?address=" + addr);
-
+        window.history.pushState(null, null, "?address=" + addr);
     }
 
-    const onChangeInputAddress = e => {
-        e.preventDefault();
-        setInputAddress(e.target.value);
-    }
+
 
     return (
         <div>
@@ -186,27 +170,8 @@ function ClusterPage(props) {
                         based on public data on previous transactions.
                     </div>}
 
-
-                    <InputGroup onSubmit={submitInputAddress} className="mb-3 " hasValidation>
-                        <FormControl onKeyPress={(e) => {
-                            if (e.key !== 'Enter') return;
-                            e.preventDefault();
-                            submitInputAddress();
-                        }}
-                            onChange={onChangeInputAddress}
-                            placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
-                            className="search-bar"
-                            isInvalid={invalid}
-                            ref={inputEl}
-                        >
-                        </FormControl>
-
-                        <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
-                        <Form.Control.Feedback type="invalid">
-                            Please enter a valid ethereum address or .eth ens name. 
-                        </Form.Control.Feedback>
-                    </InputGroup>
-
+                    <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
+                    
                     {searchType === 'tornadoPool' &&
                         <>
                             {showResultsSection &&

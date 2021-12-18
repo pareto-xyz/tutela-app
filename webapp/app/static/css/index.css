@@ -93,9 +93,9 @@ a:hover {
 MAIN PAGE SEARCH SECTION
 */
 
-.main {
+.full-page.main {
     display: flex;
-    /* margin-top: 100px; */
+    min-height: 80vh;
     padding: 0px;
     align-items: center;
     flex-direction: column;
@@ -107,7 +107,7 @@ td, th {
     padding: 5px;
 }
 
-#input-address.fixed-width {
+.fixed-width {
     width: 600px;
     border: transparent;
 }
