@@ -54,7 +54,7 @@ class Diff2Vec:
             alpha = self.learning_rate,
             seed = self.seed,
         )
-
+        self.model = model
         num_nodes: int = len(sequences)
 
         print('Fetching embeddings')
