@@ -36,37 +36,36 @@ class EulerianDiffusion:
         """
         infected: List[int] = [node] 
 
-        # subgraph: nx.DiGraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
-        # subgraph.add_node(node)  # start with such this node
+        subgraph: nx.DiGraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
+        subgraph.add_node(node)  # start with such this node
         counter: int = 1
-        neighbors = self.graph.neighbors(0, as_set=False)
 
         while counter < self.cover_size:
             w: int = random.sample(infected, 1)[0]
-            # neighbors: Set[int] = self.graph.neighbors(w, as_set=False)
+            neighbors: List[int] = self.graph._edges[w]  
 
             if len(neighbors) == 0:  # nothing to do!
                 break
 
             u: int = random.sample(neighbors, 1)[0]
+            
             if u not in infected:
                 counter += 1
                 infected.append(u)
                 # double graph
-                # subgraph.add_edges_from([(u, w), (w, u)])
+                subgraph.add_edges_from([(u, w), (w, u)])
 
                 if counter == self.cover_size:
                     break
 
-        # euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
-        euler = []
+        euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
         return euler
 
     def diffuse(self, writer: jsonlines.Writer) -> Dict[int, List[int]]:
         pbar = tqdm(total=len(self.component))
         for node in self.component:
             seq: List[int] = self._diffuse(node)
-            # writer.write(seq)
+            writer.write(seq)
             pbar.update()
         pbar.close()
 
