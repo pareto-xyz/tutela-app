@@ -36,8 +36,8 @@ export default function IndexPage() {
                         about themselves through their blockchain activity.</strong>
                 </div>
                 <div className="section-desc">
-                    We use data science and Ethereum and Tornado Cash reveals to <strong>probablistically estimate which
-                        Ethereum addresses are affiliated with single entities. </strong>
+                    We use data science and Ethereum and Tornado Cash reveals to <strong>probablistically estimate which Ethereum 
+                        addresses are affiliated with single entities and which Tornado Cash deposits may be compromised.</strong>
 
 
                 </div>
@@ -71,27 +71,15 @@ export default function IndexPage() {
                         </div>
                         <div>
                             <div className="block-title">
-                                Time-of-Day
-                                Transaction Activity
+                            Diff2Vec Machine Learning
                             </div>
                             <div className="block-text">
-                                Ethereum transaction timestamps reveal the daily activity patterns of the account owner.
-                                Consistent time-of-day activity across multiple addresses can be used to link multiple wallets.
+                            Diff2Vec is a machine learning algorithm. Applying it to Ethereum transactions allows the 
+                            clustering of potentially related addresses.
                             </div>
                         </div>
 
-                        <div>
-                            <div className="block-title">
-                                Gas Price
-                                Distribution
-                            </div>
-                            <div className="block-text">
-                                Ethereum transactions also contain the gas price, which is
-                                usually automatically set by wallet softwares. Users rarely
-                                change this setting manually, so may reveal when two addresses use the same version of a wallet
-                                (e.g. v[xx] of MetaMask).
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
                 <br />
@@ -101,12 +89,24 @@ export default function IndexPage() {
                     <div className="center-blocks">
                         <div>
                             <div className="block-title">
-                                Synchronous
-                                Tx Reveal
+                            Address Match Reveal
                             </div>
                             <div className="block-text">
-                                If you consistently make txs with a “source” wallet and a “destination” wallet at roughly
-                                similar times, you may reveal the two wallets have the same owner.
+                            Suppose the address making a deposit transaction to a Tornado Cash pool matches 
+                            the address making a withdrawal transaction (from the same pool). In that case, 
+                            the two transactions can be linked, and the corresponding deposit may be compromised 
+                            as the user identity may be revealed. These may be TORN yield farmers who deposit and withdraw to the same address.
+                            </div>
+                        </div>
+                        <div>
+                            <div className="block-title">
+                            Unique Gas Price Reveal
+                            </div>
+                            <div className="block-text">
+                            Prior to EIP-1559, Ethereum users could specify the gas price when making a 
+                            deposit or withdrawal to a Tornado Cash pool. Those who do so tend to specify 
+                            gas prices that are identical for deposit and withdrawal transactions, linking the 
+                            wallets that made the deposit and withdrawal transactions.
                             </div>
                         </div>
                         <div>
@@ -119,6 +119,15 @@ export default function IndexPage() {
                                 to begin staking on the beacon chain), then you could reveal yourself within the Tornado
                                 protocol
                                 if no other wallet has mixed this exact denomination set.
+                            </div>
+                        </div>
+                        <div>
+                            <div className="block-title">
+                            Linked Address Reveal
+                            </div>
+                            <div className="block-text">
+                            Suppose two addresses deposit and withdraw to the same Tornado Cash Pool. If these addresses 
+                            interact outside of the Tornado Protocol, then they may be linked and their deposits compromised. 
                             </div>
                         </div>
                         <div>
