@@ -79,10 +79,13 @@ class UndirectedGraph:
     def nodes(self) -> Set[int]:
         return self._nodes
 
-    def neighbors(self, node: int) -> Set[int]:
-        # since we always add backwards connections, we can just fetch
-        # all the connections frmo this node.
-        return set(self._edges[node]) - {node}
+    def neighbors(self, node: int, as_set=True) -> Set[int]:
+        if as_set:
+            # since we always add backwards connections, we can just fetch
+            # all the connections from this node.
+            return set(self._edges[node]) - {node}
+        else:
+            return self._edges[node]
 
     def connected_components(self, component_file: str) -> List[Set[int]]:
         visited: Dict[int, bool] = defaultdict(lambda: False)
@@ -171,7 +174,7 @@ class UndirectedGraph:
     def from_pickle(self, edges_file: str):
         print('loading edges...')
         with open(edges_file, 'rb') as fp:
-            self._edges: Dict[int, List[int]] = pickle.load(fp)
+            self._edges: Dict[int, Union[List[int], Set[int]]] = pickle.load(fp)
         print('loading nodes...')
         self._nodes: Set[int] = set(list(self._edges.keys()))
         self._size: int = len(self._nodes)
