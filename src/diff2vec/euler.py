@@ -34,39 +34,41 @@ class EulerianDiffusion:
         """
         Generate diffusion tree from source node.
         """
-        infected: Set[int] = {node}
+        infected: List[int] = [node] 
 
-        subgraph: nx.DiGraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
-        subgraph.add_node(node)  # start with such this node
+        # subgraph: nx.DiGraph = nx.DiGraph()  # subgraphs we assume are small enough for nx
+        # subgraph.add_node(node)  # start with such this node
         counter: int = 1
+        neighbors = self.graph.neighbors(0, as_set=False)
 
         while counter < self.cover_size:
             w: int = random.sample(infected, 1)[0]
-            neighbors: Set[int] = self.graph.neighbors(w)
-            neighbors: Set[int] = neighbors - infected
+            # neighbors: Set[int] = self.graph.neighbors(w, as_set=False)
 
             if len(neighbors) == 0:  # nothing to do!
                 break
 
-            # set subtract so we always sample a new node 
-            # rather than rejection sample
             u: int = random.sample(neighbors, 1)[0]
-            
-            counter += 1
-            infected.add(u)
-            # double graph
-            subgraph.add_edges_from([(u, w), (w, u)])
+            if u not in infected:
+                counter += 1
+                infected.append(u)
+                # double graph
+                # subgraph.add_edges_from([(u, w), (w, u)])
 
-            if counter == self.cover_size:
-                break
+                if counter == self.cover_size:
+                    break
 
-        euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
+        # euler: List[int] = [int(u) for u, _ in nx.eulerian_circuit(subgraph, node)]
+        euler = []
         return euler
 
     def diffuse(self, writer: jsonlines.Writer) -> Dict[int, List[int]]:
+        pbar = tqdm(total=len(self.component))
         for node in self.component:
             seq: List[int] = self._diffuse(node)
-            writer.write(json.dumps(seq))
+            # writer.write(seq)
+            pbar.update()
+        pbar.close()
 
 
 class SubGraphSequences:
@@ -90,12 +92,11 @@ class SubGraphSequences:
         return components
 
     def get_sequences(self, components_file: str, out_file: str):
-        print('Computing connected components')
+        print('loading connected components...')
         components: List[Set[int]] = self.extract_components(components_file)
 
         with jsonlines.open(out_file, mode='w') as writer:
-            pbar = tqdm(total=len(components))
-            for component in components:
+            for c, component in enumerate(components):
                 card: int = len(component)  # cardinality
 
                 if card == 1:  # skip components of size 1
@@ -104,9 +105,7 @@ class SubGraphSequences:
                 if card < self.vertex_card:
                     self.vertex_card: int = card
 
+                print(f'Component: ({c+1}/{len(components)})')
                 euler: EulerianDiffusion = \
                     EulerianDiffusion(self.graph, component, self.vertex_card)
                 euler.diffuse(writer)
-
-                pbar.update()
-            pbar.close()
