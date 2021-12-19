@@ -298,7 +298,7 @@ def search_address(request: Request) -> Response:
 
         return set(cluster_txs)  # no duplicates
 
-    def query_tornado_stats(address: str) -> Dict[str, int]:
+    def query_tornado_stats(address: str) -> Dict[str, Any]:
         """
         Given a user address, we want to supply a few statistics:
 
@@ -342,7 +342,7 @@ def search_address(request: Request) -> Response:
         num_compromised_linked_tx = num_all - num_remain_linked_tx
 
         # compute number of txs compromised by TCash heuristics
-        stats: Dict[str, int] = dict(
+        stats: Dict[str, Any] = dict(
             num_deposit = num_deposit,
             num_withdraw = num_withdraw,
             num_compromised = dict(
@@ -351,8 +351,19 @@ def search_address(request: Request) -> Response:
                 num_compromised_gas_price = num_compromised_gas_price,
                 num_compromised_multi_denom = num_compromised_multi_denom,
                 num_compromised_linked_tx = num_compromised_linked_tx,
+                hovers = dict(
+                    num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
+                    num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
+                    num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
+                    num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.'
+                )
             ),
-            num_uncompromised = num_all - num_compromised
+            num_uncompromised = num_all - num_compromised,
+            hovers = dict(
+                num_deposit = '# of deposit transactions into tornado cash pools.',
+                num_withdraw = '# of withdrawal transactions from tornado cash pools.',
+                num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
+            )
         )
         return stats
 
@@ -575,14 +586,14 @@ def search_tornado(request: Request) -> Response:
     amount, currency = pool.tags.strip().split()
     stats: Dict[str, Any] = {
         'num_deposits': num_deposits,
-        'num_compromised': {
+        'tcash_num_compromised': {
             'all_reveals': num_compromised,
             'exact_match': num_exact_match_reveals,
             'gas_price': num_gas_price_reveals,
             'multi_denom': num_multi_denom_reveals,
             'linked_tx': num_linked_tx_reveals,
         },
-        'num_uncompromised': num_deposits - num_compromised
+        'tcash_num_uncompromised': num_deposits - num_compromised
     }
 
     output['data']['query']['metadata']['amount'] = int(amount)

@@ -9,7 +9,7 @@ export default function TpoolStats({ data, aliases }) {
             </div>
             {data &&
                 <div>
-                    <AgnosticTable aliases={aliases} keyValues={Object.entries(data)} />
+                    <AgnosticTable aliases={aliases} keyValues={data} />
                 </div>
             }
         </div>
