@@ -9,19 +9,19 @@ export default function TornadoInfo({ data, aliases }) {
                 TORNADO CASH STATISTICS
             </div>
             <div className="panel-sub">
-            This shows Tornado Cash transactions by your input address and other clustered addresses.
+            This shows Tornado Cash transactions by your input address.
             </div>
             <div className="two-tables">
                 {data && data.summary && data.summary.address && <div>
                     <div className="table-title">by address </div>
-                    <AgnosticTable aliases={aliases} keyValues={Object.entries(data.summary.address)} />
+                    <AgnosticTable aliases={aliases} keyValues={data.summary.address} />
                 </div>
                 }
                 {data && data.summary && data.summary.cluster &&
                     <div>
                         <div className="table-title">by cluster </div>
 
-                        <AgnosticTable aliases={aliases} keyValues={Object.entries(data.summary.cluster)} />
+                        <AgnosticTable aliases={aliases} keyValues={data.summary.cluster} />
                     </div>
                 }
 

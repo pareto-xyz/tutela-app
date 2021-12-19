@@ -93,9 +93,9 @@ a:hover {
 MAIN PAGE SEARCH SECTION
 */
 
-.main {
+.full-page.main {
     display: flex;
-    /* margin-top: 100px; */
+    min-height: 80vh;
     padding: 0px;
     align-items: center;
     flex-direction: column;
@@ -107,7 +107,7 @@ td, th {
     padding: 5px;
 }
 
-#input-address.fixed-width {
+.fixed-width {
     width: 600px;
     border: transparent;
 }
@@ -217,14 +217,12 @@ ABOUT
 }
 
 .center-blocks > div {
-    flex: 1;
     margin-right: 40px;
 }
 
 .center-blocks {
-    display: flex;
-    flex-direction: row;
-    min-width: 150px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .block-title {
