@@ -556,6 +556,7 @@ def search_tornado(request: Request) -> Response:
     address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
+    return_tx: bool = checker.get('return_tx')
 
     output['data']['query']['address'] = address
     output['data']['metadata']['page'] = page
@@ -565,22 +566,20 @@ def search_tornado(request: Request) -> Response:
         tornado_pools[tornado_pools.address == address].iloc[0]
 
     deposit_txs: Set[str] = get_equal_user_deposit_txs(address)
-    deposit_txs_list: List[str] = list(deposit_txs)
     num_deposits: int = len(deposit_txs)
 
-    exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
-    gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
-    multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
-    linked_tx_reveals: Set[str] = find_reveals(deposit_txs_list, LinkedTransaction)
+    exact_match_reveals: Set[str] = find_reveals(deposit_txs, ExactMatch)
+    gas_price_reveals: Set[str] = find_reveals(deposit_txs, GasPrice)
+    multi_denom_reveals: Set[str] = find_reveals(deposit_txs, MultiDenom)
+    linked_tx_reveals: Set[str] = find_reveals(deposit_txs, LinkedTransaction)
 
     reveal_txs: Set[str] = set().union(
         exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
-    reveal_txs: Set[str] = reveal_txs.intersection(deposit_txs)
 
-    num_exact_match_reveals: int = len(exact_match_reveals.intersection(deposit_txs))
-    num_gas_price_reveals: int = len(gas_price_reveals.intersection(deposit_txs))
-    num_multi_denom_reveals: int = len(multi_denom_reveals.intersection(deposit_txs))
-    num_linked_tx_reveals: int = len(linked_tx_reveals.intersection(deposit_txs))
+    num_exact_match_reveals: int = len(exact_match_reveals)
+    num_gas_price_reveals: int = len(gas_price_reveals)
+    num_multi_denom_reveals: int = len(multi_denom_reveals)
+    num_linked_tx_reveals: int = len(linked_tx_reveals)
 
     num_compromised: int = len(reveal_txs)
     amount, currency = pool.tags.strip().split()
@@ -595,6 +594,15 @@ def search_tornado(request: Request) -> Response:
         },
         'tcash_num_uncompromised': num_deposits - num_compromised
     }
+
+    if return_tx:
+        output['data']['deposits'] = list(deposit_txs)
+        output['data']['compromised'] = {
+            'exact_match': list(exact_match_reveals),
+            'gas_price': list(gas_price_reveals),
+            'multi_denom': list(multi_denom_reveals),
+            'linked_tx': list(linked_tx_reveals),
+        }
 
     output['data']['query']['metadata']['amount'] = float(amount)
     output['data']['query']['metadata']['currency'] = currency

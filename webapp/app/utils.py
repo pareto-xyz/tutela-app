@@ -45,6 +45,13 @@ def safe_float(x, default=0):
         return default
 
 
+def safe_bool(x, default=False):
+    try:
+        return bool(x)
+    except:
+        return default
+
+
 def get_order_command(s, descending):
     s = s.strip()
     column = None
@@ -313,7 +320,8 @@ def default_tornado_response() -> Dict[str, Any]:
                     }
                 },
             },
-            'compromised': [],
+            'deposits': [],
+            'compromised': {},
             'metadata': {
                 'compromised_size': 0,
                 'num_pages': 0,
@@ -509,7 +517,8 @@ class TornadoPoolRequestChecker:
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page() and self._check_limit()
+        return self._check_address() and self._check_page() and \
+            self._check_limit() and self._check_return_tx()
 
     def _check_address(self) -> bool:
         """
@@ -542,6 +551,12 @@ class TornadoPoolRequestChecker:
         self._params['limit'] = limit
         return True
 
+    def _check_return_tx(self) -> bool:
+        return_tx: Union[str, bool] = self.request.args.get('return_tx', False)
+        return_tx: bool = safe_bool(return_tx, False)
+        self._params['return_tx'] = return_tx
+        return True
+
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
 
@@ -562,12 +577,14 @@ def get_equal_user_deposit_txs(address: str) -> Set[str]:
     return set(txs)
 
 
-def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
+def find_reveals(transactions: Set[str], class_: Any) -> Set[str]:
+    transactions: List[str] = list(transactions)
     rows: List[class_] = \
         class_.query.filter(class_.transaction.in_(transactions)).all()
     clusters: List[int] = list(set([row.cluster for row in rows]))
     rows: List[class_] = \
         class_.query.filter(class_.cluster.in_(clusters)).all()
 
-    reveals: List[str] = list(set([row.transaction for row in rows]))
-    return set(reveals)
+    reveals: Set[str] = set([row.transaction for row in rows])
+    reveals: Set[str] = reveals.intersection(transactions)
+    return reveals
