@@ -596,7 +596,7 @@ def search_tornado(request: Request) -> Response:
         'tcash_num_uncompromised': num_deposits - num_compromised
     }
 
-    output['data']['query']['metadata']['amount'] = int(amount)
+    output['data']['query']['metadata']['amount'] = float(amount)
     output['data']['query']['metadata']['currency'] = currency
     output['data']['query']['metadata']['stats'] = stats
     output['data']['metadata']['compromised_size'] = num_compromised
