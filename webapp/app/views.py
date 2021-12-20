@@ -556,6 +556,7 @@ def search_tornado(request: Request) -> Response:
     address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
+    return_tx: bool = checker.get('return_tx')
 
     output['data']['query']['address'] = address
     output['data']['metadata']['page'] = page
@@ -593,6 +594,15 @@ def search_tornado(request: Request) -> Response:
         },
         'tcash_num_uncompromised': num_deposits - num_compromised
     }
+
+    if return_tx:
+        output['data']['deposits'] = list(deposit_txs)
+        output['data']['compromised'] = {
+            'exact_match': list(exact_match_reveals),
+            'gas_price': list(gas_price_reveals),
+            'multi_denom': list(multi_denom_reveals),
+            'linked_tx': list(linked_tx_reveals),
+        }
 
     output['data']['query']['metadata']['amount'] = float(amount)
     output['data']['query']['metadata']['currency'] = currency
