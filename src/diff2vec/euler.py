@@ -1,9 +1,9 @@
 """
 Eulerian Diffusion.
 """
-import os, random
+import random
 import numpy as np
-import json, jsonlines
+import jsonlines
 from tqdm import tqdm
 import networkx as nx
 from typing import List, Dict, Set
@@ -77,9 +77,14 @@ class SubGraphSequences:
     Separate the original graph and run diffusion on each node 
     in subgraph.
     """
-    def __init__(self, graph: UndirectedGraph, vertex_card: int):
+    def __init__(self, graph: UndirectedGraph, vertex_card: int, seed: int = 42):
         self.graph: UndirectedGraph = graph
         self.vertex_card: int = vertex_card  # number of nodes per sample
+
+        self.set_random_seed(seed)
+
+    def set_random_seed(self, seed: int):
+        random.seed(seed)
     
     def extract_components(self, component_file: str) -> List[Set[int]]:
         with jsonlines.open(component_file) as reader:
