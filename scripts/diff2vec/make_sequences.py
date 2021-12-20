@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('sequences_file', type=str, help='path to sequences file')
     parser.add_argument('--cover-size', type=int, default=80, 
                         help='size of subgraph (default: 80)')
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
     args: Any = parser.parse_args()
 
     main(args)
