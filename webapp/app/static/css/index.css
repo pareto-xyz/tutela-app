@@ -25,13 +25,6 @@ html.ombre {
   --fadedgrey: #5b5b5b86;
 }
 
-@font-face {
-  font-family: "PT Mono";
-  src: url("../fonts/PTMono-Bold.woff2") format("woff2");
-  font-weight: bold;
-  font-style: normal;
-}
-
 body {
   font-family: "PT Mono", "Ubuntu", monospace;
   background-color: transparent;

@@ -78,7 +78,7 @@ TOP
 .anon-score-group {
   display: flex;
   align-items: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   white-space: nowrap;
 }
 
@@ -394,6 +394,7 @@ ul.dropdown-menu {
 .my-accordion-header {
   font-size: 18px;
   margin-bottom: 2px;
+  background-color: #4c4c4c;
 }
 
 .selected-result > .my-accordion-header > button {
