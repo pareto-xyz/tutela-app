@@ -552,7 +552,7 @@ class TornadoPoolRequestChecker:
         return True
 
     def _check_return_tx(self) -> bool:
-        return_tx: Union[str, bool] = self.request.args.get('return_tx', False)
+        return_tx: Union[str, bool] = self._request.args.get('return_tx', False)
         return_tx: bool = safe_bool(return_tx, False)
         self._params['return_tx'] = return_tx
         return True
