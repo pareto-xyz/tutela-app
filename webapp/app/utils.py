@@ -562,12 +562,14 @@ def get_equal_user_deposit_txs(address: str) -> Set[str]:
     return set(txs)
 
 
-def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
+def find_reveals(transactions: Set[str], class_: Any) -> Set[str]:
+    transactions: List[str] = list(transactions)
     rows: List[class_] = \
         class_.query.filter(class_.transaction.in_(transactions)).all()
     clusters: List[int] = list(set([row.cluster for row in rows]))
     rows: List[class_] = \
         class_.query.filter(class_.cluster.in_(clusters)).all()
 
-    reveals: List[str] = list(set([row.transaction for row in rows]))
-    return set(reveals)
+    reveals: Set[str] = set([row.transaction for row in rows])
+    reveals: Set[str] = reveals.intersection(transactions)
+    return reveals
