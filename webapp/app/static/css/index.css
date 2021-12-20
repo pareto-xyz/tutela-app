@@ -215,7 +215,7 @@ ABOUT
 .left-section-header:before,
 .left-section-header:after {
   width: 95%;
-  height: 70%;
+  height: 95%;
   border: 1px solid var(--fadedgreen);
   border-radius: 6px;
   content: "";
