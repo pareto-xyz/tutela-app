@@ -1,4 +1,4 @@
-import os
+import os, json
 import pandas as pd
 from tqdm import tqdm
 import networkx as nx
@@ -77,6 +77,7 @@ def build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
         for deposit_tuple in deposit_tuples:
             deposit_tx, deposit_addr = deposit_tuple
             graph.add_node(deposit_tx)
+            graph.add_edge(withdraw_tx, deposit_tx)
             tx2addr[deposit_tx] = deposit_addr
 
     clusters: List[Set[str]] = [  # ignore singletons
