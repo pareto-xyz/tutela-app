@@ -6,6 +6,78 @@ body {
 html {
   background-color: #202020;
 }
+
+/* Style optimization */
+
+#invalid-input,
+#spinner,
+#no-clusters-msg,
+.all-pagination {
+  margin: 10px 0px;
+}
+
+.query-info,
+.tornado-info,
+.linked-adress,
+.specific-result,
+.specific-result:focus,
+.result-entry.selected,
+.dropdown-toggle,
+.detail-page,
+.selected-result > .my-accordion-header > button,
+.my-accordion-body {
+  background-color: var(--fadedgrey);
+}
+
+.specific-result,
+.specific-result:focus,
+.page-button,
+.select-page,
+.input-num,
+.dropdown-accordion > button,
+.my-accordion-header > button {
+  border: transparent;
+}
+
+.specific-result,
+.specific-result:focus,
+.panel-sub,
+.fa-question-circle,
+#instructions,
+.page-button,
+.copied-badge {
+  color: var(--lightgrey);
+}
+
+.query-info,
+.tornado-info,
+.linked-adress {
+  border-radius: 5px;
+  padding: 15px;
+  height: 100%;
+}
+
+.specific-result,
+.specific-result:focus {
+  font-size: 0.8em;
+}
+
+.dropdown-accordion > *,
+.dropdown-accordion > a.dropdown-item,
+.dropdown-accordion.accordion-header > button > * {
+  color: black;
+}
+
+#detail-table,
+.detail-table {
+  border-collapse: separate;
+  border-spacing: 5px 5px;
+  font-size: 0.9em;
+  border-color: transparent;
+}
+
+/* Body styles */
+
 .footer-react {
   padding: 0 1rem;
   position: absolute;
@@ -14,20 +86,13 @@ html {
 }
 
 .panel-title {
-  background-color: var(--fadedgrey);
   color: var(--tcashgreen);
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  display: block;
-  text-overflow: ellipsis;
   border-radius: 5px;
-  padding: 15px;
   margin: 10px 0;
 }
 
 .panel-sub {
-  color: var(--lightgrey);
   font-size: 0.8em;
 }
 
@@ -49,12 +114,10 @@ html {
 .squashed-row {
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .accordion-badge {
-  margin: 0px 20px 0px 10px;
-  border-radius: 5px;
-  background-color: var(--fadedgreen);
   padding: 10px;
   font-size: 0.9em;
 }
@@ -83,19 +146,11 @@ TOP
 }
 
 .fa-question-circle {
-  color: var(--lightgrey);
   margin-left: 5px;
-}
-
-#invalid-input,
-#spinner,
-#no-clusters-msg {
-  margin: 10px 0px;
 }
 
 #instructions {
   margin: 40px 0 30px 0;
-  color: var(--lightgrey);
 }
 
 #no-clusters-msg {
@@ -122,18 +177,11 @@ RESULTS
 
 .page-button {
   font-size: 1.5em;
-  color: var(--lightgrey);
   background-color: transparent;
-  border: transparent;
 }
 
 .all-pagination {
-  display: flex;
-  margin: 10px 0px;
-  font-size: 0.8em;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  font-size: 0.8rem;
 }
 
 .shown {
@@ -143,26 +191,18 @@ RESULTS
 
 .pagination {
   align-items: center;
-  margin-bottom: 5px;
+  justify-content: center;
 }
 
 .select-page {
   margin: 0px 10px;
   padding: 4px;
   border-radius: 4px;
-  background-color: black;
+  background-color: transparent;
   color: white;
-  border: transparent;
 }
 
 /* query info ---------------- */
-
-.query-info {
-  background-color: var(--fadedgrey);
-  border-radius: 5px;
-  padding: 15px;
-  height: 100%;
-}
 
 /* tornado info ------------------ */
 
@@ -178,12 +218,6 @@ RESULTS
 
 .two-tables > * {
   flex: 1;
-}
-
-.tornado-info {
-  background-color: var(--fadedgrey);
-  border-radius: 5px;
-  padding: 15px;
 }
 
 #tornado-data-cluster {
@@ -209,7 +243,8 @@ input.form-control.rounded {
 }
 
 .first-part-accordion-header {
-  display: flex;
+  word-wrap: break-word;
+  margin: 1rem 0;
 }
 
 .etherscan-link {
@@ -220,7 +255,6 @@ input.form-control.rounded {
 }
 
 .copied-badge {
-  color: var(--lightgrey);
   background-color: transparent;
 }
 
@@ -245,7 +279,6 @@ input.form-control.rounded {
 }
 
 .result-entry.selected {
-  background-color: var(--fadedgrey);
   outline: none;
 }
 
@@ -267,13 +300,14 @@ input.form-control.rounded {
 }
 
 /* search options ----------------- */
-.search-options {
-  display: flex;
-  flex-wrap: wrap;
+.button-group,
+.link-input,
+.results-pagination {
+  margin: 0.5rem 0;
 }
 
-.button-group {
-  margin-right: 10px;
+.results-pagination {
+  text-align: center;
 }
 
 .dropdown-lever {
@@ -281,27 +315,11 @@ input.form-control.rounded {
   border-top: dashed 1px darkgrey;
 }
 
-.specific-result,
-.specific-result:focus {
-  padding: 0px 0px 0px 5px;
-  font-size: 0.8em;
-  min-width: 0px;
-  flex: 1;
-  background-color: var(--fadedgrey);
-  border: transparent;
-  color: var(--lightgrey);
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-}
-
-.search-options > .input-group {
-  flex: 1;
-}
-
 .dropdown-toggle {
-  background-color: var(--fadedgrey);
   color: white;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   padding: 0.375rem 0.75rem;
+  width: 100%;
+  border: transparent;
 }
 
 .selected-dropdown {
@@ -317,7 +335,6 @@ ul.dropdown-menu {
 
 .input-num {
   max-width: 40px;
-  border: transparent;
   border-radius: 5px;
   text-align: center;
 }
@@ -325,7 +342,6 @@ ul.dropdown-menu {
 .dropdown-accordion > button {
   background-color: transparent;
   font-size: 12pt;
-  border: transparent;
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -338,15 +354,6 @@ ul.dropdown-menu {
 
 .dropdown-accordion.accordion-header {
   margin-top: 10px;
-}
-
-.dropdown-accordion.accordion-header > button > * {
-  color: black;
-}
-
-.dropdown-accordion > *,
-.dropdown-accordion > a.dropdown-item {
-  color: black;
 }
 
 .dropdown-accordion.accordion-item {
@@ -383,7 +390,6 @@ ul.dropdown-menu {
 /* detail page -------------------*/
 
 .detail-page {
-  background-color: var(--fadedgrey);
   border-radius: 5px;
   width: 100%;
   margin-left: 30px;
@@ -392,51 +398,29 @@ ul.dropdown-menu {
 }
 
 .my-accordion-header {
-  font-size: 18px;
-  margin-bottom: 2px;
-  background-color: #4c4c4c;
-}
-
-.selected-result > .my-accordion-header > button {
-  background-color: var(--fadedgrey);
+  font-size: 1rem;
 }
 
 .my-accordion-header > button {
   width: 100%;
   padding: 10px;
   background-color: #4c4c4c;
-  border: transparent;
+  overflow: hidden;
 }
 
 .my-accordion-body {
-  background-color: var(--fadedgrey);
   padding: 20px;
 }
 
-.expand-symbol {
-  font-size: 0.8em;
+.drop-info {
+  margin-bottom: 1rem;
 }
 
 .result-identifier {
   display: none;
 }
 
-#detail-table,
-.detail-table {
-  border-collapse: separate;
-  border-spacing: 5px 5px;
-  font-size: 0.9em;
-  border-color: transparent;
-}
-
 .detail-row > td {
-  background-color: var(--fadedgrey);
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: white;
   border-top: transparent;
-}
-
-.detail-row > td:last-child {
-  width: 100%;
 }

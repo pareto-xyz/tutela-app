@@ -30,7 +30,7 @@ export default function AccordionOfResults(props) {
                 <div className="row">
                     <Accordion.Header className="col-12 my-accordion-header" onClick={() => setSelected(!selected)}>
                         <div className="row">
-                            <div className="col-12 first-part-accordion-header">
+                            <div className="col-sm-12 col-md-10 first-part-accordion-header">
                                 {title}
                                 &nbsp;
                                 <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
@@ -39,47 +39,55 @@ export default function AccordionOfResults(props) {
                                 </Toast>
                             </div>
 
-                            <div className="col-12 squashed-row">
+                            <div className="col-sm-12 col-md-2 squashed-row">
                                 <div className="accordion-badge">{badge}</div>
-                                {expandable && <div className="expand-symbol">&#x25BC;</div>}
+                                {expandable && <div className="expand-symbol"><i class="fas fa-angle-down"></i></div>}
                             </div>
                         </div>
                     </Accordion.Header>
-                    {expandable &&
-                        <Accordion.Body className="my-accordion-body">
-                            <div className="panel-sub">result #{startIndex + idx + 1}</div>
-                            <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
-                            <div className="etherscan-link">
-                                {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
-                            </div>
-                        </Accordion.Body>}
+                    <div className="col-12 drop-info">
+                        {expandable &&
+                            <Accordion.Body className="my-accordion-body">
+                                <div className="panel-sub">result #{startIndex + idx + 1}</div>
+                                <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
+                                <div className="etherscan-link">
+                                    {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
+                                </div>
+                            </Accordion.Body>}
+                    </div>
                 </div>
             </Accordion.Item>
         );
     }
 
     return (
-        <div className="row linked-adress">
-            {sectionHeader && sectionHeader}
-            {SortAndFilters && SortAndFilters}
-            {!noResults && Pagination && Pagination}
-
+        <div className="row">
             <div className="col-12">
-                {(loading || noResults) && <div className="results loading col-12">
+                <div className="linked-adress">
+                    <div className="row">
+                        {sectionHeader && sectionHeader}
+                        {SortAndFilters && SortAndFilters}
+                        {!noResults && Pagination && Pagination}
 
-                    {loading ? Spinner : (noResults && noDataComponent)
-                    }
-                </div>}
-                <Accordion className="row overall-accordion" >
-                    {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
+                        <div className="col-12">
+                            {(loading || noResults) && <div className="results loading col-12">
 
-                </Accordion>
+                                {loading ? Spinner : (noResults && noDataComponent)
+                                }
+                            </div>}
+                            <Accordion className="row overall-accordion" >
+                                {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
 
+                            </Accordion>
+
+                        </div>
+                        <div className="results loading col-12">
+                            {loading && Spinner }
+                        </div>
+                        {!noResults && Pagination && Pagination}
+                    </div>
+                </div>
             </div>
-            <div className="results loading col-12">
-                {loading && Spinner }
-            </div>
-            {!noResults && Pagination && Pagination}
         </div>
     )
 }

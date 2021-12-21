@@ -133,8 +133,13 @@ const FilterByName = ({ ogVal, getNewResults }) => {
     }, [ogVal])
 
     return (
+<<<<<<< HEAD
         <InputGroup  >
             <FormControl className="specific-result shadowed"
+=======
+        <InputGroup className="col-sm-12 col-md-12 col-lg-4 link-input" >
+            <FormControl className="specific-result"
+>>>>>>> bbef0d8 (New styles adress page)
                 placeholder="search specific address" // or name"
                 onChange={(e) => {
                     e.preventDefault();
@@ -204,39 +209,40 @@ export default function SortAndFilters({ schema, setSort, getNewResults }) {
 
     return (
         <div className="search-options col-12">
-            <Dropdown className="button-group" onSelect={selectSort}>
-                <Dropdown.Toggle variant="dark" size="sm" >
-                    sort by
-                </Dropdown.Toggle>
+            <div className="row">
+                <Dropdown className="col-sm-12 col-md-6 col-lg-4 button-group" onSelect={selectSort}>
+                    <Dropdown.Toggle variant="dark" size="sm" >
+                        sort by
+                    </Dropdown.Toggle>
 
-                <Dropdown.Menu>
-                    {Object.keys(schema).map(getSortOption)}
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={() => setDesc(!descendingSort)} eventKey='descending' className={descendingSort ? 'selected-dropdown' : ''}>
-                        {descendingSort && CHECKMARK}
-                        descending order
-                    </Dropdown.Item>
-                </Dropdown.Menu>
-            </Dropdown>
-            <Dropdown className="button-group">
-                <Dropdown.Toggle variant="dark" size="sm" >
-                    filter by
-                </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                        {Object.keys(schema).map(getSortOption)}
+                        <Dropdown.Divider />
+                        <Dropdown.Item onClick={() => setDesc(!descendingSort)} eventKey='descending' className={descendingSort ? 'selected-dropdown' : ''}>
+                            {descendingSort && CHECKMARK}
+                            descending order
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+                <Dropdown className="col-sm-12 col-md-6 col-lg-4 button-group">
+                    <Dropdown.Toggle variant="dark" size="sm" >
+                        filter by
+                    </Dropdown.Toggle>
 
-                <Dropdown.Menu>
-                    <Accordion>
-                        {Object.entries(schema).map((entry, idx) => <FilterOption idx={idx} key={idx} entry={entry} getNewResults={getNewResults} />)}
-                    </Accordion>
-                    <Dropdown.Divider />
-                    <Dropdown.Item className="flush-right" onClick={() => getNewResults(false, 'clear')} >
-                        (clear all)
-                    </Dropdown.Item>
-                </Dropdown.Menu>
+                    <Dropdown.Menu>
+                        <Accordion>
+                            {Object.entries(schema).map((entry, idx) => <FilterOption idx={idx} key={idx} entry={entry} getNewResults={getNewResults} />)}
+                        </Accordion>
+                        <Dropdown.Divider />
+                        <Dropdown.Item className="flush-right" onClick={() => getNewResults(false, 'clear')} >
+                            (clear all)
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
 
-            </Dropdown>
+                </Dropdown>
 
-            <FilterByName ogVal={filter_name} getNewResults={getNewResults} />
-
+                <FilterByName ogVal={filter_name} getNewResults={getNewResults} />
+            </div>
         </div>
     );
 }

@@ -11,6 +11,7 @@ export default function Pagination({ paginationData, getNewResults }) {
     }
 
     return (
+<<<<<<< HEAD
         <div className='all-pagination col-12'>
             <div>
                 results {firstInRange}-{lastInRange} out of {total}
@@ -37,6 +38,36 @@ export default function Pagination({ paginationData, getNewResults }) {
                  className="page-button" id="next-page" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </button>
+=======
+        <div className='col-12 all-pagination'>
+            <div className="row">
+                <div className="col-sm-12 col-md-6 results-pagination">
+                    results {firstInRange}-{lastInRange} out of {total}
+                </div>
+                <div className="col-sm-12 col-md-6 pagination">
+                    <button onClick={e => {
+                        e.preventDefault();
+                        if (page === 0) return;
+                        changePage(page-1);
+                    }} 
+                    className="page-button" id="prev-page" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </button>
+                    page
+                    <Form.Select value={page + 1 } id="page-number" className="select-page" onChange={e => changePage(e.target.value)}>
+                        {Array(num_pages).fill(0).map((_, i) => <option value={i+1}>{i+1}</option>)}
+                    </Form.Select>
+                    out of {num_pages}
+                    <button onClick={e => {
+                        e.preventDefault();
+                        if (page >= num_pages - 1) return;
+                        changePage(page + 1);
+                    }} 
+                    className="page-button" id="next-page" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </button>
+                </div>
+>>>>>>> bbef0d8 (New styles adress page)
             </div>
         </div>
     );
