@@ -133,13 +133,8 @@ const FilterByName = ({ ogVal, getNewResults }) => {
     }, [ogVal])
 
     return (
-<<<<<<< HEAD
-        <InputGroup  >
-            <FormControl className="specific-result shadowed"
-=======
         <InputGroup className="col-sm-12 col-md-12 col-lg-4 link-input" >
             <FormControl className="specific-result"
->>>>>>> bbef0d8 (New styles adress page)
                 placeholder="search specific address" // or name"
                 onChange={(e) => {
                     e.preventDefault();

@@ -8,6 +8,9 @@ html {
 }
 
 /* Style optimization */
+.mt-1r {
+  margin: 1rem 0;
+}
 
 #invalid-input,
 #spinner,
@@ -118,8 +121,18 @@ html {
 }
 
 .accordion-badge {
-  padding: 10px;
   font-size: 0.9em;
+  background-color: var(--tcashgreen);
+  color: var(--dark);
+  height: 1.3rem;
+  border-radius: 0 20px 20px 0;
+  -webkit-border-radius: 0 20px 20px 0;
+  -moz-border-radius: 0 20px 20px 0;
+  -ms-border-radius: 0 20px 20px 0;
+  -o-border-radius: 0 20px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /**
@@ -192,6 +205,7 @@ RESULTS
 .pagination {
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
 .select-page {
@@ -229,6 +243,21 @@ input.form-control.rounded {
 }
 
 /* results list ------------------ */
+.adress-row {
+  justify-content: space-between;
+}
+
+.text {
+  width: 100%;
+  max-width: 405px;
+  text-align: left;
+}
+
+.adress-copy {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .results-section {
   display: flex;
   margin-top: 20px;
@@ -244,7 +273,6 @@ input.form-control.rounded {
 
 .first-part-accordion-header {
   word-wrap: break-word;
-  margin: 1rem 0;
 }
 
 .etherscan-link {
@@ -256,6 +284,12 @@ input.form-control.rounded {
 
 .copied-badge {
   background-color: transparent;
+  border: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+.fa-copy {
+  text-align: right;
 }
 
 .results.loading {
@@ -405,7 +439,6 @@ ul.dropdown-menu {
   width: 100%;
   padding: 10px;
   background-color: #4c4c4c;
-  overflow: hidden;
 }
 
 .my-accordion-body {
