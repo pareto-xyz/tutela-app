@@ -29,6 +29,7 @@ DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
 SAME_ADDR_HEUR: str = 'address_match'
 LINKED_TX_HEUR: str = 'linked_transaction'
+TORN_MINE_HEUR: str = 'torn_mine'
 
 
 def safe_int(x, default=0):
@@ -188,6 +189,8 @@ def heuristic_to_str(s: int) -> str:
         return SAME_NUM_TX_HEUR
     elif s == 4:
         return LINKED_TX_HEUR
+    elif s == 5:
+        return TORN_MINE_HEUR
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -203,6 +206,8 @@ def heuristic_to_int(s: str) -> int:
         return 3
     elif s == LINKED_TX_HEUR:
         return 4
+    elif s == TORN_MINE_HEUR:
+        return 5
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -340,6 +345,7 @@ def default_tornado_response() -> Dict[str, Any]:
                             GAS_PRICE_HEUR, 
                             SAME_NUM_TX_HEUR,
                             LINKED_TX_HEUR,
+                            TORN_MINE_HEUR,
                         ],
                     },
                 },

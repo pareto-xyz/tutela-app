@@ -105,6 +105,27 @@ class LinkedTransaction(db.Model):
         return f'<LinkedTransaction {self.address}>'
 
 
+class TornMining(db.Model):
+    __tablename__: str = 'torn_mine'
+
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(
+        db.String(128),
+        index = True,
+        nullable = False,
+    )
+    transaction: db.Column = db.Column(
+        db.String(256),
+        index = True,
+        nullable = False,
+    )
+    meta_data: db.Column = db.Column(db.String(256))
+    cluster: db.Column = db.Column(db.Integer)
+
+    def __repr__(self) -> str:
+        return f'<TornMining {self.address}>'
+
+
 class TornadoDeposit(db.Model):
     __tablename__: str = 'tornado_deposit'
     id: db.Column = db.Column(db.Integer, primary_key = True)

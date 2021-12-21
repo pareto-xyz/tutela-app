@@ -7,7 +7,7 @@ from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
-    Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
+    Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
     TornadoDeposit, TornadoWithdraw
 from app.utils import \
     get_anonymity_score, get_order_command, \
