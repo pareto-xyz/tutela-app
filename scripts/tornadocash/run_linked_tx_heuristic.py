@@ -41,6 +41,14 @@ def main(args: Any):
     address_and_withdraw: pd.DataFrame = \
         address_and_withdraw[['from_address', 'to_address']]
 
+    address_and_withdraw_counts: pd.DataFrame = \
+        address_and_withdraw.groupby(
+            ['from_address', 'to_address']).size().reset_index(name='size')
+
+    address_and_withdraw: pd.DataFrame = \
+        address_and_withdraw_counts[
+            address_and_withdraw_counts['size'] >= args.min_interactions]
+
     address_and_withdraw: pd.DataFrame = dataframe_from_set_of_sets(
         filter(lambda x: len(x) == 2, 
             filter_repeated_and_permuted(address_and_withdraw)))
@@ -380,6 +388,8 @@ if __name__ == "__main__":
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('data_dir', type=str, help='path to tornado cash data')
     parser.add_argument('save_dir', type=str, help='folder to save clusters')
+    parser.add_argument('--min-interactions', type=int, default=3, 
+                        help='minimum number of interactions (default: 3)')
     args: Any = parser.parse_args()
 
     main(args)
