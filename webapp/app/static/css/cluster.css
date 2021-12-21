@@ -28,7 +28,8 @@ html {
 .dropdown-toggle,
 .detail-page,
 .selected-result > .my-accordion-header > button,
-.my-accordion-body {
+.my-accordion-body,
+.detail-row {
   background-color: var(--fadedgrey);
 }
 
