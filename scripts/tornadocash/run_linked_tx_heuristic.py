@@ -41,6 +41,14 @@ def main(args: Any):
     address_and_withdraw: pd.DataFrame = \
         address_and_withdraw[['from_address', 'to_address']]
 
+    address_and_withdraw_counts: pd.DataFrame = \
+        address_and_withdraw.groupby(
+            ['from_address', 'to_address']).size().reset_index(name='size')
+
+    address_and_withdraw: pd.DataFrame = \
+        address_and_withdraw_counts[
+            address_and_withdraw_counts['size'] >= args.min_interactions]
+
     address_and_withdraw: pd.DataFrame = dataframe_from_set_of_sets(
         filter(lambda x: len(x) == 2, 
             filter_repeated_and_permuted(address_and_withdraw)))
@@ -61,10 +69,10 @@ def main(args: Any):
     address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
 
-    clusters_file: str = os.path.join(args.save_dir, f'linked_tx_clusters.json')
-    tx2addr_file: str = os.path.join(args.save_dir, f'linked_tx_tx2addr.json')
-    address_file: str = os.path.join(args.save_dir, f'linked_tx_address_set.json')
-    metadata_file: str = os.path.join(args.save_dir, f'linked_tx_metadata.csv')
+    clusters_file: str = os.path.join(args.save_dir, f'linked_tx_clusters_{args.min_interactions}intxs.json')
+    tx2addr_file: str = os.path.join(args.save_dir, f'linked_tx_tx2addr_{args.min_interactions}intxs.json')
+    address_file: str = os.path.join(args.save_dir, f'linked_tx_address_set_{args.min_interactions}intxs.json')
+    metadata_file: str = os.path.join(args.save_dir, f'linked_tx_metadata_{args.min_interactions}intxs.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
     to_json(address_sets, address_file)
@@ -380,6 +388,8 @@ if __name__ == "__main__":
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('data_dir', type=str, help='path to tornado cash data')
     parser.add_argument('save_dir', type=str, help='folder to save clusters')
+    parser.add_argument('--min-interactions', type=int, default=3, 
+                        help='minimum number of interactions (default: 3)')
     args: Any = parser.parse_args()
 
     main(args)

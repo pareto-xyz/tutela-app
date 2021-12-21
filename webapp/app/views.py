@@ -7,7 +7,7 @@ from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
-    Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
+    Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
     TornadoDeposit, TornadoWithdraw
 from app.utils import \
     get_anonymity_score, get_order_command, \
@@ -141,19 +141,20 @@ def haveibeencompromised():
             tornado_cash_address = pool,
         ).all()
     deposit_txs: Set[str] = set([d.hash for d in deposits])
-    deposit_txs_list: List[str] = list(deposit_txs)
 
     # search for these txs in the reveal tables
-    exact_match_reveals: Set[str] = find_reveals(deposit_txs_list, ExactMatch)
-    gas_price_reveals: Set[str] = find_reveals(deposit_txs_list, GasPrice)
-    multi_denom_reveals: Set[str] = find_reveals(deposit_txs_list, MultiDenom)
-    linked_tx_reveals: Set[str] = find_reveals(deposit_txs_list, LinkedTransaction)
+    exact_match_reveals: Set[str] = find_reveals(deposit_txs, ExactMatch)
+    gas_price_reveals: Set[str] = find_reveals(deposit_txs, GasPrice)
+    multi_denom_reveals: Set[str] = find_reveals(deposit_txs, MultiDenom)
+    linked_tx_reveals: Set[str] = find_reveals(deposit_txs, LinkedTransaction)
+    torn_mine_reveals: Set[str] = find_reveals(deposit_txs, TornMining)
 
     def format_compromised(
         exact_match_reveals: Set[str],
         gas_price_reveals: Set[str],
         multi_denom_reveals: Set[str],
         linked_tx_reveals: Set[str],
+        torn_mine_reveals: Set[str],
     ) -> List[Dict[str, Any]]:
         compromised: List[Dict[str, Any]] = []
         for reveal in exact_match_reveals:
@@ -164,11 +165,14 @@ def haveibeencompromised():
             compromised.append({'heuristic': heuristic_to_str(3), 'transaction': reveal})
         for reveal in linked_tx_reveals:
             compromised.append({'heuristic': heuristic_to_str(4), 'transaction': reveal})
+        for reveal in torn_mine_reveals:
+            compromised.append({'heuristic': heuristic_to_str(5), 'transaction': reveal})
         return compromised
 
     # add compromised sets to response
     compromised: List[Dict[str, Any]] = format_compromised(
-        exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals, 
+        linked_tx_reveals, torn_mine_reveals)
     output['data']['compromised'] = compromised
     output['data']['compromised_size'] = len(compromised)
     output['success'] = 1
@@ -310,9 +314,11 @@ def search_address(request: Request) -> Response:
         gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
         multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
         linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
+        torn_mine_txs: Set[str] = query_heuristic(address, TornMining)
 
         reveal_txs: Set[str] = set().union(
-            exact_match_txs, gas_price_txs, multi_denom_txs, linked_txs)
+            exact_match_txs, gas_price_txs, multi_denom_txs, 
+            linked_txs, torn_mine_txs)
 
         # find all txs where the from_address is the current user.
         deposits: Optional[List[TornadoDeposit]] = \
@@ -334,12 +340,14 @@ def search_address(request: Request) -> Response:
         num_remain_gas_price: int = len(all_txs - gas_price_txs)
         num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
         num_remain_linked_tx: int = len(all_txs - linked_txs)
+        num_remain_torn_mine: int = len(all_txs - torn_mine_txs)
 
         num_compromised: int = num_all - num_remain
         num_compromised_exact_match = num_all - num_remain_exact_match
         num_compromised_gas_price = num_all - num_remain_gas_price
         num_compromised_multi_denom = num_all - num_remain_multi_denom
         num_compromised_linked_tx = num_all - num_remain_linked_tx
+        num_compromised_torn_mine = num_all - num_remain_torn_mine
 
         # compute number of txs compromised by TCash heuristics
         stats: Dict[str, Any] = dict(
@@ -351,11 +359,13 @@ def search_address(request: Request) -> Response:
                 num_compromised_gas_price = num_compromised_gas_price,
                 num_compromised_multi_denom = num_compromised_multi_denom,
                 num_compromised_linked_tx = num_compromised_linked_tx,
+                num_compromised_torn_mine = num_compromised_torn_mine,
                 hovers = dict(
                     num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
                     num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
                     num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
-                    num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.'
+                    num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
+                    num_compromised_torn_mine = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal informatino of when deposits were made.',
                 )
             ),
             num_uncompromised = num_all - num_compromised,
@@ -572,14 +582,17 @@ def search_tornado(request: Request) -> Response:
     gas_price_reveals: Set[str] = find_reveals(deposit_txs, GasPrice)
     multi_denom_reveals: Set[str] = find_reveals(deposit_txs, MultiDenom)
     linked_tx_reveals: Set[str] = find_reveals(deposit_txs, LinkedTransaction)
+    torn_mine_reveals: Set[str] = find_reveals(deposit_txs, TornMining)
 
     reveal_txs: Set[str] = set().union(
-        exact_match_reveals, gas_price_reveals, multi_denom_reveals, linked_tx_reveals)
+        exact_match_reveals, gas_price_reveals, multi_denom_reveals, 
+        linked_tx_reveals, torn_mine_reveals)
 
     num_exact_match_reveals: int = len(exact_match_reveals)
     num_gas_price_reveals: int = len(gas_price_reveals)
     num_multi_denom_reveals: int = len(multi_denom_reveals)
     num_linked_tx_reveals: int = len(linked_tx_reveals)
+    num_torn_mine_reveals: int = len(torn_mine_reveals)
 
     num_compromised: int = len(reveal_txs)
     amount, currency = pool.tags.strip().split()
@@ -591,6 +604,7 @@ def search_tornado(request: Request) -> Response:
             'gas_price': num_gas_price_reveals,
             'multi_denom': num_multi_denom_reveals,
             'linked_tx': num_linked_tx_reveals,
+            'torn_mine': num_torn_mine_reveals,
         },
         'tcash_num_uncompromised': num_deposits - num_compromised
     }
@@ -602,6 +616,7 @@ def search_tornado(request: Request) -> Response:
             'gas_price': list(gas_price_reveals),
             'multi_denom': list(multi_denom_reveals),
             'linked_tx': list(linked_tx_reveals),
+            'torn_mine': list(torn_mine_reveals),
         }
 
     output['data']['query']['metadata']['amount'] = float(amount)
