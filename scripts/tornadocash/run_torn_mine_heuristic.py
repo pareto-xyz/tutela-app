@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from tqdm import tqdm
-import network as nx
+import networkx as nx
 from typing import Any, Tuple, Dict, List, Set
 
 from src.utils.utils import to_json, from_json, Entity, Heuristic
@@ -69,13 +69,15 @@ def build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
     graph: nx.DiGraph = nx.DiGraph()
     tx2addr: Dict[str, str] = {}
 
-    for withdraw_tuple, deposit_tuple in links.items():
+    for withdraw_tuple, deposit_tuples in links.items():
         withdraw_tx, withdraw_addr, _ = withdraw_tuple
-        deposit_tx, deposit_addr = deposit_tuple
         graph.add_node(withdraw_tx)
-        graph.add_node(deposit_tx)
         tx2addr[withdraw_tx] = withdraw_addr
-        tx2addr[deposit_tx] = deposit_addr
+
+        for deposit_tuple in deposit_tuples:
+            deposit_tx, deposit_addr = deposit_tuple
+            graph.add_node(deposit_tx)
+            tx2addr[deposit_tx] = deposit_addr
 
     clusters: List[Set[str]] = [  # ignore singletons
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
