@@ -98,6 +98,7 @@ def get_display_aliases() -> Dict[str, str]:
         'num_compromised_gas_price': 'unique gas price',
         'num_compromised_multi_denom': 'multi-denom',
         'num_compromised_linked_tx': 'linked address',
+        'num_compromised_torn_mine': 'TORN mining',
         'conf': 'confidence score',
         'entity': 'address type',
         'balance': 'ETH balance',
