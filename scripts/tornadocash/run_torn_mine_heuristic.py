@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 from tqdm import tqdm
+import network as nx
 from typing import Any, Tuple, Dict, List, Set
 
-from src.utils.utils import from_json
+from src.utils.utils import to_json, from_json, Entity, Heuristic
 
 MINE_POOL_RATES: Dict[str, int] ={
     '0.1 ETH': 4, 
@@ -27,23 +28,113 @@ MINE_POOL: List[str] = list(MINE_POOL_RATES.keys())
 
 def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
-    deposit_df, withdraw_df, miner_df = load_data(args.data_dir)
 
-    deposit_df: pd.DataFrame = deposit_df[deposit_df['tcash_pool'].isin(MINE_POOL)]
-    withdraw_df: pd.DataFrame = withdraw_df[withdraw_df['tcash_pool'].isin(MINE_POOL)]
+    cache_file: str = os.path.join(args.data_dir, 'heuristic_5_linked_txs.json')
 
-    unique_deposits: Set[str] = set(deposit_df['from_address'])
-    unique_withdraws: Set[str] = set(withdraw_df['recipient_address'])
+    if os.path.isfile(cache_file):
+        total_linked_txs: Dict[str, Dict[str, Any]] = from_json(cache_file)
+    else:
+        deposit_df, withdraw_df, miner_df = load_data(args.data_dir)
 
-    addr2deposits: Dict[str, Any] = address_to_txs_and_blocks(deposit_df, 'deposit')
-    addr2withdraws: Dict[str, Any] = address_to_txs_and_blocks(withdraw_df, 'withdraw')
+        deposit_df: pd.DataFrame = deposit_df[deposit_df['tcash_pool'].isin(MINE_POOL)]
+        withdraw_df: pd.DataFrame = withdraw_df[withdraw_df['tcash_pool'].isin(MINE_POOL)]
 
-    total_linked_txs: Dict[str, Dict[str, Any]] = get_total_linked_txs(
-        miner_df, unique_deposits, unique_withdraws, addr2deposits, addr2withdraws)
+        unique_deposits: Set[str] = set(deposit_df['from_address'])
+        unique_withdraws: Set[str] = set(withdraw_df['recipient_address'])
 
-    w2d: Dict[Tuple[str], List[Tuple[str]]] = apply_anonymity_mining_heuristic(total_linked_txs)
+        addr2deposits: Dict[str, Any] = address_to_txs_and_blocks(deposit_df, 'deposit')
+        addr2withdraws: Dict[str, Any] = address_to_txs_and_blocks(withdraw_df, 'withdraw')
 
-    breakpoint()
+        total_linked_txs: Dict[str, Dict[str, Any]] = get_total_linked_txs(
+            miner_df, unique_deposits, unique_withdraws, addr2deposits, addr2withdraws)
+
+    w2d: Dict[Tuple[str], List[Tuple[str]]] = \
+        apply_anonymity_mining_heuristic(total_linked_txs)
+
+    clusters, tx2addr = build_clusters(w2d)
+    address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
+    address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
+
+    clusters_file: str = os.path.join(args.save_dir, 'torn_mine_clusters.json')
+    tx2addr_file: str = os.path.join(args.save_dir, 'torn_mine_tx2addr.json')
+    address_file: str = os.path.join(args.save_dir, 'torn_mine_address_set.json')
+    metadata_file: str = os.path.join(args.save_dir, 'torn_mine_metadata.csv')
+    to_json(clusters, clusters_file)
+    to_json(tx2addr, tx2addr_file)
+    to_json(address_sets, address_file)
+    address_metadata.to_csv(metadata_file, index=False)
+
+
+def build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
+    graph: nx.DiGraph = nx.DiGraph()
+    tx2addr: Dict[str, str] = {}
+
+    for withdraw_tuple, deposit_tuple in links.items():
+        withdraw_tx, withdraw_addr, _ = withdraw_tuple
+        deposit_tx, deposit_addr = deposit_tuple
+        graph.add_node(withdraw_tx)
+        graph.add_node(deposit_tx)
+        tx2addr[withdraw_tx] = withdraw_addr
+        tx2addr[deposit_tx] = deposit_addr
+
+    clusters: List[Set[str]] = [  # ignore singletons
+        c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+
+    return clusters, tx2addr
+
+
+def get_address_sets(
+    tx_clusters: List[Set[str]],
+    tx2addr: Dict[str, str],
+) -> List[Set[str]]:
+    """
+    Stores pairs of addresses that are related to each other. Don't 
+    apply graphs on this because we are going to join this into the 
+    other clusters.
+    """
+    address_sets: List[Set[str]] = []
+
+    for cluster in tx_clusters:
+        addr_set: Set[str] = set([tx2addr[tx] for tx in cluster])
+        addr_set: List[str] = list(addr_set)
+
+        if len(addr_set) > 1:  # make sure not singleton
+            for addr1 in addr_set:
+                for addr2 in addr_set:
+                    if addr1 != addr2:
+                        address_sets.append({addr1, addr2})
+
+    return address_sets
+
+
+def get_metadata(address_sets: List[Set[str]]) -> pd.DataFrame:
+    """
+    Stores metadata about addresses to add to db. 
+    """
+    unique_addresses: Set[str] = set().union(*address_sets)
+
+    address: List[str] = []
+    entity: List[int] = [] 
+    conf: List[float] = []
+    meta_data: List[str] = []
+    heuristic: List[int] = []
+
+    for member in unique_addresses:
+        address.append(member)
+        entity.append(Entity.EOA.value)
+        conf.append(1)
+        meta_data.append(json.dumps({}))
+        heuristic.append(Heuristic.TORN_MINE.value)
+
+    response: Dict[str, List[Any]] = dict(
+        address = address,
+        entity = entity,
+        conf = conf,
+        meta_data = meta_data,
+        heuristic = heuristic,
+    )
+    response: pd.DataFrame = pd.DataFrame.from_dict(response)
+    return response
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -113,6 +204,8 @@ def D_type_anonymity_heuristic(
 ) -> Dict[str, Dict[str, Any]]:
     d_addr: str = miner_tx.recipient_address
     d_addr2w: Dict[str, Dict[str, Any]] = {d_addr: {}}
+
+    breakpoint()
 
     for d_pool in addr2deposits[d_addr]:
         for (d_hash, d_blocks) in addr2deposits[d_addr][d_pool]:
