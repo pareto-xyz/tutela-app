@@ -30,7 +30,7 @@ export default function AccordionOfResults(props) {
                 <div className="row">
                     <Accordion.Header className="col-12 my-accordion-header" onClick={() => setSelected(!selected)}>
                         <div className="row adress-row">
-                            <div className="col-1 mt-1r accordion-badge">{badge}</div>
+                            <div className="mt-1r accordion-badge">{badge}</div>
                             <div className="col-8 mt-1r first-part-accordion-header">
                                 <div className="adress-copy">
                                     <div className="text">{title}</div>

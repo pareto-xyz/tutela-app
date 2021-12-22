@@ -22,7 +22,6 @@ html {
 .query-info,
 .tcash-overall,
 .tornado-info,
-.linked-adress,
 .specific-result,
 .specific-result:focus,
 .result-entry.selected,
@@ -143,7 +142,8 @@ html {
   font-size: 0.9em;
   background-color: var(--tcashgreen);
   color: var(--dark);
-  height: 1.3rem;
+  padding: 5px;
+  /* height: 1.3rem; */
   border-radius: 0 20px 20px 0;
   -webkit-border-radius: 0 20px 20px 0;
   -moz-border-radius: 0 20px 20px 0;
