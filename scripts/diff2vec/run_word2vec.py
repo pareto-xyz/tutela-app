@@ -10,10 +10,16 @@ class TrainCallback(CallbackAny2Vec):
     """
 
     def __init__(self, save_dir: str):
-        self._save_dir: str = save_dif
+        self._save_dir: str = save_dir
         self._epoch: int = 0
 
-    def on_epoch_start(self, _):
+    def on_train_begin(self, _):
+        print('training start')
+
+    def on_train_end(self, _):
+        print('done')
+
+    def on_epoch_begin(self, _):
         print(f'epoch {self._epoch} start')
         self._epoch += 1
 
