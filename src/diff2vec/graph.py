@@ -101,7 +101,6 @@ class UndirectedGraph:
                 pbar.update()
             pbar.close()
 
-
     def subgraph(self, component: Set[int]):
         """
         Produce a UndirectedGraph instance with only the nodes in the component.
