@@ -200,6 +200,7 @@ function ClusterPage(props) {
                                     <QueryObjContext.Provider value={queryObj}>
 
                                         <AccordionOfResults
+                                            myClassName="linked-adress"
                                             sectionHeader={AddressClusterHeader}
                                             rowTitle='address'
                                             rowBadge='entity'

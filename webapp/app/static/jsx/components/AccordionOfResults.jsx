@@ -11,7 +11,8 @@ const Spinner = (<div id="spinner" className="justify-content-center">
 
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
-        noDataComponent, SortAndFilters, Pagination, startIndex=0 } = props;
+        noDataComponent, SortAndFilters, Pagination, startIndex=0, 
+        myClassName="", } = props;
     const noResults = results.length == 0;
     
     function Row({ result, idx }) {
@@ -64,7 +65,7 @@ export default function AccordionOfResults(props) {
     return (
         <div className="row">
             <div className="col-12">
-                <div className="linked-adress">
+                <div className={myClassName}>
                     <div className="row">
                         {sectionHeader && sectionHeader}
                         {SortAndFilters && SortAndFilters}
