@@ -140,7 +140,6 @@ html {
   background-color: var(--tcashgreen);
   color: var(--dark);
   padding: 5px 10px 5px 5px;
-  /* height: 1.3rem; */
   border-radius: 0 20px 20px 0;
   -webkit-border-radius: 0 20px 20px 0;
   -moz-border-radius: 0 20px 20px 0;
@@ -149,6 +148,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 }
 
 /**
