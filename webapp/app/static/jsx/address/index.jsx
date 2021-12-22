@@ -178,7 +178,7 @@ function ClusterPage(props) {
                                 <>
                                     {showResultsSection &&
                                         <div>
-                                    <div className="tornado-results-section ">
+                                    <div className="row results-section ">
 
                                                 <TpoolOverall data={queryInfo} loading={loadingQuery} />
                                                 {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
