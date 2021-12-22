@@ -23,11 +23,7 @@ export default function QueryInfo({ data, loading, aliases }) {
                     anonymity score: &nbsp;{anonymity_score * 100} &nbsp;/ 100
                     <MyTooltip tooltipText={'The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this.'} />
                 </div>}
-                {loading && <div id="spinner" className="justify-content-center">
-                    <div className="spinner-border" role="status">
-                        <span className="sr-only">Loading...</span>
-                    </div>
-                </div>}
+                
                 {!loading && <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={combined} />}
             </div>
         </div>

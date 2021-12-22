@@ -61,9 +61,13 @@ def istornado():
         return Response(json.dumps(output))
 
     is_tornado: bool = int(is_tornado_address(address))
-    pool: pd.DataFrame = \
-        tornado_pools[tornado_pools.address == address].iloc[0]
-    amount, currency = pool.tags.strip().split()
+    if not is_tornado:
+        amount = None 
+        currency = None
+    else:
+        pool: pd.DataFrame = \
+            tornado_pools[tornado_pools.address == address].iloc[0]
+        amount, currency = pool.tags.strip().split()
 
     output['data']['is_tornado'] = is_tornado
     output['data']['amount'] = int(amount)
