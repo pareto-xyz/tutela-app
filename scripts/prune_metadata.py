@@ -4,6 +4,9 @@ multiple exchanges. EOA addresses might appear multiple times as well.
 
 We stored the metadata in chunks; as such there may be duplicates. Let
 us just take the most confident of each.
+
+Input: data.csv
+Output: data-pruned.csv
 """
 
 import pandas as pd

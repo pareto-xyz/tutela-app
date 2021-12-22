@@ -1,13 +1,9 @@
 """
 Helper functions to run Diff2Vec on a NetworkX graph.
 """
-
 import numpy as np
-import networkx as nx
-from typing import List, Tuple
+from typing import List 
 from gensim.models import Word2Vec
-
-from src.diff2vec.euler import SubGraphSequences
 
 
 class Diff2Vec:
@@ -25,7 +21,6 @@ class Diff2Vec:
         self,
         dimensions: int = 128,        # Dimensionality of the word vectors.
         window_size: int = 10,        # Maximum distance between the current and predicted word within a sentence.
-        cover_size: int = 80,         # Number of nodes in diffusion.
         epochs: int = 1,              # Number of iterations (epochs) over the corpus.
         learning_rate: float = 0.05,  # The initial learning rate.
         workers: int = 4,             # Number of workers
@@ -33,7 +28,6 @@ class Diff2Vec:
         seed: int = 42,               # Seed for the random number generator.
     ):
         self.window_size = window_size
-        self.cover_size = cover_size
         self.dimensions = dimensions
         self.workers = workers
         self.window_size = window_size
@@ -42,15 +36,13 @@ class Diff2Vec:
         self.min_count = min_count
         self.seed = seed
 
-    def fit(self, graph: nx.Graph):
+    def fit(self, sequences: List[List[int]]):
         """
         Fitting a Diff2Vec model.
         Arg types:
             * **graph** *(NetworkX graph)* - The graph to be embedded.
         """
-        sequencer: SubGraphSequences = SubGraphSequences(graph, self.cover_size)
-        sequences: List[str] = sequencer.get_sequences()
-
+        print('Fitting Word2Vec')
         model: Word2Vec = Word2Vec(
             sequences,
             vector_size = self.dimensions,
@@ -62,8 +54,10 @@ class Diff2Vec:
             alpha = self.learning_rate,
             seed = self.seed,
         )
+        self.model = model
+        num_nodes: int = len(sequences)
 
-        num_nodes: int = graph.number_of_nodes()
+        print('Fetching embeddings')
         self._embedding = [model.wv[str(n)] for n in range(num_nodes)]
 
     def get_embedding(self) -> np.array:
