@@ -64,6 +64,12 @@ html {
   margin: 0.5rem 0;
 }
 
+.tcash-overall {
+  border-radius: 5px;
+  padding: 15px;
+  margin-right: 30px;
+}
+
 .query-info,
 .tornado-info,
 .linked-adress {
