@@ -182,6 +182,11 @@ TOP
 .search-adress {
   margin: 0 0 32px 0 !important;
 }
+
+tbody tr:last-of-type > td:last-of-type {
+  word-break: break-word;
+}
+
 /**
 RESULTS
 */
@@ -283,11 +288,23 @@ input.form-control.rounded {
   padding-right: 10px;
 }
 
+.accordion-button:focus {
+  outline: 1px solid rgb(173, 118, 0) !important;
+}
+
 .copied-badge {
   background-color: transparent;
   border: transparent;
   box-shadow: none;
   text-align: left;
+  word-wrap: initial;
+  position: absolute;
+  top: -20px;
+  left: -20px;
+}
+
+.copy {
+  position: relative;
 }
 .fa-copy {
   text-align: right;

@@ -34,10 +34,13 @@ export default function AccordionOfResults(props) {
                             <div className="col-8 mt-1r first-part-accordion-header">
                                 <div className="adress-copy">
                                     <div className="text">{title}</div>
-                                    <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
-                                    <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
-                                        Copied!
-                                    </Toast>
+                                    <div className="copy">
+                                        <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
+                                        <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
+                                            Copied!
+                                        </Toast>
+                                    </div>
+                                    
                                 </div>
                             </div>
                             {expandable && <div className="col-2 mt-1r expand-symbol"><i class="fas fa-angle-down"></i></div>}
