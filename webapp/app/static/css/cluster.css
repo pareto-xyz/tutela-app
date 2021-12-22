@@ -55,6 +55,7 @@ html {
 .ta-c,
 .results-pagination {
   text-align: center;
+  white-space: nowrap;
 }
 
 .button-group,
