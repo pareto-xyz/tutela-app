@@ -3,15 +3,17 @@ import AgnosticTable from '../components/AgnosticTable';
 
 export default function TpoolStats({ data, aliases }) {
     return (
-        <div className="tornado-info ">
-            <div className="panel-title">
-                TORNADO CASH ANONYMITY SET
-            </div>
-            {data &&
-                <div>
-                    <AgnosticTable aliases={aliases} keyValues={data} />
+        <div className="col-md-12 col-lg-6">
+            <div className="tornado-info">
+                <div className="panel-title col-12">
+                    TORNADO CASH ANONYMITY SET
                 </div>
-            }
+                {data &&
+                    <div>
+                        <AgnosticTable aliases={aliases} keyValues={data} />
+                    </div>
+                }
+            </div>
         </div>
     )
 }

@@ -12,22 +12,24 @@ export default function QueryInfo({ data, loading, aliases }) {
     const combined = { ...data, ...metadata };
 
     return (
-        <div className="query-info ">
-            <div className="panel-sub">about your input</div>
-            <div className="panel-title">
-                OVERALL INFO
-            </div>
-
-            {anonymity_score >= 0 && <div className="anon-score-group">
-                anonymity score: &nbsp;{anonymity_score * 100} &nbsp;/ 100
-                <MyTooltip tooltipText={'The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this.'} />
-            </div>}
-            {loading && <div id="spinner" className="justify-content-center">
-                <div className="spinner-border" role="status">
-                    <span className="sr-only">Loading...</span>
+        <div className="col-md-12 col-lg-6">
+            <div className="query-info ">
+                <div className="panel-sub">about your input</div>
+                <div className="panel-title">
+                    OVERALL INFO
                 </div>
-            </div>}
-            {!loading && <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={combined} />}
+
+                {anonymity_score >= 0 && <div className="anon-score-group">
+                    anonymity score: &nbsp;{anonymity_score * 100} &nbsp;/ 100
+                    <MyTooltip tooltipText={'The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this.'} />
+                </div>}
+                {loading && <div id="spinner" className="justify-content-center">
+                    <div className="spinner-border" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
+                </div>}
+                {!loading && <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={combined} />}
+            </div>
         </div>
     );
 }

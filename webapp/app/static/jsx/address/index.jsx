@@ -6,7 +6,7 @@ import axios from 'axios';
 import example from '../../data/example';
 import QueryInfo from './QueryInfo';
 import TornadoInfo from './TornadoInfo';
-import schemaResponse from '../../data/schema';
+//import schemaResponse from '../../data/schema';
 import TpoolOverall from './TpoolOverall';
 import TpoolStats from './TpoolStats';
 import { QueryObjContext } from '../components/Contexts';
@@ -32,7 +32,7 @@ const NoClusters = (
 )
 
 const AddressClusterHeader = (
-    <div className="results">
+    <div className="results col-12">
         <div className="panel-title">
             LINKED ADDRESSES
         </div>
@@ -154,71 +154,77 @@ function ClusterPage(props) {
         }; // clears all the sort, filters, page, etc.
         setQuery(queryObj);
         getNewResults(true);
-        window.history.pushState(null, null, "?address=" + addr);
+        if (params.get('address') !== addr) {
+            window.location.href = '/cluster?address=' + addr;
+        }
+        // window.history.pushState(null, null, "?address=" + addr);
     }
 
 
 
     return (
-        <div>
-            <Header current={'address'} />
+        <div className="container">
+            <div className="row">
+                <Header current={'address'} />
 
-            <div className="container ">
-                <div>
-                    {firstView && <div id="instructions">
-                        Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
-                        based on public data on previous transactions.
-                    </div>}
-
-                    <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
-                    
-                    {searchType === 'tornadoPool' &&
-                        <>
-                            {showResultsSection &&
-                                <div>
-                                    <div className="tornado-results-section ">
-
-                                        <TpoolOverall data={queryInfo} loading={loadingQuery} />
-                                        {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
-
-                                    </div>
-                                    <HaveIBeenCompromised aliases={aliases} tcashAddr={inputAddress} />
-                                </div>
-                            }
-
-                        </>}
-                    {searchType === 'other' && <>
-                        {showResultsSection && <div className="results-section">
-
-                            <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
-                            <TornadoInfo data={tornado} aliases={aliases} />
-
+                <div className="col-12 halved-bar">
+                    <div className="row instruct">
+                        <div className="col-11">
+                        {firstView && <div id="instructions">
+                            Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
+                            based on public data on previous transactions.
                         </div>}
-                        {showResultsSection &&
-                            <QueryObjContext.Provider value={queryObj}>
 
-                                <AccordionOfResults
-                                    sectionHeader={AddressClusterHeader}
-                                    rowTitle='address'
-                                    rowBadge='entity'
-                                    Pagination={<Pagination paginationData={paginationData} getNewResults={getNewResults} />}
-                                    results={pageResults}
-                                    loading={loadingCluster}
-                                    aliases={aliases}
-                                    noDataComponent={NoClusters}
-                                    startIndex={paginationData.page * paginationData.limit}
-                                    SortAndFilters={<SortAndFilters schema={schema} setSort={setSort} getNewResults={getNewResults} />}
-                                />
-                            </QueryObjContext.Provider>
+                        <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
 
-                        }
-                    </>}
+                            {searchType === 'tornadoPool' &&
+                                <>
+                                    {showResultsSection &&
+                                        <div>
+                                    <div className="row results-section ">
 
-                </div >
+                                                <TpoolOverall data={queryInfo} loading={loadingQuery} />
+                                                {queryInfo.metadata && <TpoolStats data={queryInfo.metadata.stats} aliases={aliases} />}
 
-            </div>
+                                            </div>
+                                            <HaveIBeenCompromised aliases={aliases} tcashAddr={inputAddress} />
+                                        </div>
+                                    }
+
+                                </>}
+                            {searchType === 'other' && <>
+                                {showResultsSection && <div className="row results-section">
+
+                                    <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                                    <TornadoInfo data={tornado} aliases={aliases} />
+
+                                </div>}
+                                {showResultsSection &&
+                                    <QueryObjContext.Provider value={queryObj}>
+
+                                        <AccordionOfResults
+                                            myClassName="linked-adress"
+                                            sectionHeader={AddressClusterHeader}
+                                            rowTitle='address'
+                                            rowBadge='entity'
+                                            Pagination={<Pagination paginationData={paginationData} getNewResults={getNewResults} />}
+                                            results={pageResults}
+                                            loading={loadingCluster}
+                                            aliases={aliases}
+                                            noDataComponent={NoClusters}
+                                            startIndex={paginationData.page * paginationData.limit}
+                                            SortAndFilters={<SortAndFilters schema={schema} setSort={setSort} getNewResults={getNewResults} />}
+                                        />
+                                    </QueryObjContext.Provider>
+
+                                }
+                            </>}
+
+                        </div >
+                    </div>
+                </div>
                 <Footer />
-
+            </div>
         </div>
     )
 }

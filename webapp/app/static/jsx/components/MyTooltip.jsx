@@ -17,7 +17,7 @@ export default function MyTooltip({tooltipText}) {
             delay={{ show: 250, hide: 400 }}
             overlay={renderHelpTooltip}
         >
-            <div className="help-circle"><i className="fas fa-question-circle"></i></div>
+          <i className="far fa-question-circle"></i>
         </OverlayTrigger>
     );
 }

@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { isValid } from './utils';
-import isTornado from '../../data/istornado';
+//import isTornado from '../../data/istornado';
 
 export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress }) {
 
@@ -17,7 +17,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
     }, [])
 
     useEffect(() => {
-        if (inputEl.current.value.length === 0 && inputAddress.length > 0) {
+        if (inputAddress.length > 0) {
             inputEl.current.value = inputAddress;
         }
     }, [inputAddress])
@@ -68,7 +68,8 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
-                <InputGroup onSubmit={submitInputAddress} className="mb-3 fixed-width" hasValidation>
+                <div className="row">
+                <InputGroup onSubmit={submitInputAddress} className="mb-3 fixed-width col-12" hasValidation>
                     <FormControl onKeyPress={(e) => {
                         if (e.key !== 'Enter') return;
                         e.preventDefault();
@@ -87,6 +88,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                         Please enter a valid ethereum address or .eth ens name.
                     </Form.Control.Feedback>
                 </InputGroup>
+                </div>
             </OverlayTrigger>
 
         </>
