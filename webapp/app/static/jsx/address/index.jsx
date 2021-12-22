@@ -154,7 +154,10 @@ function ClusterPage(props) {
         }; // clears all the sort, filters, page, etc.
         setQuery(queryObj);
         getNewResults(true);
-        window.history.pushState(null, null, "?address=" + addr);
+        if (params.get('address') !== addr) {
+            window.location.href = '/cluster?address=' + addr;
+        }
+        // window.history.pushState(null, null, "?address=" + addr);
     }
 
 

@@ -17,7 +17,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
     }, [])
 
     useEffect(() => {
-        if (inputEl.current.value.length === 0 && inputAddress.length > 0) {
+        if (inputAddress.length > 0) {
             inputEl.current.value = inputAddress;
         }
     }, [inputAddress])
