@@ -12,7 +12,7 @@ const Spinner = (<div id="spinner" className="justify-content-center">
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
         noDataComponent, SortAndFilters, Pagination, startIndex=0, 
-        myClassName="", } = props;
+        myClassName="default-accordion-class", } = props;
     const noResults = results.length == 0;
     
     function Row({ result, idx }) {
