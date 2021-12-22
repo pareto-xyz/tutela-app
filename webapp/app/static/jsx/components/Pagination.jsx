@@ -13,10 +13,10 @@ export default function Pagination({ paginationData, getNewResults }) {
     return (
         <div className='col-12 all-pagination'>
             <div className="row pagination-container">
-                <div className="col-sm-12 col-md-4 ta-c results-pagination">
+                <div className="col-sm-12 col-md-4 col-lg-3 ta-c results-pagination">
                     results {firstInRange}-{lastInRange} out of {total}
                 </div>
-                <div className="col-sm-12 col-md-4 ta-c">
+                <div className="col-sm-12 col-md-4 col-lg-3 ta-c">
                     <button onClick={e => {
                         e.preventDefault();
                         if (page === 0) return;

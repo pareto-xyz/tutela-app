@@ -173,6 +173,10 @@ TOP
   margin-left: 5px;
 }
 
+.instruct {
+  justify-content: center;
+}
+
 #instructions {
   margin: 40px 0 30px 0;
   text-align: justify;
