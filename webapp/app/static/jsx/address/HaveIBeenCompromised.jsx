@@ -38,7 +38,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
                 YOUR COMPROMISED TXNS IN THIS POOL
             </div>
             <InputGroup  >
-                <FormControl className="rounded"
+                <FormControl className="rounded specific-result"
                     placeholder="enter deposit address to check for compromised txns"
                     onChange={(e) => {
                         e.preventDefault();

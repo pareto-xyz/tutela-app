@@ -296,16 +296,23 @@ input.form-control.rounded {
     border-top: dashed 1px darkgrey;
 }
 
+.specific-result.shadowed {
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.specific-result::placeholder {
+    color: #a1a1a1;
+}
+
 .specific-result, .specific-result:focus {
-    padding: 0px 0px 0px 5px;
+    padding: 0px 0px 0px 10px;
     font-size: 0.8em;
     font-family: 'Ubuntu';
     min-width: 0px;
     flex: 1;
     background-color: var(--fadedgrey);
     border: transparent;
-    color: var(--lightgrey);
-    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    color: white;
 }
 
 .search-options > .input-group {

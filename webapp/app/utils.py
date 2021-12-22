@@ -29,6 +29,7 @@ DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
 SAME_ADDR_HEUR: str = 'address_match'
 LINKED_TX_HEUR: str = 'linked_transaction'
+TORN_MINE_HEUR: str = 'torn_mine'
 
 
 def safe_int(x, default=0):
@@ -41,6 +42,13 @@ def safe_int(x, default=0):
 def safe_float(x, default=0):
     try: 
         return float(x)
+    except:
+        return default
+
+
+def safe_bool(x, default=False):
+    try:
+        return bool(x)
     except:
         return default
 
@@ -90,6 +98,7 @@ def get_display_aliases() -> Dict[str, str]:
         'num_compromised_gas_price': 'unique gas price',
         'num_compromised_multi_denom': 'multi-denom',
         'num_compromised_linked_tx': 'linked address',
+        'num_compromised_torn_mine': 'TORN mining',
         'conf': 'confidence score',
         'entity': 'address type',
         'balance': 'ETH balance',
@@ -104,6 +113,8 @@ def get_display_aliases() -> Dict[str, str]:
         'exact_match': 'address match reveals',
         'multi_denom': 'multi-denom reveals',
         'gas_price': 'unique gas price reveals',
+        'linked_tx': 'linked address reveals',
+        'torn_mine': 'TORN mining reveals',
         'unique_gas_price': 'unique gas price',
         'deposit_address_reuse': 'deposit address reuse',
         'multi_denomination': 'multi-denomination',
@@ -181,6 +192,8 @@ def heuristic_to_str(s: int) -> str:
         return SAME_NUM_TX_HEUR
     elif s == 4:
         return LINKED_TX_HEUR
+    elif s == 5:
+        return TORN_MINE_HEUR
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -196,6 +209,8 @@ def heuristic_to_int(s: str) -> int:
         return 3
     elif s == LINKED_TX_HEUR:
         return 4
+    elif s == TORN_MINE_HEUR:
+        return 5
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -313,7 +328,8 @@ def default_tornado_response() -> Dict[str, Any]:
                     }
                 },
             },
-            'compromised': [],
+            'deposits': [],
+            'compromised': {},
             'metadata': {
                 'compromised_size': 0,
                 'num_pages': 0,
@@ -332,6 +348,7 @@ def default_tornado_response() -> Dict[str, Any]:
                             GAS_PRICE_HEUR, 
                             SAME_NUM_TX_HEUR,
                             LINKED_TX_HEUR,
+                            TORN_MINE_HEUR,
                         ],
                     },
                 },
@@ -509,7 +526,8 @@ class TornadoPoolRequestChecker:
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page() and self._check_limit()
+        return self._check_address() and self._check_page() and \
+            self._check_limit() and self._check_return_tx()
 
     def _check_address(self) -> bool:
         """
@@ -542,6 +560,12 @@ class TornadoPoolRequestChecker:
         self._params['limit'] = limit
         return True
 
+    def _check_return_tx(self) -> bool:
+        return_tx: Union[str, bool] = self._request.args.get('return_tx', False)
+        return_tx: bool = safe_bool(return_tx, False)
+        self._params['return_tx'] = return_tx
+        return True
+
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
 
@@ -562,12 +586,14 @@ def get_equal_user_deposit_txs(address: str) -> Set[str]:
     return set(txs)
 
 
-def find_reveals(transactions: List[str], class_: Any) -> Set[str]:
+def find_reveals(transactions: Set[str], class_: Any) -> Set[str]:
+    transactions: List[str] = list(transactions)
     rows: List[class_] = \
         class_.query.filter(class_.transaction.in_(transactions)).all()
     clusters: List[int] = list(set([row.cluster for row in rows]))
     rows: List[class_] = \
         class_.query.filter(class_.cluster.in_(clusters)).all()
 
-    reveals: List[str] = list(set([row.transaction for row in rows]))
-    return set(reveals)
+    reveals: Set[str] = set([row.transaction for row in rows])
+    reveals: Set[str] = reveals.intersection(transactions)
+    return reveals
