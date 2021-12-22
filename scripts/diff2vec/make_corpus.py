@@ -23,7 +23,7 @@ def main(args: Any):
             with jsonlines.open(sequence_file) as in_fp: 
                 for row in in_fp:
                     row: List[int] = row
-                    row: str = ' '.join(row) + '\n'
+                    row: str = ' '.join(map(str, row))
                     out_fp.write(row)
                     sizes[i] += 1
                     count += 1
