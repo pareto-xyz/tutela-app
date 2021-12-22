@@ -6,7 +6,7 @@ export default function Footer() {
             <footer>
                 <a href="https://github.com/TutelaLabs/tutela-app"><i className="fab fa-github"></i></a>
                 <span>
-                    &nbsp; copyright 2021.
+                    &nbsp; copyright © 2021
                 </span>
             </footer>
         </div>

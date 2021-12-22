@@ -43,7 +43,7 @@ export default function AccordionOfResults(props) {
                                     
                                 </div>
                             </div>
-                            {expandable && <div className="col-2 mt-1r expand-symbol"><i class="fas fa-angle-down"></i></div>}
+                            {expandable && <div className="col-2 mt-1r expand-symbol"><i className="fas fa-angle-down"></i></div>}
                         </div>
                     </Accordion.Header>
                     <div className="col-12 drop-info">

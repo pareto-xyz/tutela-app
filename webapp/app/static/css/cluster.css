@@ -37,7 +37,6 @@ html {
 .specific-result:focus,
 .page-button,
 .select-page,
-.input-num,
 .dropdown-accordion > button,
 .my-accordion-header > button {
   border: transparent;
@@ -51,6 +50,17 @@ html {
 .page-button,
 .copied-badge {
   color: var(--lightgrey);
+}
+
+.ta-c,
+.results-pagination {
+  text-align: center;
+}
+
+.button-group,
+.link-input,
+.results-pagination {
+  margin: 0.5rem 0;
 }
 
 .query-info,
@@ -165,6 +175,7 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
+  text-align: justify;
 }
 
 #no-clusters-msg {
@@ -203,21 +214,17 @@ RESULTS
   font-size: 0.8rem;
 }
 
+.pagination-container {
+  justify-content: space-between;
+}
+
 .shown {
   display: flex !important;
   visibility: visible !important;
 }
 
-.pagination {
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
 .select-page {
   margin: 0px 10px;
-  padding: 4px;
-  border-radius: 4px;
   background-color: transparent;
   color: white;
 }
@@ -352,16 +359,6 @@ input.form-control.rounded {
 }
 
 /* search options ----------------- */
-.button-group,
-.link-input,
-.results-pagination {
-  margin: 0.5rem 0;
-}
-
-.results-pagination {
-  text-align: center;
-}
-
 .dropdown-lever {
   padding-top: 5px;
   border-top: dashed 1px darkgrey;
@@ -383,12 +380,6 @@ ul.dropdown-menu {
   background-color: #5a5a5a;
   color: white;
   font-size: 0.9em;
-}
-
-.input-num {
-  max-width: 40px;
-  border-radius: 5px;
-  text-align: center;
 }
 
 .dropdown-accordion > button {
