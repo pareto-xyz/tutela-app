@@ -22,7 +22,7 @@ export default function IndexPage() {
                     </div>
                     <AddressSearchBar onSubmit={onAddressSubmit} inputAddress={inputAddress} setInputAddress={setInputAddress}/>
                     <div className="row instruct">
-                        <div className="col-11" id="instructions">Enter an ethereum address or ENS name to see likely connected ethereum addresses (ie. its cluster)
+                        <div className="col-11 text-center" id="instructions">Enter an ethereum address or ENS name to see likely connected ethereum addresses (ie. its cluster)
                             based on public data on previous transactions. </div>
                     </div>
                 </div>
