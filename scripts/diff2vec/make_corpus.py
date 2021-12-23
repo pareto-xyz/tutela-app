@@ -13,7 +13,7 @@ from typing import Any, List
 
 
 def main(args: Any):
-    corpus_file: str = os.path.join(args.data_dir, 'corpus-30.jsonl')
+    corpus_file: str = os.path.join(args.out_dir, 'corpus-30.jsonl')
     with jsonlines.open(corpus_file, 'w') as out_fp:
         sequence_files: List[str] = glob(
             os.path.join(args.data_dir, 'sequences-30-*.jsonl'))
@@ -38,6 +38,7 @@ if __name__ == "__main__":
     from argparse import ArgumentParser
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('data_dir', type=str, help='path to data_dir')
+    parser.add_argument('out_dir', type=str, help='path to out_dir')
     args: Any = parser.parse_args()
 
     main(args)
