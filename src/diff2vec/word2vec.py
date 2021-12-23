@@ -486,7 +486,6 @@ class Word2Vec(utils.SaveLoad):
             Keyword arguments propagated to `self.prepare_vocab`.
 
         """
-        breakpoint()
         self._check_corpus_sanity(corpus_iterable=corpus_iterable, corpus_file=corpus_file, passes=1)
         total_words, corpus_count = self.scan_vocab(
             corpus_iterable=corpus_iterable, corpus_file=corpus_file, progress_per=progress_per, trim_rule=trim_rule)

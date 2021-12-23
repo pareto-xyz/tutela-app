@@ -13,9 +13,10 @@ from typing import Any, List
 
 
 def main(args: Any):
-    corpus_file: str = os.path.join(args.data_dir, 'ethereum-30.cor')
-    with open(corpus_file, 'w') as out_fp:
-        sequence_files: List[str] = glob(os.path.join(args.data_dir, 'sequences-30-*.jsonl'))
+    corpus_file: str = os.path.join(args.data_dir, 'corpus-30.jsonl')
+    with jsonlines.open(corpus_file, 'w') as out_fp:
+        sequence_files: List[str] = glob(
+            os.path.join(args.data_dir, 'sequences-30-*.jsonl'))
         sizes: List[int] = [0] * len(sequence_files)
         count: int = 0
         for i, sequence_file in enumerate(sequence_files):
@@ -23,7 +24,6 @@ def main(args: Any):
             with jsonlines.open(sequence_file) as in_fp: 
                 for row in in_fp:
                     row: List[int] = row
-                    row: str = ' '.join(map(str, row))
                     out_fp.write(row)
                     sizes[i] += 1
                     count += 1
