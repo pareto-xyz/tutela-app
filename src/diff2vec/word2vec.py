@@ -180,6 +180,7 @@ class Word2Vec(utils.SaveLoad):
 
         corpus_count = sentence_no + 1
         self.raw_vocab = vocab
+        breakpoint()
         return total_words, corpus_count
 
     def scan_vocab(self, corpus_file, corpus_size, progress_per=10000, workers=None, trim_rule=None):
