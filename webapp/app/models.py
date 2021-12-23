@@ -34,6 +34,10 @@ class DepositTransaction(db.Model):
         index = True,
         nullable = False,
     )
+    deposit: db.Column = db.Column(
+        db.String(128),
+        nullable = False,
+    )
     transaction: db.Column = db.Column(
         db.String(256),
         index = True,

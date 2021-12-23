@@ -684,7 +684,8 @@ def search_transaction():
             Heuristic.query.filter(Heuristic.address == address).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
-             'timestamp': row.block_ts, 'heuristic': identifier} for row in rows]
+             'timestamp': row.block_ts, 'heuristic': identifier,
+             'metadata': {}} for row in rows]
         return rows
 
     def find_dar_matches(address: str) -> List[Dict[str, Any]]:
@@ -692,7 +693,8 @@ def search_transaction():
             DepositTransaction.query.filter(DepositTransaction.address == address).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
-             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR} for row in rows]
+             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,
+             'metadata': {'deposit': row.deposit}} for row in rows]
         return rows
 
     transactions: List[Dict[str, Any]] = find_dar_matches(address) + \
