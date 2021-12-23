@@ -8,5 +8,5 @@ bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum
 bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum.transactions_1year --use_legacy_sql=false "select from_address, to_address, value, block_timestamp, block_number from bigquery-public-data.crypto_ethereum.transactions where (block_number >= 10966874) and (block_number <= 13330090)"
 
 # get all txs before adte
-bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum.transactions --use_legacy_sql=false "select from_address, to_address, `hash`, block_timestamp, block_number from bigquery-public-data.crypto_ethereum.transactions where block_number <= 13330090"
+bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum.transactions2 --use_legacy_sql=false "select b.from_address, b.to_address, b.hash as transaction, b.block_timestamp, b.block_number from bigquery-public-data.crypto_ethereum.transactions as b where b.block_number <= 13330090"
 
