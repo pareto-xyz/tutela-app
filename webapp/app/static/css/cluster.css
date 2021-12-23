@@ -184,7 +184,6 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
-  text-align: justify;
 }
 
 #no-clusters-msg {
@@ -283,8 +282,8 @@ input.form-control.rounded {
 .results-section {
   display: flex;
   margin-top: 20px;
-  margin-bottom: 20px;
-  gap: 10px 0;
+  margin-bottom: 32px;
+  gap: 30px 0;
 }
 
 .tornado-results-section {
