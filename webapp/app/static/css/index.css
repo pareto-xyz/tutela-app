@@ -156,11 +156,6 @@ MAIN PAGE SEARCH SECTION
 .main-react {
   margin-top: 90px;
 }
-td,
-th {
-  text-align: left;
-  padding: 5px;
-}
 
 #input-address.fixed-width,
 .input-adress {
