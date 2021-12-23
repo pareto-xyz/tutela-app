@@ -40,6 +40,7 @@ class DepositCluster(BaseCluster):
         # save data about (unique) addresses
         metadata_file: str = os.path.join(self.save_dir, 'metadata.csv')
         result_file: str = os.path.join(self.save_dir, 'data.csv')
+        tx_file: str = os.path.join(self.save_dir, 'transactions.csv')
 
         print('processing txs',  end = '', flush=True)
 
@@ -52,12 +53,14 @@ class DepositCluster(BaseCluster):
             # join the last chunk and current chunk
             both_chunks: pd.DataFrame = last_chunk.append(tx_chunk)
 
-            result: pd.DataFrame = self._cluster_chunk(
+            result, tx_result = self._cluster_chunk(
                 both_chunks,
                 self.loader.get_exchanges(),
                 self.loader.get_miners(),
                 self.loader.get_blacklist(),
             )
+            result: pd.DataFrame = result
+            tx_result: pd.DataFrame = tx_result
 
             """
             Add confidence to dataframe.
@@ -74,6 +77,7 @@ class DepositCluster(BaseCluster):
             """
             scores: pd.DataFrame = self._get_confidence(result)
             result['conf'] = scores
+            tx_result['conf'] = scores
 
             """
             Metadata stores information we might be interested in storing 
@@ -88,9 +92,11 @@ class DepositCluster(BaseCluster):
             if chunk_count == 0:
                 metadata.to_csv(metadata_file, index=False)
                 result.to_csv(result_file, index=False)
+                tx_result.to_csv(tx_file, index=False)
             else:
                 metadata.to_csv(metadata_file, mode='a', header=False, index=False)
                 result.to_csv(result_file, mode='a', header=False, index=False)
+                tx_result.to_csv(tx_file, mode='a', header=False, index=False)
 
             if (max_block - min_block <= self.t_max):
                 print('Consider choosing a larger chunksize.')
@@ -104,7 +110,7 @@ class DepositCluster(BaseCluster):
             print('.', end = '', flush=True)  # progress bar
             chunk_count += 1
 
-            del metadata, result, tx_chunk, scores, both_chunks
+            del metadata, result, tx_result, tx_chunk, scores, both_chunks
 
     def _make_metadata(self, data: pd.DataFrame):
         """
@@ -165,11 +171,11 @@ class DepositCluster(BaseCluster):
         exchanges: pd.DataFrame,
         miners: pd.DataFrame,
         blacklist: pd.DataFrame,
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         exchange_addrs: np.array = exchanges.address
         blacklist_addrs: np.array = blacklist.address
 
-        columns: List[str] = ['block_number', 'from_address', 'to_address', 'value']
+        columns: List[str] = ['block_number', 'block_timestamp', 'from_address', 'to_address', 'value']
         tx_chunk: pd.DataFrame = tx_chunk[columns].sort_values('block_number')
         tx_chunk['block'] = tx_chunk['block_number']  # dummy column
 
@@ -220,7 +226,14 @@ class DepositCluster(BaseCluster):
         results.columns = ['user', 'deposit', 'exchange', 't_diff', 'a_diff']
         results: pd.DataFrame = results.drop_duplicates()
 
-        return results
+        # keep transactions from EOA to deposit
+        transactions: pd.DataFrame = deposit[
+            ['from_address_x', 'from_address_y', 'block_number_x', 'block_timestamp_x']
+        ]
+        transactions.columns = ['user', 'deposit', 'block_number', 'block_timestamp']
+        transactions: pd.DataFrame = transactions.drop_duplicates()
+
+        return results, transactions
 
     def _get_confidence(
         self,
