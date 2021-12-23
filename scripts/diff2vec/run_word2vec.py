@@ -38,6 +38,7 @@ def main(args: Any):
         epochs = args.epochs,
         alpha = args.lr,
         seed = args.seed,
+        corpus_size = 263644512,
         callbacks = [TrainCallback(args.model_dir)],
     )
 
