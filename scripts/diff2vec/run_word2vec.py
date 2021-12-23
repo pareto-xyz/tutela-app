@@ -31,14 +31,14 @@ class TrainCallback(CallbackAny2Vec):
 
 
 def main(args: Any):
-    model: Word2Vec = Word2Vec(
+    Word2Vec(
         corpus_file = args.corpus_file,
+        corpus_size = 263644512,
         vector_size = args.dim,
         workers = args.workers,
         epochs = args.epochs,
         alpha = args.lr,
         seed = args.seed,
-        corpus_size = 263644512,
         callbacks = [TrainCallback(args.model_dir)],
     )
 
