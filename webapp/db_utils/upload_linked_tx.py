@@ -14,7 +14,7 @@ def main(args: Any):
     cursor = conn.cursor()
 
     cursor.execute(
-        f"COPY linked_transaction(address, transaction, meta_data, cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
+        f"COPY linked_transaction(address, transaction, block_number, block_ts, meta_data, cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
     )
     conn.commit()
 
