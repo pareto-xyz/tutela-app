@@ -635,6 +635,11 @@ def search_tornado(request: Request) -> Response:
 
 @app.route('/transaction', methods=['GET'])
 def transaction():
+    return render_template('transaction.html')
+
+
+@app.route('/search/transaction', methods=['GET'])
+def search_transaction():
     address: str = request.args.get('address', '')
     address: str = resolve_address(address, ns)
     address: str = address.lower()
