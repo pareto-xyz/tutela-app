@@ -424,7 +424,7 @@ class Word2Vec(utils.SaveLoad):
         self.load = call_on_class_only
 
         if corpus_iterable is not None or corpus_file is not None:
-            self._check_corpus_sanity(corpus_iterable=corpus_iterable, corpus_file=corpus_file, passes=(epochs + 1))
+            # self._check_corpus_sanity(corpus_iterable=corpus_iterable, corpus_file=corpus_file, passes=(epochs + 1))
             self.build_vocab(corpus_iterable=corpus_iterable, corpus_file=corpus_file, trim_rule=trim_rule)
             self.train(
                 corpus_iterable=corpus_iterable, corpus_file=corpus_file, total_examples=self.corpus_count,
@@ -486,6 +486,7 @@ class Word2Vec(utils.SaveLoad):
             Keyword arguments propagated to `self.prepare_vocab`.
 
         """
+        breakpoint()
         self._check_corpus_sanity(corpus_iterable=corpus_iterable, corpus_file=corpus_file, passes=1)
         total_words, corpus_count = self.scan_vocab(
             corpus_iterable=corpus_iterable, corpus_file=corpus_file, progress_per=progress_per, trim_rule=trim_rule)
