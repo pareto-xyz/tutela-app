@@ -105,13 +105,13 @@ html {
 
 .panel-title {
   color: var(--tcashgreen);
-  font-weight: 700;
+  font-weight: 700 !important;
   border-radius: 5px;
   margin: 10px 0;
 }
 
 .panel-sub {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
 
 .halved-bar > *.right-side {
@@ -184,6 +184,7 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
+  font-size: 1.1rem;
 }
 
 #no-clusters-msg {
