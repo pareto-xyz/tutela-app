@@ -23,6 +23,31 @@ class Address(db.Model):
         return f'<Address {self.address}>'
 
 
+class DepositTransaction(db.Model):
+    """
+    Store transactions from EOA to deposit addresses computed during DAR.
+    """
+    __tablename__: str = 'deposit_transaction'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(
+        db.String(128),
+        index = True,
+        unique = True,
+        nullable = False,
+    )
+    transaction: db.Column = db.Column(
+        db.String(256),
+        index = True,
+        nullable = False,
+    )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
+    meta_data: db.Column = db.Column(db.String(256))
+
+    def __repr__(self) -> str:
+        return f'<DepositTransaction {self.address}>'
+
+
 class ExactMatch(db.Model):
     __tablename__: str = 'exact_match'
     id: db.Column = db.Column(db.Integer, primary_key = True)
