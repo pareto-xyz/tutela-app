@@ -684,40 +684,6 @@ class Word2Vec(utils.SaveLoad):
         progress_queue.put((examples, tally, raw_tally))
         progress_queue.put(None)
 
-    def _worker_loop(self, job_queue, progress_queue):
-        """Train the model, lifting batches of data from the queue.
-
-        This function will be called in parallel by multiple workers (threads or processes) to make
-        optimal use of multicore machines.
-
-        Parameters
-        ----------
-        job_queue : Queue of (list of objects, float)
-            A queue of jobs still to be processed. The worker will take up jobs from this queue.
-            Each job is represented by a tuple where the first element is the corpus chunk to be processed and
-            the second is the floating-point learning rate.
-        progress_queue : Queue of (int, int, int)
-            A queue of progress reports. Each report is represented as a tuple of these 3 elements:
-                * Size of data chunk processed, for example number of sentences in the corpus chunk.
-                * Effective word count used in training (after ignoring unknown words and trimming the sentence length).
-                * Total word count used in training.
-
-        """
-        thread_private_mem = self._get_thread_working_mem()
-        jobs_processed = 0
-        while True:
-            job = job_queue.get()
-            if job is None:
-                progress_queue.put(None)
-                break  # no more jobs => quit this worker
-            data_iterable, alpha = job
-
-            tally, raw_tally = self._do_train_job(data_iterable, alpha, thread_private_mem)
-
-            progress_queue.put((len(data_iterable), tally, raw_tally))  # report back progress
-            jobs_processed += 1
-        logger.debug("worker exiting, processed %i jobs", jobs_processed)
-
     def _job_producer(self, data_iterator, job_queue, cur_epoch=0, total_examples=None, total_words=None):
         """Fill the jobs queue using the data found in the input stream.
 
@@ -925,65 +891,6 @@ class Word2Vec(utils.SaveLoad):
         trained_word_count, raw_word_count, job_tally = self._log_epoch_progress(
             progress_queue=progress_queue, job_queue=None, cur_epoch=cur_epoch,
             total_examples=total_examples, total_words=total_words, is_corpus_file_mode=True)
-
-        return trained_word_count, raw_word_count, job_tally
-
-    def _train_epoch(
-            self, data_iterable, cur_epoch=0, total_examples=None, total_words=None,
-            queue_factor=2, report_delay=1.0, callbacks=(),
-        ):
-        """Train the model for a single epoch.
-
-        Parameters
-        ----------
-        data_iterable : iterable of list of object
-            The input corpus. This will be split in chunks and these chunks will be pushed to the queue.
-        cur_epoch : int, optional
-            The current training epoch, needed to compute the training parameters for each job.
-            For example in many implementations the learning rate would be dropping with the number of epochs.
-        total_examples : int, optional
-            Count of objects in the `data_iterator`. In the usual case this would correspond to the number of sentences
-            in a corpus, used to log progress.
-        total_words : int, optional
-            Count of total objects in `data_iterator`. In the usual case this would correspond to the number of raw
-            words in a corpus, used to log progress.
-        queue_factor : int, optional
-            Multiplier for size of queue -> size = number of workers * queue_factor.
-        report_delay : float, optional
-            Number of seconds between two consecutive progress report messages in the logger.
-
-        Returns
-        -------
-        (int, int, int)
-            The training report for this epoch consisting of three elements:
-                * Size of data chunk processed, for example number of sentences in the corpus chunk.
-                * Effective word count used in training (after ignoring unknown words and trimming the sentence length).
-                * Total word count used in training.
-
-        """
-        job_queue = Queue(maxsize=queue_factor * self.workers)
-        progress_queue = Queue(maxsize=(queue_factor + 1) * self.workers)
-
-        workers = [
-            threading.Thread(
-                target=self._worker_loop,
-                args=(job_queue, progress_queue,))
-            for _ in range(self.workers)
-        ]
-
-        workers.append(threading.Thread(
-            target=self._job_producer,
-            args=(data_iterable, job_queue),
-            kwargs={'cur_epoch': cur_epoch, 'total_examples': total_examples, 'total_words': total_words}))
-
-        for thread in workers:
-            thread.daemon = True  # make interrupting the process with ctrl+c easier
-            thread.start()
-
-        trained_word_count, raw_word_count, job_tally = self._log_epoch_progress(
-            progress_queue, job_queue, cur_epoch=cur_epoch, total_examples=total_examples,
-            total_words=total_words, report_delay=report_delay, is_corpus_file_mode=False,
-        )
 
         return trained_word_count, raw_word_count, job_tally
 
