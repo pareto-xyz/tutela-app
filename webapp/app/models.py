@@ -36,6 +36,8 @@ class ExactMatch(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -56,6 +58,8 @@ class GasPrice(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -77,6 +81,8 @@ class MultiDenom(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -98,6 +104,8 @@ class LinkedTransaction(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -119,6 +127,8 @@ class TornMining(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
