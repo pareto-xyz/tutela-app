@@ -80,6 +80,10 @@ def istornado():
 
 @app.route('/transaction', methods=['GET'])
 def transaction():
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
     return render_template('transaction.html')
 
 

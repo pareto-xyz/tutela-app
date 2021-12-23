@@ -24,6 +24,9 @@ ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
 # --
+ETH_DAR_HEUR: str = 'deposit_address_reuse'
+ETH_DIFF2VEC_HEUR: str = 'diff2vec'
+# --
 GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
@@ -194,6 +197,10 @@ def heuristic_to_str(s: int) -> str:
         return LINKED_TX_HEUR
     elif s == 5:
         return TORN_MINE_HEUR
+    elif s == 10:
+        return ETH_DAR_HEUR
+    elif s == 11:
+        return ETH_DIFF2VEC_HEUR
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -211,6 +218,10 @@ def heuristic_to_int(s: str) -> int:
         return 4
     elif s == TORN_MINE_HEUR:
         return 5
+    elif s == ETH_DAR_HEUR:
+        return 10
+    elif s == ETH_DIFF2VEC_HEUR:
+        return 11
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -360,6 +371,43 @@ def default_tornado_response() -> Dict[str, Any]:
         },
         'success': 1,
         'is_tornado': 1,
+    }
+    return output
+
+
+def default_transaction_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'data': {
+            'query': {
+                'address': '', 
+            },
+            'transactions': [],
+            'metadata': {
+                'num_pages': 0,
+                'page': 0,
+                'limit': 50,
+                'schema': {
+                    HEURISTIC_COL: {
+                        'type': 'category',
+                        'values': [
+                            DEPO_REUSE_HEUR, 
+                            SAME_ADDR_HEUR, 
+                            GAS_PRICE_HEUR, 
+                            SAME_NUM_TX_HEUR,
+                            LINKED_TX_HEUR,
+                            TORN_MINE_HEUR,
+                            None,  # filler
+                            None,
+                            None,
+                            None,
+                            ETH_DAR_HEUR,
+                            ETH_DIFF2VEC_HEUR,
+                        ],
+                    },
+                }
+            }
+        },
+        'success': 1
     }
     return output
 
