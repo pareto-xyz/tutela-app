@@ -1,6 +1,6 @@
 import os
 from typing import Any
-from gensim.models import Word2Vec
+from src.diff2vec.word2vec import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 
 
