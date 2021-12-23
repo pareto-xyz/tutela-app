@@ -151,6 +151,7 @@ class Word2Vec(utils.SaveLoad):
         min_reduce = 1
         vocab = defaultdict(int)
         checked_string_types = 0
+        print('building vocab')
         pbar = tqdm(total=size)
         for sentence_no, sentence in enumerate(sentences):
             if not checked_string_types:

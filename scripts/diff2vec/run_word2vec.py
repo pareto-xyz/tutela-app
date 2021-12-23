@@ -33,7 +33,7 @@ class TrainCallback(CallbackAny2Vec):
 def main(args: Any):
     Word2Vec(
         corpus_file = args.corpus_file,
-        corpus_size = 263644512,
+        corpus_size = args.corpus_size,
         vector_size = args.dim,
         workers = args.workers,
         epochs = args.epochs,
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('corpus_file', type=str, help='path to cached sequences')
     parser.add_argument('model_dir', type=str, help='path to save model')
+    parser.add_argument('--corpus-size', type=int, default=263644512, help='epochs (default: 263644512)')
     parser.add_argument('--epochs', type=int, default=5, help='epochs (default: 5)')
     parser.add_argument('--workers', type=int, default=4, help='workers (default: 4)')
     parser.add_argument('--min-count', type=int, default=5, help='min count (default: 5)')
