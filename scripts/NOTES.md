@@ -16,3 +16,6 @@
 1. Run a command in `bq_commands.sh`.
 2. Create a table in Google buckets.
 3. Run `table2bucket.py` to move table to bucket.
+4. Run `dl_bucket.py` to download data from the bucket. This will exist in a lot of files.
+5. Run `sort_big_csv.py` to merge files and / or merge sort the transactions by block number. First run with the `--sort-only` flag to sort each file locally. Then run with `--merge-only` to run external merge sort.
+
