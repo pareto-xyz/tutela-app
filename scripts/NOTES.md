@@ -9,3 +9,10 @@
 7. Run `heuristic_metadata.py` to generate `metadata-joined.csv`.
 8. Run `run_nx.py` to generate `metadata-final.csv`. This is the file that will be used to populate the PostgreSQL database.
 9. Run `combine_metadata.py` to add clusters to `metadata-pruned.csv`.
+
+
+# Order of Operations for downloading data
+
+1. Run a command in `bq_commands.sh`.
+2. Create a table in Google buckets.
+3. Run `table2bucket.py` to move table to bucket.

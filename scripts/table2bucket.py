@@ -16,11 +16,12 @@ if __name__ == "__main__":
                         choices=['lexical-theory-329617.crypto_ethereum', 
                                  'bigquery-public-data.crypto_ethereum'])
     parser.add_argument('--bucket', type=str, default='blocks',
-                        choices=['blocks', 'transactions', 'tokens', 'token_transfers', 
+                        choices=['blocks', 'transactions', 'transactions2', 'tokens', 'token_transfers', 
                                  'traces', 'contracts', 'transactions_1week',
                                  'transactions_1month', 'transactions_1year'])
     parser.add_argument('--table', type=str, default='ethereum-block-data',
-                        choices=['ethereum-block-data', 'ethereum-transaction-data', 
+                        choices=['ethereum-block-data', 'ethereum-transaction-data',
+                                 'ethereum-transaction-data2',
                                  'ethereum-token-data', 'ethereum-transfers-data', 
                                  'ethereum-trace-data', 'ethereum-contract-data',
                                  'ethereum-transaction-1week-data',
