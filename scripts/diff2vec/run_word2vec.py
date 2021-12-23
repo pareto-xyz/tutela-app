@@ -31,6 +31,7 @@ class TrainCallback(CallbackAny2Vec):
 
 
 def main(args: Any):
+    cache_dir: str = os.path.join(args.model_dir, 'cache')
     Word2Vec(
         corpus_file = args.corpus_file,
         corpus_size = args.corpus_size,
@@ -39,6 +40,7 @@ def main(args: Any):
         epochs = args.epochs,
         alpha = args.lr,
         seed = args.seed,
+        cache_dir = cache_dir,
         callbacks = [TrainCallback(args.model_dir)],
     )
 

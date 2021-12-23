@@ -33,6 +33,8 @@ from gensim import utils, matutils
 
 from smart_open.compression import get_supported_extensions
 
+from src.utils.utils import to_pickle
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -72,7 +74,7 @@ class Word2Vec(utils.SaveLoad):
             max_vocab_size=None, sample=1e-3, seed=1, workers=3, min_alpha=0.0001,
             sg=0, hs=0, negative=5, ns_exponent=0.75, cbow_mean=1, hashfxn=hash, epochs=5, null_word=0,
             trim_rule=None, sorted_vocab=1, batch_words=MAX_WORDS_IN_BATCH, compute_loss=False, callbacks=(),
-            comment=None, max_final_vocab=None, shrink_windows=True,
+            comment=None, max_final_vocab=None, shrink_windows=True, cache_dir='./cache',
         ):
         self.vector_size = int(vector_size)
         self.workers = int(workers)
@@ -107,6 +109,10 @@ class Word2Vec(utils.SaveLoad):
         self.null_word = null_word
         self.cum_table = None  # for negative sampling
         self.raw_vocab = None
+
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
+        self.cache_dir = cache_dir
 
         if not hasattr(self, 'wv'):  # set unless subclass already set (eg: FastText)
             self.wv = KeyedVectors(vector_size)
@@ -180,7 +186,10 @@ class Word2Vec(utils.SaveLoad):
 
         corpus_count = sentence_no + 1
         self.raw_vocab = vocab
-        breakpoint()
+
+        cache_vocab_file = os.path.join(self.cache_dir, 'vocab.pickle')
+        to_pickle(vocab, cache_vocab_file)
+
         return total_words, corpus_count
 
     def scan_vocab(self, corpus_file, corpus_size, progress_per=10000, workers=None, trim_rule=None):
