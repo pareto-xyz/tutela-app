@@ -25,10 +25,22 @@ html.ombre {
   --fadedgrey: #5b5b5b86;
 }
 
-body {
-  font-family: "PT Mono", "Ubuntu", monospace;
+body,
+input {
+  font-family: "PT Sans", sans-serif;
   background-color: transparent;
-  font-size: 1.1em;
+  font-weight: 400;
+}
+
+header,
+footer,
+h1,
+h2,
+h3,
+h4,
+.panel-title {
+  font-family: "PT Mono", monospace;
+  background-color: transparent;
   font-weight: 400;
 }
 
@@ -132,13 +144,6 @@ a:hover {
   color: white;
 }
 
-.instructions {
-  color: var(--lightgrey);
-  margin: 40px 0px;
-  text-align: center;
-  width: 80%;
-}
-
 /**
 MAIN PAGE SEARCH SECTION
 */
@@ -150,11 +155,6 @@ MAIN PAGE SEARCH SECTION
 }
 .main-react {
   margin-top: 90px;
-}
-td,
-th {
-  text-align: left;
-  padding: 5px;
 }
 
 #input-address.fixed-width,

@@ -77,7 +77,7 @@ html {
 
 .specific-result,
 .specific-result:focus {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
 
 .dropdown-accordion > *,
@@ -90,7 +90,7 @@ html {
 .detail-table {
   border-collapse: separate;
   border-spacing: 5px 5px;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   border-color: transparent;
 }
 
@@ -105,13 +105,13 @@ html {
 
 .panel-title {
   color: var(--tcashgreen);
-  font-weight: 700;
+  font-weight: 700 !important;
   border-radius: 5px;
   margin: 10px 0;
 }
 
 .panel-sub {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
 
 .halved-bar > *.right-side {
@@ -184,7 +184,7 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
-  text-align: justify;
+  font-size: 1.1rem;
 }
 
 #no-clusters-msg {
@@ -283,8 +283,8 @@ input.form-control.rounded {
 .results-section {
   display: flex;
   margin-top: 20px;
-  margin-bottom: 20px;
-  gap: 10px 0;
+  margin-bottom: 32px;
+  gap: 30px 0;
 }
 
 .tornado-results-section {
@@ -368,6 +368,18 @@ input.form-control.rounded {
 }
 
 /* search options ----------------- */
+.accordion-button[aria-expanded="true"] .fa-angle-down {
+  transform: rotate(90deg);
+  transition: all ease 0.5s;
+  -webkit-transform: rotate(90deg);
+  -moz-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+}
+.accordion-button .fa-angle-down {
+  transition: all ease 0.5s;
+}
+
 .dropdown-lever {
   padding-top: 5px;
   border-top: dashed 1px darkgrey;

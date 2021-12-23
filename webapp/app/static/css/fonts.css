@@ -4,6 +4,18 @@
   font-weight: bold;
   font-style: normal;
 }
+@font-face {
+  font-family: "PT Mono";
+  src: url("../fonts/PTMono-Regular.ttf") format("ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "PT Sans";
+  src: url("../fonts/PTSans-Regular.ttf") format("ttf");
+  font-weight: normal;
+  font-style: normal;
+}
 /* ubuntu-300 - latin */
 @font-face {
   font-family: "Ubuntu";
