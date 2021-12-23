@@ -16,16 +16,22 @@ def from_json(path):
 def main(args: Any):
     clusters: List[Set[str]] = from_json(args.clusters_file)
     tx2addr: Dict[str, str] = from_json(args.tx2addr_file)
+    tx2block: Dict[str, int] = from_json(args.tx2block_file)
+    tx2ts: Dict[str, Any] = from_json(args.tx2ts_file)
 
     transactions, tx2cluster = get_transactions(clusters)
     transactions: List[str] = list(transactions)
     addresses: List[str] = [tx2addr[tx] for tx in transactions]
+    block_numbers: List[int] = [tx2block[tx] for tx in transactions]
+    block_timestamps: List[Any] = [tx2ts[tx] for tx in transactions]
     clusters: List[int] = [tx2cluster[tx] for tx in transactions]
     meta_datas:  List[str] = [json.dumps({}) for _ in transactions]
 
     dataset: Dict[str, List[Any]] = {
         'address': addresses,
-        'transactions': transactions,
+        'transaction': transactions,
+        'block_number': block_numbers,
+        'block_ts': block_timestamps,
         'meta_data': meta_datas,
         'cluster': clusters,
     }
@@ -55,6 +61,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('clusters_file', type=str)
     parser.add_argument('tx2addr_file', type=str)
+    parser.add_argument('tx2block_file', type=str)
+    parser.add_argument('tx2ts_file', type=str)
     parser.add_argument('out_file', type=str)
     args = parser.parse_args()
 
