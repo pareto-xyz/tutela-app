@@ -32,12 +32,12 @@ class DepositTransaction(db.Model):
     address: db.Column = db.Column(
         db.String(128),
         index = True,
-        unique = True,
         nullable = False,
     )
     transaction: db.Column = db.Column(
         db.String(256),
         index = True,
+        unique = True,
         nullable = False,
     )
     block_number: db.Column = db.Column(db.Integer)
