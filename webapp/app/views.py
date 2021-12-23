@@ -14,9 +14,11 @@ from app.utils import \
     entity_to_int, entity_to_str, to_dict, \
     heuristic_to_str, is_valid_address, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
-    AddressRequestChecker, TornadoPoolRequestChecker, \
-    default_address_response, default_tornado_response, \
-    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
+    AddressRequestChecker, TornadoPoolRequestChecker, TransactionRequestChecker, \
+    default_address_response, default_tornado_response, default_transaction_response, \
+    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, \
+    GAS_PRICE_HEUR, DEPO_REUSE_HEUR, DIFF2VEC_HEUR, SAME_NUM_TX_HEUR, \
+    SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR
 from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
@@ -24,6 +26,7 @@ from flask import render_template
 from sqlalchemy import or_
 
 from app.utils import get_known_attrs, get_display_aliases
+from webapp.app.utils import heuristic_to_int
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
@@ -76,15 +79,6 @@ def istornado():
 
     response: str = json.dumps(output)
     return Response(response)
-
-
-@app.route('/transaction', methods=['GET'])
-def transaction():
-    address: str = request.args.get('address', '')
-    address: str = resolve_address(address, ns)
-    address: str = address.lower()
-
-    return render_template('transaction.html')
 
 
 @app.route('/search', methods=['GET'])
@@ -636,4 +630,69 @@ def search_tornado(request: Request) -> Response:
 
     response: str = json.dumps(output)
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))
+    return Response(response=response)
+
+
+@app.route('/transaction', methods=['GET'])
+def transaction():
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
+    if not is_valid_address(address):
+        return default_transaction_response()
+
+    request.args = dict(request.args)
+    request.args['address'] = address
+
+    checker: TransactionRequestChecker = TransactionRequestChecker(
+        request,
+        default_page = 0,
+        default_limit = PAGE_LIMIT,
+    )
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_transaction_response()
+
+    if not is_valid_request:
+        return Response(output)
+
+    address: str = checker.get('address').lower()
+    page: int = checker.get('page')
+    size: int = checker.get('limit')
+
+    request_repr: str = checker.to_str()
+
+    if rds.exists(request_repr):
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
+
+    output['data']['query']['address'] = address
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+
+    # --
+
+    def find_tcash_matches(address: str, Heuristic: Any, identifier: int
+    ) -> List[Dict[str, Any]]:
+
+        rows: List[Heuristic] = \
+            Heuristic.query.filter(Heuristic.address == address).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': identifier} for row in rows]
+        return rows
+
+    transactions: List[Dict[str, Any]] = \
+        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR)) + \
+        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR)) + \
+        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR)) + \
+        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR)) + \
+        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR)) 
+
+    output['data']['transactions'] = transactions
+    output['success'] = 1
+
+    response: str = json.dumps(output)
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
+
     return Response(response=response)
