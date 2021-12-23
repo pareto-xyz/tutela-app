@@ -33,7 +33,7 @@ from gensim import utils, matutils
 
 from smart_open.compression import get_supported_extensions
 
-from src.utils.utils import to_pickle
+from src.utils.utils import to_json, from_json
 
 logger = logging.getLogger(__name__)
 
@@ -180,15 +180,19 @@ class Word2Vec(utils.SaveLoad):
             if self.max_vocab_size and len(vocab) > self.max_vocab_size:
                 utils.prune_vocab(vocab, min_reduce, trim_rule=trim_rule)
                 min_reduce += 1
-            
+
             pbar.update()
         pbar.close()
 
         corpus_count = sentence_no + 1
+        assert corpus_count == self.corpus_size, "Incorrect corpus size?"
         self.raw_vocab = vocab
 
-        cache_vocab_file = os.path.join(self.cache_dir, 'vocab.pickle')
-        to_pickle(vocab, cache_vocab_file)
+        cache_vocab = os.path.join(self.cache_dir, 'vocab.json')
+        to_json(vocab, cache_vocab)
+
+        cache_stats = os.path.join(self.cache_dir, 'vocab-stats.json')
+        to_json({'total_words': total_words, 'corpus_count': corpus_count}, cache_stats)
 
         return total_words, corpus_count
 
@@ -196,8 +200,16 @@ class Word2Vec(utils.SaveLoad):
         logger.info("collecting all words and their counts")
         corpus_iterable = JSONLineSentence(corpus_file)
 
-        total_words, corpus_count = self._scan_vocab(
-            corpus_iterable, corpus_size, progress_per, trim_rule)
+        cache_vocab: os.path.join(self.cache_dir, 'vocab.json')
+        cache_stats = os.path.join(self.cache_dir, 'vocab-stats.json')
+        if os.path.isfile(cache_vocab) and os.path.isfile(cache_stats):
+            self.raw_vocab = from_json(cache_vocab)
+            stats = from_json(cache_stats)
+            total_words = stats['total_words']
+            corpus_count = stats['corpus_count']
+        else:
+            total_words, corpus_count = self._scan_vocab(
+                corpus_iterable, corpus_size, progress_per, trim_rule)
 
         logger.info(
             "collected %i word types from a corpus of %i raw words and %i sentences",
