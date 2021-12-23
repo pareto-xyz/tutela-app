@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from src.utils.utils import Entity, Heuristic
 from src.utils.loader import DataframeLoader

@@ -42,7 +42,7 @@ class DepositTransaction(db.Model):
     )
     block_number: db.Column = db.Column(db.Integer)
     block_ts: db.Column = db.Column(db.DateTime)
-    meta_data: db.Column = db.Column(db.String(256))
+    conf: db.Column = db.Column(db.Float)
 
     def __repr__(self) -> str:
         return f'<DepositTransaction {self.address}>'
