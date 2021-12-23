@@ -8,7 +8,7 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
-    TornadoDeposit, TornadoWithdraw
+    TornadoDeposit, TornadoWithdraw, DepositTransaction
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
@@ -682,12 +682,23 @@ def transaction():
              'timestamp': row.block_ts, 'heuristic': identifier} for row in rows]
         return rows
 
-    transactions: List[Dict[str, Any]] = \
+    def find_dar_matches(address: str) -> List[Dict[str, Any]]:
+        rows: List[DepositTransaction] = \
+            DepositTransaction.query.filter(DepositTransaction.address == address).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR} for row in rows]
+        return rows
+
+    transactions: List[Dict[str, Any]] = find_dar_matches(address) + \
         find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR)) + \
         find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR)) + \
         find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR)) + \
         find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR)) + \
-        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR)) 
+        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR))
+
+    # sort by timestamp
+    transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
 
     output['data']['transactions'] = transactions
     output['success'] = 1
