@@ -3,6 +3,7 @@ Lambda Class's Exact Match Heuristic.
 """
 import os
 import pandas as pd
+from pandas._config.config import describe_option
 from tqdm import tqdm
 import networkx as nx
 from typing import Any, Tuple, List, Set, Optional, Dict
@@ -12,6 +13,7 @@ from src.utils.utils import to_json
 def main(args: Any):
     withdraw_df, deposit_df = load_data(args.data_dir)
     clusters, tx2addr = get_exact_matches(deposit_df, withdraw_df, by_pool=args.by_pool)
+    tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
     appendix: str = '_by_pool' if args.by_pool else ''
     # NOTE: we do not make a `db_file` here b/c we are guaranteed singleton clusters.
@@ -19,8 +21,14 @@ def main(args: Any):
         args.save_dir, f'exact_match_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(
         args.save_dir, f'exact_match_tx2addr{appendix}.json')
+    tx2block_file: str = os.path.join(
+        args.save_dir, f'exact_match_tx2block{appendix}.json')
+    tx2ts_file: str = os.path.join(
+        args.save_dir, f'exact_match_tx2ts{appendix}.json')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(tx2block, tx2block_file)
+    to_json(tx2ts, tx2ts_file)
 
 
 def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -40,6 +48,20 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
     deposit_df['block_timestamp'] = deposit_df['block_timestamp'].apply(pd.Timestamp)
 
     return withdraw_df, deposit_df
+
+
+def get_transaction_info(
+    withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame
+) -> Tuple[Dict[str, int], Dict[str, Any]]:
+    hashes: pd.DataFrame = pd.concat([withdraw_df.hash, deposit_df.hash])
+    block_numbers: pd.DataFrame = \
+        pd.concat([withdraw_df.block_number, deposit_df.block_number])
+    block_timestamps: pd.DataFrame = \
+        pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    tx2block = dict(zip(hashes, block_numbers))
+    tx2ts = dict(zip(hashes, block_timestamps))
+    return tx2block, tx2ts
 
 
 def get_exact_matches(

@@ -19,6 +19,8 @@ def main(args: Any):
     appendix: str = f'_exact_{args.max_num_days}days'
     clusters_file: str = os.path.join(args.save_dir, f'same_num_txs_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2addr{appendix}.json')
+    tx2block_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2block{appendix}.json')
+    tx2ts_file: str = os.path.join(args.save_dir, f'same_num_txs_tx2ts{appendix}.json')
     addr2conf_file: str = os.path.join(args.save_dir, f'same_num_txs_addr2conf{appendix}.json')
     address_file: str = os.path.join(args.save_dir, f'same_num_txs_address_sets{appendix}.json')
     metadata_file: str = os.path.join(args.save_dir, f'same_num_txs_metadata{appendix}.csv')
@@ -26,10 +28,13 @@ def main(args: Any):
     withdraw_df, deposit_df, tornado_df = load_data(args.data_dir)
     clusters, address_sets, tx2addr, addr2conf = get_same_num_transactions_clusters(
         deposit_df, withdraw_df, tornado_df, args.max_num_days, args.data_dir)
-    
+    tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
+
     # save some stuff before continuing
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(tx2block, tx2block_file)
+    to_json(tx2ts, tx2ts_file)
     to_pickle(addr2conf, addr2conf_file)
     del clusters, tx2addr, deposit_df, withdraw_df, tornado_df  # free memory
     to_json(address_sets, address_file)
@@ -61,6 +66,20 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     tornado_df: pd.DataFrame = pd.read_csv(args.tornado_csv)
 
     return withdraw_df, deposit_df, tornado_df
+
+
+def get_transaction_info(
+    withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame
+) -> Tuple[Dict[str, int], Dict[str, Any]]:
+    hashes: pd.DataFrame = pd.concat([withdraw_df.hash, deposit_df.hash])
+    block_numbers: pd.DataFrame = \
+        pd.concat([withdraw_df.block_number, deposit_df.block_number])
+    block_timestamps: pd.DataFrame = \
+        pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    tx2block = dict(zip(hashes, block_numbers))
+    tx2ts = dict(zip(hashes, block_timestamps))
+    return tx2block, tx2ts
 
 
 def get_same_num_transactions_clusters(

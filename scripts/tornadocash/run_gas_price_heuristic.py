@@ -14,6 +14,7 @@ def main(args: Any):
     withdraw_df, deposit_df = load_data(args.data_dir)
     clusters, tx2addr = \
         get_same_gas_price_clusters(deposit_df, withdraw_df, by_pool=args.by_pool)
+    tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
     address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
     address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
@@ -22,12 +23,18 @@ def main(args: Any):
         args.save_dir, f'gas_price_clusters{appendix}.json')
     tx2addr_file: str = os.path.join(
         args.save_dir, f'gas_price_tx2addr{appendix}.json')
+    tx2block_file: str = os.path.join(
+        args.save_dir, f'gas_price_tx2block{appendix}.json')
+    tx2ts_file: str = os.path.join(
+        args.save_dir, f'gas_price_tx2ts{appendix}.json')
     address_file: str = os.path.join(
         args.save_dir, f'gas_price_address_set{appendix}.json')
     metadata_file: str = os.path.join(
         args.save_dir, f'gas_price_metadata{appendix}.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(tx2block, tx2block_file)
+    to_json(tx2ts, tx2ts_file)
     to_json(address_sets, address_file)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -53,6 +60,20 @@ def load_data(root) -> Tuple[pd.DataFrame, pd.DataFrame]:
     deposit_df['block_timestamp'] = deposit_df['block_timestamp'].apply(pd.Timestamp)
 
     return withdraw_df, deposit_df
+
+
+def get_transaction_info(
+    withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame
+) -> Tuple[Dict[str, int], Dict[str, Any]]:
+    hashes: pd.DataFrame = pd.concat([withdraw_df.hash, deposit_df.hash])
+    block_numbers: pd.DataFrame = \
+        pd.concat([withdraw_df.block_number, deposit_df.block_number])
+    block_timestamps: pd.DataFrame = \
+        pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    tx2block = dict(zip(hashes, block_numbers))
+    tx2ts = dict(zip(hashes, block_timestamps))
+    return tx2block, tx2ts
 
 
 def get_same_gas_price_clusters(

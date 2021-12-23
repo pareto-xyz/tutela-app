@@ -64,6 +64,7 @@ def main(args: Any):
 
     # build a graph, then find clusters, build tx2addr
     clusters, tx2addr = build_clusters(links, all_tx2addr)
+    tx2block, tx2ts = get_transaction_info(withdraw_txs, deposit_txs)
 
     address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
     address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
@@ -71,10 +72,14 @@ def main(args: Any):
 
     clusters_file: str = os.path.join(args.save_dir, f'linked_tx_clusters_{args.min_interactions}intxs.json')
     tx2addr_file: str = os.path.join(args.save_dir, f'linked_tx_tx2addr_{args.min_interactions}intxs.json')
+    tx2block_file: str = os.path.join(args.save_dir, f'linked_tx_tx2block_{args.min_interactions}intxs.json')
+    tx2ts_file: str = os.path.join(args.save_dir, f'linked_tx_tx2ts_{args.min_interactions}intxs.json')
     address_file: str = os.path.join(args.save_dir, f'linked_tx_address_set_{args.min_interactions}intxs.json')
     metadata_file: str = os.path.join(args.save_dir, f'linked_tx_metadata_{args.min_interactions}intxs.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(tx2block, tx2block_file)
+    to_json(tx2ts, tx2ts_file)
     to_json(address_sets, address_file)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -100,6 +105,20 @@ def build_clusters(
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
 
     return clusters, tx2addr
+
+
+def get_transaction_info(
+    withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame
+) -> Tuple[Dict[str, int], Dict[str, Any]]:
+    hashes: pd.DataFrame = pd.concat([withdraw_df.hash, deposit_df.hash])
+    block_numbers: pd.DataFrame = \
+        pd.concat([withdraw_df.block_number, deposit_df.block_number])
+    block_timestamps: pd.DataFrame = \
+        pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    tx2block = dict(zip(hashes, block_numbers))
+    tx2ts = dict(zip(hashes, block_timestamps))
+    return tx2block, tx2ts
 
 
 def get_address_sets(
