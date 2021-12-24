@@ -384,6 +384,36 @@ def search_address(request: Request) -> Response:
         )
         return stats
 
+    def query_diff2vec(address: str) -> List[Dict[str, Any]]:
+        """
+        Search the embedding table to fetch neighbors from Diff2Vec cluster.
+        """
+        entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+        cluster: List[Dict[str, Any]] = []
+        cluster_conf: float = 0
+
+        if entry is not None:
+            neighbors: List[int] = json.loads(entry.neighbors)
+            distances: List[float] = json.loads(entry.distances)
+
+            for neighbor, distance in zip(neighbors, distances):
+                member: Dict[str, Any] = {
+                    'address': neighbor,
+                    '_distance': distance,
+                    # TODO: check if this is well calibrated
+                    'conf': float(1./abs(distance)),
+                    'heuristic': DIFF2VEC_HEUR, 
+                    'entity': UNKNOWN,
+                    'ens_name': get_ens_name(neighbor, ns),
+                }
+                cluster.append(member)
+                cluster_conf += float(1./abs(distance))
+
+        cluster_size: int = len(cluster)
+        cluster_conf: float = cluster_conf / float(cluster_size)
+
+        return cluster, cluster_size, cluster_conf
+
 
     if len(address) > 0:
         offset: int = page * size
@@ -520,7 +550,7 @@ def search_address(request: Request) -> Response:
                 raise Exception(f'Entity {entity} not supported.')
 
             # find Diff2Vec embeddings and add to front of cluster
-            diff2vec_cluster, diff2vec_size, diff2vec_conf = search_embedding(address)
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(address)
             cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
             cluster_size += len(diff2vec_cluster)
 
@@ -531,7 +561,7 @@ def search_address(request: Request) -> Response:
             # --- compute anonymity score using hyperbolic fn ---
             anon_score = compute_anonymity_score(
                 addr,
-                # seed computing anonymity score with diff2vec
+                # seed computing anonymity score with diff2vec + tcash reveals
                 extra_cluster_sizes = [
                     diff2vec_size,
                     tornado_dict['num_compromised']['num_compromised_exact_match'],
@@ -570,37 +600,6 @@ def search_address(request: Request) -> Response:
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
-
-
-def search_embedding(address: str) -> List[Dict[str, Any]]:
-    """
-    Search the embedding table to fetch neighbors from Diff2Vec cluster.
-    """
-    entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
-    cluster: List[Dict[str, Any]] = []
-    cluster_conf: float = 0
-
-    if entry is not None:
-        neighbors: List[int] = json.loads(entry.neighbors)
-        distances: List[float] = json.loads(entry.distances)
-
-        for neighbor, distance in zip(neighbors, distances):
-            member: Dict[str, Any] = {
-                'address': neighbor,
-                '_distance': distance,
-                # TODO: check if this is well calibrated
-                'conf': float(1./abs(distance)),
-                'heuristic': DIFF2VEC_HEUR, 
-                'entity': UNKNOWN,
-                'ens_name': get_ens_name(neighbor, ns),
-            }
-            cluster.append(member)
-            cluster_conf += float(1./abs(distance))
-
-    cluster_size: int = len(cluster)
-    cluster_conf: float = cluster_conf / float(cluster_size)
-
-    return cluster, cluster_size, cluster_conf
 
 
 def search_tornado(request: Request) -> Response:
