@@ -6,8 +6,8 @@ from scipy.stats import gaussian_kde
 
 def main(args: Any):
     vectors: np.array = np.load(args.vectors_npy)
-    kde = gaussian_kde(vectors)
-    density: np.array = kde(vectors)
+    kde = gaussian_kde(vectors.T)
+    density: np.array = kde(vectors.T)
 
     filename: str = os.path.basename(args.vectors_npy)
     name_pieces: List[str] = filename.split('.')
