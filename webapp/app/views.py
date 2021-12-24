@@ -388,7 +388,12 @@ def search_address(request: Request) -> Response:
     if len(address) > 0:
         offset: int = page * size
 
-        # --- search for address ---
+        # --- check tornado queries ---
+        # Note that this is out of the `Address` existence check
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        output['data']['tornado']['summary']['address'].update(tornado_dict)
+
+        # --- search for address in DAR/Diff2Vec tables ---
         addr: Optional[Address] = Address.query.filter_by(address = address).first()
 
         if addr is not None:  # make sure address exists
@@ -527,8 +532,22 @@ def search_address(request: Request) -> Response:
             anon_score = compute_anonymity_score(
                 addr,
                 # seed computing anonymity score with diff2vec
-                extra_cluster_sizes = [diff2vec_size], 
-                extra_cluster_confs = [diff2vec_conf],
+                extra_cluster_sizes = [
+                    diff2vec_size,
+                    tornado_dict['num_compromised']['num_compromised_exact_match'],
+                    tornado_dict['num_compromised']['num_compromised_gas_price'],
+                    tornado_dict['num_compromised']['num_compromised_multi_denom'],
+                    tornado_dict['num_compromised']['num_compromised_linked_tx'],
+                    tornado_dict['num_compromised']['num_compromised_torn_mine'],
+                ], 
+                extra_cluster_confs = [
+                    diff2vec_conf,
+                    1.,
+                    1.,
+                    0.5,
+                    0.25,
+                    0.25,
+                ],
             )
             anon_score: float = round(anon_score, 3)  # brevity is a virtue
             output['data']['query']['anonymity_score'] = anon_score
@@ -543,11 +562,6 @@ def search_address(request: Request) -> Response:
         if len(known_lookup) > 0:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
-
-        # --- check tornado queries ---
-        # Note that this is out of the `Address` existence check
-        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
-        output['data']['tornado']['summary']['address'].update(tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
