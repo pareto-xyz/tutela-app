@@ -1,6 +1,6 @@
 import os
 from typing import Any
-from gensim.models import Word2Vec
+from src.diff2vec.word2vec import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 
 
@@ -31,13 +31,16 @@ class TrainCallback(CallbackAny2Vec):
 
 
 def main(args: Any):
-    model: Word2Vec = Word2Vec(
+    cache_dir: str = os.path.join(args.model_dir)
+    Word2Vec(
         corpus_file = args.corpus_file,
+        corpus_size = args.corpus_size,
         vector_size = args.dim,
         workers = args.workers,
         epochs = args.epochs,
         alpha = args.lr,
         seed = args.seed,
+        cache_dir = cache_dir,
         callbacks = [TrainCallback(args.model_dir)],
     )
 
@@ -47,6 +50,7 @@ if __name__ == "__main__":
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument('corpus_file', type=str, help='path to cached sequences')
     parser.add_argument('model_dir', type=str, help='path to save model')
+    parser.add_argument('--corpus-size', type=int, default=263644512, help='epochs (default: 263644512)')
     parser.add_argument('--epochs', type=int, default=5, help='epochs (default: 5)')
     parser.add_argument('--workers', type=int, default=4, help='workers (default: 4)')
     parser.add_argument('--min-count', type=int, default=5, help='min count (default: 5)')
