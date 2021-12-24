@@ -110,8 +110,7 @@ class Word2Vec(utils.SaveLoad):
         self.cum_table = None  # for negative sampling
         self.raw_vocab = None
 
-        if not os.path.isdir(cache_dir):
-            os.makedirs(cache_dir)
+        if not os.path.isdir(cache_dir): os.makedirs(cache_dir)
         self.cache_dir = cache_dir
 
         if not hasattr(self, 'wv'):  # set unless subclass already set (eg: FastText)
