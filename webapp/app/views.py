@@ -559,11 +559,12 @@ def search_embedding(address: str) -> List[Dict[str, Any]]:
         for neighbor, distance in zip(neighbors, distances):
             member: Dict[str, Any] = {
                 'address': neighbor,
-                'meta_data': {'distance': distance},
+                'distance': distance,
                 # TODO: check if this is well calibrated
                 'conf': float(1./abs(distance)),
                 'heuristic': DIFF2VEC_HEUR, 
                 'entity': UNKNOWN,
+                'ens_name': get_ens_name(neighbor, ns),
             }
             cluster.append(member)
 
