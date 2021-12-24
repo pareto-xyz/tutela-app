@@ -157,16 +157,22 @@ MAIN PAGE SEARCH SECTION
   margin-top: 90px;
 }
 
-#input-address.fixed-width,
+.justify-center {
+  justify-content: center;
+}
+
+.input-group.fixed-width,
 .input-adress {
   height: auto;
   font-size: 1.2rem;
-  padding: 0.5rem 20px;
   border: transparent;
+  width: 80%;
 }
-#address-form {
-  width: 95%;
+
+.address-form {
+  max-width: 80%;
 }
+
 #address-form > .input-group > .btn {
   background-color: white;
   border-radius: 0px 0.25rem 0.25rem 0;
