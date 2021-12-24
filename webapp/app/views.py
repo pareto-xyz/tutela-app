@@ -239,7 +239,9 @@ def search_address(request: Request) -> Response:
         addr: Address,
         exchange_weight: float = 0.1,
         slope: float = 0.1,
-        ) -> float:
+        extra_cluster_sizes: List[int] = [],
+        extra_cluster_confs: List[float] = []
+    ) -> float:
         """
         Only EOA addresses have an anonymity score. If we get an exchange,
         we return an anonymity score of 0. If we get a deposit, we return -1,
@@ -259,8 +261,8 @@ def search_address(request: Request) -> Response:
         assert addr.entity == entity_to_int(EOA), \
             f'Unknown entity: {entity_to_str(addr.entity)}'
 
-        cluster_confs: List[float] = []
-        cluster_sizes: List[float] = []
+        cluster_confs: List[float] = extra_cluster_sizes
+        cluster_sizes: List[float] = extra_cluster_confs
 
         if addr.user_cluster is not None:
             # find all other EOA addresses with same `dar_user_cluster`.
@@ -398,6 +400,7 @@ def search_address(request: Request) -> Response:
 
             # store the clusters in here
             cluster: List[Address] = []
+
             # stores cluster size with filters. This is necessary to reflect changes
             # in # of elements with new filters.
             cluster_size: int = 0
@@ -511,12 +514,22 @@ def search_address(request: Request) -> Response:
             else:
                 raise Exception(f'Entity {entity} not supported.')
 
+            # find Diff2Vec embeddings and add to front of cluster
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = search_embedding(address)
+            cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
+            cluster_size += len(diff2vec_cluster)
+
             output['data']['cluster'] = cluster
             output['data']['metadata']['cluster_size'] = cluster_size
             output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
 
             # --- compute anonymity score using hyperbolic fn ---
-            anon_score = compute_anonymity_score(addr)
+            anon_score = compute_anonymity_score(
+                addr,
+                # seed computing anonymity score with diff2vec
+                extra_cluster_sizes = [diff2vec_size], 
+                extra_cluster_confs = [diff2vec_conf],
+            )
             anon_score: float = round(anon_score, 3)  # brevity is a virtue
             output['data']['query']['anonymity_score'] = anon_score
 
@@ -551,6 +564,7 @@ def search_embedding(address: str) -> List[Dict[str, Any]]:
     """
     entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
     cluster: List[Dict[str, Any]] = []
+    cluster_conf: float = 0
 
     if entry is not None:
         neighbors: List[int] = json.loads(entry.neighbors)
@@ -567,8 +581,12 @@ def search_embedding(address: str) -> List[Dict[str, Any]]:
                 'ens_name': get_ens_name(neighbor, ns),
             }
             cluster.append(member)
+            cluster_conf += float(1./abs(distance))
 
-    return cluster
+    cluster_size: int = len(cluster)
+    cluster_conf: float = cluster_conf / float(cluster_size)
+
+    return cluster, cluster_size, cluster_conf
 
 
 def search_tornado(request: Request) -> Response:
