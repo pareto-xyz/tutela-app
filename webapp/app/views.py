@@ -8,7 +8,7 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
-    TornadoDeposit, TornadoWithdraw
+    TornadoDeposit, TornadoWithdraw, Embedding
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
@@ -16,7 +16,8 @@ from app.utils import \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
-    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
+    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, \
+    DIFF2VEC_HEUR, UNKNOWN
 from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
@@ -542,6 +543,31 @@ def search_address(request: Request) -> Response:
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
+
+
+def search_embedding(address: str) -> List[Dict[str, Any]]:
+    """
+    Search the embedding table to fetch neighbors from Diff2Vec cluster.
+    """
+    entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+    cluster: List[Dict[str, Any]] = []
+
+    if entry is not None:
+        neighbors: List[int] = json.loads(entry.neighbors)
+        distances: List[float] = json.loads(entry.distances)
+
+        for neighbor, distance in zip(neighbors, distances):
+            member: Dict[str, Any] = {
+                'address': neighbor,
+                'meta_data': {'distance': distance},
+                # TODO: check if this is well calibrated
+                'conf': float(1./abs(distance)),
+                'heuristic': DIFF2VEC_HEUR, 
+                'entity': UNKNOWN,
+            }
+            cluster.append(member)
+
+    return cluster
 
 
 def search_tornado(request: Request) -> Response:

@@ -23,9 +23,11 @@ DEFI: str = 'defi'
 ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
+UNKNOWN: str = 'unknown'
 # --
 GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
+DIFF2VEC_HEUR: str = 'diff2vec'
 SAME_NUM_TX_HEUR: str = 'multi_denomination'
 SAME_ADDR_HEUR: str = 'address_match'
 LINKED_TX_HEUR: str = 'linked_transaction'
@@ -156,6 +158,8 @@ def entity_to_str(i: int) -> str:
         return MINING
     elif i == 7:
         return TORNADO
+    elif i == 8:
+        return UNKNOWN
     else:
         raise Exception(f'Fatal error: {i}')
 
@@ -177,6 +181,8 @@ def entity_to_int(s: str) -> int:
         return 6
     elif s == TORNADO:
         return 7
+    elif s == UNKNOWN:
+        return 8
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -194,6 +200,8 @@ def heuristic_to_str(s: int) -> str:
         return LINKED_TX_HEUR
     elif s == 5:
         return TORN_MINE_HEUR
+    elif s == 6:
+        return DIFF2VEC_HEUR
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -211,6 +219,8 @@ def heuristic_to_int(s: str) -> int:
         return 4
     elif s == TORN_MINE_HEUR:
         return 5
+    elif s == DIFF2VEC_HEUR:
+        return 6
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -292,6 +302,7 @@ def default_address_response() -> Dict[str, Any]:
                             ICO_WALLET, 
                             MINING,
                             TORNADO,
+                            UNKNOWN,
                         ],
                     },
                     NAME_COL: {
@@ -349,6 +360,7 @@ def default_tornado_response() -> Dict[str, Any]:
                             SAME_NUM_TX_HEUR,
                             LINKED_TX_HEUR,
                             TORN_MINE_HEUR,
+                            DIFF2VEC_HEUR,
                         ],
                     },
                 },
