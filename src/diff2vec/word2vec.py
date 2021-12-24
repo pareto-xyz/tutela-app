@@ -129,13 +129,37 @@ class Word2Vec(utils.SaveLoad):
 
         self.load = call_on_class_only
 
-        self.build_vocab(corpus_file=corpus_file, corpus_size=corpus_size, trim_rule=trim_rule)
+        if not self.build_from_cache(cache_dir):
+            # if not in cache, then build from scratch
+            self.build_vocab(corpus_file=corpus_file, corpus_size=corpus_size, trim_rule=trim_rule)
+
         self.train(
             corpus_file=corpus_file, corpus_size=corpus_size, total_examples=self.corpus_count,
             total_words=self.corpus_total_words, epochs=self.epochs, start_alpha=self.alpha,
             end_alpha=self.min_alpha, compute_loss=self.compute_loss, callbacks=callbacks)
 
         self.add_lifecycle_event("created", params=str(self))
+
+    def build_from_cache(self, cache_dir):
+        cache_wv_file = os.path.join(cache_dir, 'word2vec.pickle')
+        cache_cum_table = os.path.join(cache_dir, 'cum_table.npy')
+        cache_vocab_stats = os.path.join(cache_dir, 'vocab-stats.json')
+
+        if  os.path.isfile(cache_wv_file) and \
+            os.path.isfile(cache_cum_table) and \
+            os.path.isfile(cache_vocab_stats):
+
+            vocab_stats = from_json(cache_vocab_stats)
+            self.total_words = vocab_stats['total_words']
+            self.corpus_count = vocab_stats['corpus_count']
+
+            self.wv.load(cache_wv_file)
+            self.cum_table = np.load(cache_cum_table)
+            self.init_weights()
+
+            return True
+
+        return False
 
     def build_vocab(
             self, corpus_file, corpus_size, update=False, progress_per=10000,
