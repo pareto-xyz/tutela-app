@@ -16,7 +16,7 @@ def main(args: Any):
     size = vectors.shape[0]
 
     # https://github.com/facebookresearch/faiss/issues/112
-    nlist = 4 * np.sqrt(size)
+    nlist = int(4 * np.sqrt(size))
 
     quantizer: faiss.IndexFlatL2 = faiss.IndexFlatL2(128)
     index: faiss.IndexIVFFlat = \
