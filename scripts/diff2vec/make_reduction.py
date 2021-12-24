@@ -14,7 +14,8 @@ def main(args: Any):
     name_pieces[0] = f'{name_pieces[0]}-pca'
     filename = '.'.join(name_pieces)
 
-    np.save(filename, vectors)
+    dirname: str = os.path.dirname(args.vectors_npy)
+    np.save(os.path.join(dirname, filename), vectors)
 
 
 if __name__ == "__main__":
