@@ -200,9 +200,10 @@ class Word2Vec(utils.SaveLoad):
         logger.info("collecting all words and their counts")
         corpus_iterable = JSONLineSentence(corpus_file)
 
-        cache_vocab: os.path.join(self.cache_dir, 'vocab.json')
+        cache_vocab = os.path.join(self.cache_dir, 'vocab.json')
         cache_stats = os.path.join(self.cache_dir, 'vocab-stats.json')
         if os.path.isfile(cache_vocab) and os.path.isfile(cache_stats):
+            print('loading vocabulary from cache file.')
             self.raw_vocab = from_json(cache_vocab)
             stats = from_json(cache_stats)
             total_words = stats['total_words']
@@ -269,6 +270,8 @@ class Word2Vec(utils.SaveLoad):
                 self.sample = sample
                 self.wv.key_to_index = {}
 
+            print('populating wv index')
+            pbar = tqdm(total=len(self.raw_vocab))
             for word, v in self.raw_vocab.items():
                 if keep_vocab_item(word, v, self.effective_min_count, trim_rule=trim_rule):
                     retain_words.append(word)
@@ -279,10 +282,16 @@ class Word2Vec(utils.SaveLoad):
                 else:
                     drop_unique += 1
                     drop_total += v
+                pbar.update()
+            pbar.close()
             if not dry_run:
                 # now update counts
+                print('updating wv counts')
+                pbar = tqdm(total=len(self.wv.index_to_key))
                 for word in self.wv.index_to_key:
                     self.wv.set_vecattr(word, 'count', self.raw_vocab[word])
+                    pbar.update()
+                pbar.close()
             original_unique_total = len(retain_words) + drop_unique
             retain_unique_pct = len(retain_words) * 100 / max(original_unique_total, 1)
             self.add_lifecycle_event(
@@ -353,6 +362,8 @@ class Word2Vec(utils.SaveLoad):
             # new shorthand: sample >= 1 means downsample all words with higher count than sample
             threshold_count = int(sample * (3 + np.sqrt(5)) / 2)
 
+        print('processing retained words')
+        pbar = tqdm(total=len(retain_words))
         downsample_total, downsample_unique = 0, 0
         for w in retain_words:
             v = self.raw_vocab[w]
@@ -365,6 +376,8 @@ class Word2Vec(utils.SaveLoad):
                 downsample_total += v
             if not dry_run:
                 self.wv.set_vecattr(w, 'sample_int', np.uint32(word_probability * (2**32 - 1)))
+            pbar.update()
+        pbar.close()
 
         if not dry_run and not keep_raw_vocab:
             logger.info("deleting the raw counts dictionary of %i items", len(self.raw_vocab))
@@ -391,6 +404,7 @@ class Word2Vec(utils.SaveLoad):
             self.add_null_word()
 
         if self.sorted_vocab and not update:
+            print('sorting vectors')
             self.wv.sort_by_descending_frequency()
 
         if self.hs:
@@ -460,14 +474,22 @@ class Word2Vec(utils.SaveLoad):
         self.cum_table = np.zeros(vocab_size, dtype=np.uint32)
         # compute sum of all power (Z in paper)
         train_words_pow = 0.0
+        print('making cum table: pass 1')
+        pbar = tqdm(total=vocab_size)
         for word_index in range(vocab_size):
             count = self.wv.get_vecattr(word_index, 'count')
             train_words_pow += count**float(self.ns_exponent)
+            pbar.update()
+        pbar.close()
+        print('making cum table: pass 2')
+        pbar = tqdm(total=vocab_size)
         cumulative = 0.0
         for word_index in range(vocab_size):
             count = self.wv.get_vecattr(word_index, 'count')
             cumulative += count**float(self.ns_exponent)
             self.cum_table[word_index] = round(cumulative / train_words_pow * domain)
+            pbar.update()
+        pbar.close()
         if len(self.cum_table) > 0:
             assert self.cum_table[-1] == domain
 
