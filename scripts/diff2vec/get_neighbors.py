@@ -32,7 +32,9 @@ def main(args: Any):
     index.add(vectors)
     print('done')
 
-    del vectors  # free up space
+    print('saving to disk...', end=' ')
+    faiss.write_index(index, os.path.join(args.save_dir, 'faiss.index')) 
+    print('done')
 
     print('computing neighbors')
     distances: List[np.array] = []
