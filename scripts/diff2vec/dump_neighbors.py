@@ -26,7 +26,7 @@ def main(args: Any):
         distance: List[float] = distances[index].tolist()
         distance: str = json.dumps(distance)
         neighbor: List[int] = neighbors[index].tolist()
-        neighbor: List[str] = [index2addr[nei] for nei in neighbor]
+        neighbor: List[str] = [index2addr[str(nei)] for nei in neighbor]
         neighbor: str = json.dumps(neighbor)
         distance_df.append(distance)
         neighbor_df.append(neighbor)
