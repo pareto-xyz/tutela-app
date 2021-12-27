@@ -77,6 +77,26 @@ def istornado():
     response: str = json.dumps(output)
     return Response(response)
 
+@app.route('/utils/gettornadopools', methods=['GET'])
+def get_tornado_pools():
+
+    pools = []
+
+    for index, pool in tornado_pools.iterrows():
+        amount, currency = pool.tags.strip().split()
+        pools.append({
+            'address': pool.address, 
+            'name': pool.tags,
+        })
+
+    output: Dict[str, Any] = {
+        'data': {
+            'pools': pools
+        },
+        'success': 1,
+    }
+    response: str = json.dumps(output) 
+    return Response(response)
 
 @app.route('/transaction', methods=['GET'])
 def transaction():

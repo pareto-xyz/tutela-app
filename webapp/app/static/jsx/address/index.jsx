@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { buildQueryString } from '../components/utils';
+import { buildQueryString, getApi } from '../components/utils';
 import axios from 'axios';
 import example from '../../data/example';
 import QueryInfo from './QueryInfo';
@@ -16,6 +16,7 @@ import AddressSearchBar from '../components/AddressSearchBar';
 
 import AccordionOfResults from '../components/AccordionOfResults';
 import HaveIBeenCompromised from './HaveIBeenCompromised';
+import ChooseTornadoPool from '../components/ChooseTornadoPool';
 
 
 //to be displayed instead of listed cluster, if no clusters were found. 
@@ -57,9 +58,9 @@ function ClusterPage(props) {
     const [searchType, setSearchType] = useState(null);
 
     const getAliases = () => {
-        axios.get('/utils/aliases').then(response => {
+        getApi('/utils/aliases', response => {
             setAliases(response.data);
-        }).catch(err => console.log(err));
+        });
     }
 
     // initializing
@@ -172,10 +173,13 @@ function ClusterPage(props) {
                         <div className="col-12">
                             {firstView && <div id="instructions">
                                 Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
-                                based on public data on previous transactions.
+                                based on public data on previous transactions, or use the Tornado Cash Pool Anonymity Auditor.
                             </div>}
+                            <div className="all-input-search" >
+                                <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
+                                <ChooseTornadoPool />
+                            </div>
 
-                            <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
                             {loadingQuery && <div id="spinner" className="center-inside">
                                 <div className="spinner-border" role="status">
                                     <span className="sr-only">Loading...</span>

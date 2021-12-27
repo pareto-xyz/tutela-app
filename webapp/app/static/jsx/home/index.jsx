@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddressSearchBar from '../components/AddressSearchBar';
+import ChooseTornadoPool from '../components/ChooseTornadoPool';
 
 
 export default function IndexPage() {
@@ -21,11 +22,20 @@ export default function IndexPage() {
                         <h1 className="col-12">assess your anonymity.</h1>
                     </div>
                     <div className="justify-center row">
-                            <AddressSearchBar onSubmit={onAddressSubmit} inputAddress={inputAddress} setInputAddress={setInputAddress} />
+                        <AddressSearchBar onSubmit={onAddressSubmit} inputAddress={inputAddress} setInputAddress={setInputAddress} />
                     </div>
                     <div className="row instruct">
-                        <div className="col-11 text-center" id="instructions">Enter an ethereum address or ENS name to see likely connected ethereum addresses (ie. its cluster)
+                        <div className="col-11 text-center " id="instructions" >Enter an ethereum address or ENS name to see likely connected ethereum addresses (ie. its cluster)
                             based on public data on previous transactions. </div>
+                    </div>
+                    <div className="row instruct instructions">
+                        -- or -- 
+                    </div>
+                    <div className="row instruct instructions">
+                        Use the Tornado Cash Pool Anonymity Auditor
+                    </div>
+                    <div className="row justify-center">
+                        <ChooseTornadoPool />
                     </div>
                 </div>
                 <div className="full-page col-12" id="about">
