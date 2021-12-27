@@ -173,7 +173,7 @@ function ClusterPage(props) {
                         <div className="col-12">
                             {firstView && <div id="instructions">
                                 Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
-                                based on public data on previous transactions.
+                                based on public data on previous transactions, or use the Tornado Cash Pool Anonymity Auditor.
                             </div>}
                             <div className="all-input-search" >
                                 <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
