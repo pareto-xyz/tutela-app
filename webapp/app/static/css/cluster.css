@@ -423,6 +423,10 @@ ul.dropdown-menu {
   color: var(--almostwhite);
 }
 
+.dropdown-menu > .dropdown-item:hover, .dropdown-menu > .dropdown-item:focus {
+    color: #16181b;
+}
+
 .dropdown-accordion.accordion-header {
   margin-top: 10px;
 }

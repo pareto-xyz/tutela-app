@@ -16,6 +16,7 @@ import AddressSearchBar from '../components/AddressSearchBar';
 
 import AccordionOfResults from '../components/AccordionOfResults';
 import HaveIBeenCompromised from './HaveIBeenCompromised';
+import ChooseTornadoPool from '../components/ChooseTornadoPool';
 
 
 //to be displayed instead of listed cluster, if no clusters were found. 
@@ -174,8 +175,11 @@ function ClusterPage(props) {
                                 Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
                                 based on public data on previous transactions.
                             </div>}
+                            <div className="row" >
+                                <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
+                                <ChooseTornadoPool />
+                            </div>
 
-                            <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
                             {loadingQuery && <div id="spinner" className="center-inside">
                                 <div className="spinner-border" role="status">
                                     <span className="sr-only">Loading...</span>
