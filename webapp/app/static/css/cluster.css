@@ -48,6 +48,7 @@ html {
 .panel-sub,
 .fa-question-circle,
 #instructions,
+.instructions,
 .page-button,
 .copied-badge {
   color: var(--lightgrey);
@@ -184,7 +185,10 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
-  font-size: 1.1rem;
+}
+
+#instructions, .instructions {
+    font-size: 1.1rem;
 }
 
 #no-clusters-msg {
@@ -414,6 +418,9 @@ ul.dropdown-menu {
 
 .dropdown > .dropdown-menu {
   padding: 0px;
+  min-width: 90%;
+  background-color: #1d2124;
+  color: var(--almostwhite);
 }
 
 .dropdown-accordion.accordion-header {

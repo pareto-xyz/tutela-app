@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { buildQueryString } from '../components/utils';
+import { buildQueryString, getApi } from '../components/utils';
 import axios from 'axios';
 import example from '../../data/example';
 import QueryInfo from './QueryInfo';
@@ -57,9 +57,9 @@ function ClusterPage(props) {
     const [searchType, setSearchType] = useState(null);
 
     const getAliases = () => {
-        axios.get('/utils/aliases').then(response => {
+        getApi('/utils/aliases', response => {
             setAliases(response.data);
-        }).catch(err => console.log(err));
+        });
     }
 
     // initializing

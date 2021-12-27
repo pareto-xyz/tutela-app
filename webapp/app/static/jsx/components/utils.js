@@ -1,3 +1,5 @@
+import axios from "axios";
+
 /**
      * checks if the addr is a valid ethereum address (hex and 42 char long including the 0x) 
      * @param {string} addr 
@@ -27,4 +29,8 @@ function buildQueryString(query) {
     return queryString;
 }
 
-export { isValid, buildQueryString }
+function getApi(url, thenFunction) {
+    axios.get(url).then(thenFunction).catch(err => console.log(err));
+}
+
+export { isValid, buildQueryString, getApi }
