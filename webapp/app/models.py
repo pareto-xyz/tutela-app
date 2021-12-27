@@ -23,6 +23,22 @@ class Address(db.Model):
         return f'<Address {self.address}>'
 
 
+class Embedding(db.Model):
+    __tablename__: str = 'embedding'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(
+        db.String(128),
+        index = True,
+        unique = True,
+        nullable = False,
+    )
+    neighbors: db.Column(db.String(512), nullable = False)
+    distances: db.Column(db.String(512), nullable = False)
+
+    def __repr__(self) -> str:
+        return f'<Embedding {self.address}>'
+
+
 class ExactMatch(db.Model):
     __tablename__: str = 'exact_match'
     id: db.Column = db.Column(db.Integer, primary_key = True)
