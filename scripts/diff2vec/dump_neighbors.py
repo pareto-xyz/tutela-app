@@ -6,6 +6,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from typing import Any, List, Dict
 
 from src.utils.utils import from_json
@@ -21,7 +22,7 @@ def main(args: Any):
     distance_df: List[str] = []
     neighbor_df: List[str] = []
 
-    for index in range(size):
+    for index in tqdm(range(size)):
         distance: List[float] = distances[index].tolist()
         distance: str = json.dumps(distance)
         neighbor: List[int] = neighbors[index].tolist()
