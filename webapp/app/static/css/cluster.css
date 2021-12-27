@@ -84,7 +84,7 @@ html {
 .dropdown-accordion > *,
 .dropdown-accordion > a.dropdown-item,
 .dropdown-accordion.accordion-header > button > * {
-  color: black;
+  color: var(--almostwhite);
 }
 
 #detail-table,
