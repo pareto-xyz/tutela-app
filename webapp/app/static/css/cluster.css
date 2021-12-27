@@ -87,6 +87,10 @@ html {
   color: var(--almostwhite);
 }
 
+.dropdown-accordion > a.dropdown-item:hover {
+    color: #16181b;
+}
+
 #detail-table,
 .detail-table {
   border-collapse: separate;
