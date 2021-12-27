@@ -399,6 +399,7 @@ input.form-control.rounded {
   padding: 0.375rem 0.75rem;
   width: 100%;
   border: transparent;
+  height: 100%;
 }
 
 .selected-dropdown {
