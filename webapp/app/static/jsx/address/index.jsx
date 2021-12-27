@@ -175,7 +175,7 @@ function ClusterPage(props) {
                                 Enter an ethereum address (or ENS name) to see likely connected ethereum addresses (ie. its cluster)
                                 based on public data on previous transactions.
                             </div>}
-                            <div className="row" >
+                            <div className="all-input-search" >
                                 <AddressSearchBar onSubmit={submitInputAddress} inputAddress={inputAddress} setInputAddress={setInputAddress} />
                                 <ChooseTornadoPool />
                             </div>

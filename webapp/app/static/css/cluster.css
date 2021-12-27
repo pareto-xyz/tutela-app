@@ -364,6 +364,11 @@ input.form-control.rounded {
   margin-right: 20px;
 }
 
+.all-input-search {
+    display: flex;
+    margin-right: -15px;
+}
+
 .entry-entity {
   border-radius: 5px;
   background-color: var(--fadedgreen);
