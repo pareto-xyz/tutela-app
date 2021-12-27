@@ -424,7 +424,7 @@ ul.dropdown-menu {
 
 .dropdown > .dropdown-menu {
   padding: 0px;
-  min-width: 90%;
+  min-width: 92%;
   background-color: #1d2124;
   color: var(--almostwhite);
 }
