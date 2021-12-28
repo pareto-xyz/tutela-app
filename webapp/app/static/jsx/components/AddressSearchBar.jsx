@@ -68,27 +68,26 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
-                <div className="row">
-                <InputGroup onSubmit={submitInputAddress} className="mb-3 fixed-width col-12" hasValidation>
-                    <FormControl onKeyPress={(e) => {
-                        if (e.key !== 'Enter') return;
-                        e.preventDefault();
-                        submitInputAddress(inputEl.current.value);
-                    }}
-                        onChange={onChangeInputAddress}
-                        placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
-                        className="search-bar"
-                        isInvalid={invalid}
-                        ref={inputEl}
-                    >
-                    </FormControl>
 
-                    <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
-                    <Form.Control.Feedback type="invalid">
-                        Please enter a valid ethereum address or .eth ens name.
-                    </Form.Control.Feedback>
-                </InputGroup>
-                </div>
+                    <InputGroup onSubmit={submitInputAddress} className="fixed-width mb-1 col-sm-12 col-md-6 col-lg-8" hasValidation>
+                        <FormControl onKeyPress={(e) => {
+                            if (e.key !== 'Enter') return;
+                            e.preventDefault();
+                            submitInputAddress(inputEl.current.value);
+                        }}
+                            onChange={onChangeInputAddress}
+                            placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
+                            className="search-bar"
+                            isInvalid={invalid}
+                            ref={inputEl}
+                        >
+                        </FormControl>
+
+                        <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
+                        <Form.Control.Feedback type="invalid">
+                            Please enter a valid ethereum address or .eth ens name.
+                        </Form.Control.Feedback>
+                    </InputGroup>
             </OverlayTrigger>
 
         </>

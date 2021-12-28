@@ -23,6 +23,8 @@ DEFI: str = 'defi'
 ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
+UNKNOWN: str = 'unknown'
+NODE: str = 'node'
 # --
 GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
@@ -104,6 +106,7 @@ def get_display_aliases() -> Dict[str, str]:
         'entity': 'address type',
         'balance': 'ETH balance',
         'ens_name': 'ENS',
+        '_distance': 'distance',
         'exchange_address': 'exchange address',
         'exchange_name': 'associated exchange',
         'account_type': 'category',
@@ -157,6 +160,8 @@ def entity_to_str(i: int) -> str:
         return MINING
     elif i == 7:
         return TORNADO
+    elif i == 8:
+        return UNKNOWN
     else:
         raise Exception(f'Fatal error: {i}')
 
@@ -178,6 +183,8 @@ def entity_to_int(s: str) -> int:
         return 6
     elif s == TORNADO:
         return 7
+    elif s == UNKNOWN:
+        return 8
     else:
         raise Exception(f'Fatal error: {s}')
 
@@ -297,6 +304,7 @@ def default_address_response() -> Dict[str, Any]:
                             ICO_WALLET, 
                             MINING,
                             TORNADO,
+                            UNKNOWN,
                         ],
                     },
                     NAME_COL: {
@@ -354,6 +362,7 @@ def default_tornado_response() -> Dict[str, Any]:
                             SAME_NUM_TX_HEUR,
                             LINKED_TX_HEUR,
                             TORN_MINE_HEUR,
+                            DIFF2VEC_HEUR,
                         ],
                     },
                 },

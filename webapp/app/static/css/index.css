@@ -25,10 +25,22 @@ html.ombre {
   --fadedgrey: #5b5b5b86;
 }
 
-body {
-  font-family: "PT Mono", "Ubuntu", monospace;
+body,
+input {
+  font-family: "PT Sans", sans-serif;
   background-color: transparent;
-  font-size: 1.1em;
+  font-weight: 400;
+}
+
+header,
+footer,
+h1,
+h2,
+h3,
+h4,
+.panel-title {
+  font-family: "PT Mono", monospace;
+  background-color: transparent;
   font-weight: 400;
 }
 
@@ -132,13 +144,6 @@ a:hover {
   color: white;
 }
 
-.instructions {
-  color: var(--lightgrey);
-  margin: 40px 0px;
-  text-align: center;
-  width: 80%;
-}
-
 /**
 MAIN PAGE SEARCH SECTION
 */
@@ -151,22 +156,26 @@ MAIN PAGE SEARCH SECTION
 .main-react {
   margin-top: 90px;
 }
-td,
-th {
-  text-align: left;
-  padding: 5px;
+
+.justify-center {
+  justify-content: center;
 }
 
-#input-address.fixed-width,
+.input-group.fixed-width,
 .input-adress {
-  height: auto;
+  /* height: 1rem ; */
   font-size: 1.2rem;
-  padding: 0.5rem 20px;
   border: transparent;
 }
-#address-form {
-  width: 95%;
+
+.input-adress {
+  width: 80%;
 }
+
+.address-form {
+  max-width: 80%;
+}
+
 #address-form > .input-group > .btn {
   background-color: white;
   border-radius: 0px 0.25rem 0.25rem 0;

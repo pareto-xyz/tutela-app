@@ -1,0 +1,30 @@
+\section{Appendix}
+
+\subsection{Tornado Cash Heuristic: Wallet Fingerprints}
+We present a Tornado Cash heuristic for identifying compromised transactions that is not yet implemented in Tutela at the time of publication.
+
+In the Ethereum ecosystem, users can select from numerous wallet softwares. Wallet fingerprints allow one to establish the wallet software a user sent their transaction from. Such wallet fingerprints could largely fragment the anonymity set of TC users. For instance, a withdrawal transaction sent with wallet software $\mathcal{A}$ can only be indistinguishable among the deposit transactions sent by users of the same wallet software $\mathcal{A}$. 
+
+Transaction fees (i.e., the $\mathsf{max\_fee}$ and $\mathsf{max\_priority\_fee}$ fields of a transaction) are typically set by the wallet software. These values are often computed by open-source algorithms that are different for each wallet. For instance, Blocknative's algorithm\footnote{See for more details: \url{https://www.blocknative.com/gas-estimator}.} uses the following: \[\mathsf{max\_fee}=\mathsf{base\_fee}+2\cdot\mathsf{max\_priority\_fee}\] Therefore, it is straightforward to assess the wallet software for many transactions. Assuming that accounts do not change their used wallet software, we can more confidently identify compromises.
+
+\subsection{Improvements to Measuring Tornado Cash's True Anonymity Set Size}
+
+The anonymity set size listed on Tornado Cash's webpage\footnote{https://tornadocash.eth.link} does not take into account compromised deposits. We can compute the uncompromised (or useful) anonymity set size as the total number of deposits in this pool removing revealed deposits from each of the heuristics above. This resulting number is a more faithful representation of the privacy provided by a Tornado Cash pool.
+
+In this regard, the very definition of anonymity set offers a way of interpreting heuristics producing multiple deposit addresses as output for a single withdraw address input by measuring anonymity in terms of the Shannon entropy~\cite{diaz2002towards}. 
+
+Concretely, we are able to quantify how much anonymity is lost after running a heuristic $\mathcal{H}$ for a given withdrawal address. Heuristics linking addresses by scanning ETH transactions outside the TC environment or linking addresses by matching deposit to withdraw portfolios typically produce a large number of candidate addresses: organizing these outputs as a non-empty set $\mathcal{C}$, they provide a natural "refined anonymity set" notion - of course, these outputs need not to include the actual deposit address, but in a worst-case scenario a clear interpretation can be given. Calling the anonymity set $\mathcal{D}$, $D$ its cardinality and recalling its definition, we can compute its Shannon entropy by simply taking the logarithm of its cardinality:
+
+\begin{equation*}
+H(\mathcal{D})=-\sum\limits_{d\in\mathcal{D}}{\frac{1}{D}\ln\Big(\frac{1}{D}\Big)}=\ln(D)
+\end{equation*} 
+
+This quantity is a central notion in classical information theory and represents how much "regularity" there is in a random variable: higher entropy will mean low information. In our context, the definition of anonymity set implies that any of its members is equally likely to be the deposit address actually linked to a given withdraw address and we interpret this fact as not having more information about the participant addresses of the actual transaction than the size of the TC anonymity set. A heuristic $\mathcal{H}$ (or combination of heuristics) producing a refined set of candidates $\mathcal{C}=\mathcal{C}(y)$ will then update our prior belief and potentially locate the actual deposit address in this set: now the conditional entropy $H(\mathcal{C})$ is substracted form the a priori entropy resulting in a quantity known as conditional information gain
+
+\begin{equation*} 
+\begin{aligned}
+  I(X,X|Y=y)=H(X)-H(X|Y=y)=\\ =\ln(\lvert \mathcal{D}\rvert)-\ln(\lvert \mathcal{C}\rvert)
+\end{aligned}
+\end{equation*}
+
+ This turns out to be equal to the Kullback-Leibler divergence between the prior and posterior probability mass functions for the anonymity sets. It measures how much information is gained upon running the heuristic. In this sense, larger sets $\mathcal{C}$ produce little information gain, whereas smaller ones produce larger information gains: in the case of $\mathcal{C}$ containing the actual deposit address corresponding to a given withdrawal, we interpret this information gain as a greater anonymity loss.
