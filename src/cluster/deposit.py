@@ -176,7 +176,7 @@ class DepositCluster(BaseCluster):
         blacklist_addrs: np.array = blacklist.address
 
         columns: List[str] = [
-            'hash', 'block_number', 'block_timestamp', 'from_address', 'to_address', 'value']
+            'transaction', 'block_number', 'block_timestamp', 'from_address', 'to_address', 'value']
         tx_chunk: pd.DataFrame = tx_chunk[columns].sort_values('block_number')
         tx_chunk['block'] = tx_chunk['block_number']  # dummy column
 
@@ -229,7 +229,7 @@ class DepositCluster(BaseCluster):
 
         # keep transactions from EOA to deposit
         transactions: pd.DataFrame = deposit[
-            ['from_address_x', 'from_address_y', 'hash_x', 'block_number_x', 'block_timestamp_x']
+            ['from_address_x', 'from_address_y', 'transaction_x', 'block_number_x', 'block_timestamp_x']
         ]
         transactions.columns = \
             ['user', 'deposit', 'transaction', 'block_number', 'block_timestamp']
