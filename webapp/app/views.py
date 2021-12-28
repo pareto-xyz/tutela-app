@@ -9,7 +9,6 @@ from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
     TornadoDeposit, TornadoWithdraw, Embedding, DepositTransaction
-
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
@@ -781,7 +780,8 @@ def search_transaction():
              'metadata': {'deposit': row.deposit}} for row in rows]
         return rows
 
-    transactions: List[Dict[str, Any]] = find_dar_matches(address) + \
+    transactions: List[Dict[str, Any]] = \
+        find_dar_matches(address) + \
         find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR)) + \
         find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR)) + \
         find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR)) + \
