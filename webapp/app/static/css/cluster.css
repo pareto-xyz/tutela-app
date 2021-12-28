@@ -87,7 +87,7 @@ html {
   color: var(--almostwhite);
 }
 
-.dropdown-accordion > a.dropdown-item:hover {
+.dropdown-accordion > a.dropdown-item:hover, .dropdown-accordion > a.dropdown-item:hover {
     color: #16181b;
 }
 
@@ -369,7 +369,6 @@ input.form-control.rounded {
 }
 
 .all-input-search {
-    display: flex;
     margin-right: -15px;
 }
 

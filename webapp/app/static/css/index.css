@@ -163,9 +163,12 @@ MAIN PAGE SEARCH SECTION
 
 .input-group.fixed-width,
 .input-adress {
-  height: 100%;
+  /* height: 1rem ; */
   font-size: 1.2rem;
   border: transparent;
+}
+
+.input-adress {
   width: 80%;
 }
 
