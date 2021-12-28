@@ -17,7 +17,7 @@ from app.utils import \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, \
-    DIFF2VEC_HEUR, UNKNOWN
+    DIFF2VEC_HEUR, UNKNOWN, NODE
 from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
@@ -418,17 +418,19 @@ def search_address(request: Request) -> Response:
             distances: List[float] = json.loads(entry.distances)
 
             for neighbor, distance in zip(neighbors, distances):
+                # swap terms b/c of upload accident
+                neighbor, distance = distance, neighbor
+                if neighbor == address: continue  # skip
                 member: Dict[str, Any] = {
                     'address': neighbor,
                     '_distance': distance,
-                    # TODO: check if this is well calibrated
-                    'conf': float(1./abs(distance)),
+                    'conf': float(1./abs(10.*distance+1.)),  # add one to make max 1
                     'heuristic': DIFF2VEC_HEUR, 
-                    'entity': UNKNOWN,
+                    'entity': NODE,
                     'ens_name': get_ens_name(neighbor, ns),
                 }
                 cluster.append(member)
-                cluster_conf += float(1./abs(distance))
+                cluster_conf += member['conf']
 
         cluster_size: int = len(cluster)
         cluster_conf: float = cluster_conf / float(cluster_size)

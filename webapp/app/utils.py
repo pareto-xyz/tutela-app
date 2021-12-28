@@ -24,6 +24,7 @@ ICO_WALLET: str = 'ico wallet'
 MINING: str = 'mining'
 TORNADO: str = 'tornado'
 UNKNOWN: str = 'unknown'
+NODE: str = 'node'
 # --
 GAS_PRICE_HEUR: str = 'unique_gas_price'
 DEPO_REUSE_HEUR: str = 'deposit_address_reuse'
@@ -105,6 +106,7 @@ def get_display_aliases() -> Dict[str, str]:
         'entity': 'address type',
         'balance': 'ETH balance',
         'ens_name': 'ENS',
+        '_distance': 'distance',
         'exchange_address': 'exchange address',
         'exchange_name': 'associated exchange',
         'account_type': 'category',
