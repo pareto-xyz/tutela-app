@@ -68,9 +68,10 @@ def istornado():
         pool: pd.DataFrame = \
             tornado_pools[tornado_pools.address == address].iloc[0]
         amount, currency = pool.tags.strip().split()
+        amount = int(amount)
 
     output['data']['is_tornado'] = is_tornado
-    output['data']['amount'] = int(amount)
+    output['data']['amount'] = amount
     output['data']['currency'] = currency
     output['success'] = 1
 
