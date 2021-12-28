@@ -48,6 +48,7 @@ html {
 .panel-sub,
 .fa-question-circle,
 #instructions,
+.instructions,
 .page-button,
 .copied-badge {
   color: var(--lightgrey);
@@ -83,7 +84,11 @@ html {
 .dropdown-accordion > *,
 .dropdown-accordion > a.dropdown-item,
 .dropdown-accordion.accordion-header > button > * {
-  color: black;
+  color: var(--almostwhite);
+}
+
+.dropdown-accordion > a.dropdown-item:hover {
+    color: #16181b;
 }
 
 #detail-table,
@@ -184,7 +189,10 @@ TOP
 
 #instructions {
   margin: 40px 0 30px 0;
-  font-size: 1.1rem;
+}
+
+#instructions, .instructions {
+    font-size: 1.1rem;
 }
 
 #no-clusters-msg {
@@ -360,6 +368,11 @@ input.form-control.rounded {
   margin-right: 20px;
 }
 
+.all-input-search {
+    display: flex;
+    margin-right: -15px;
+}
+
 .entry-entity {
   border-radius: 5px;
   background-color: var(--fadedgreen);
@@ -390,6 +403,7 @@ input.form-control.rounded {
   padding: 0.375rem 0.75rem;
   width: 100%;
   border: transparent;
+  height: 100%;
 }
 
 .selected-dropdown {
@@ -414,6 +428,13 @@ ul.dropdown-menu {
 
 .dropdown > .dropdown-menu {
   padding: 0px;
+  min-width: 92%;
+  background-color: #1d2124;
+  color: var(--almostwhite);
+}
+
+.dropdown-menu > .dropdown-item:hover, .dropdown-menu > .dropdown-item:focus {
+    color: #16181b;
 }
 
 .dropdown-accordion.accordion-header {

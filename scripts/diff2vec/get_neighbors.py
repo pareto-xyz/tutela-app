@@ -18,23 +18,28 @@ def main(args: Any):
     # https://github.com/facebookresearch/faiss/issues/112
     nlist = int(4 * np.sqrt(size))
 
-    quantizer: faiss.IndexFlatL2 = faiss.IndexFlatL2(128)
-    index: faiss.IndexIVFFlat = \
-        faiss.IndexIVFFlat(quantizer, 128, nlist, faiss.METRIC_L2)
+    if args.index_file is None:
+        quantizer: faiss.IndexFlatL2 = faiss.IndexFlatL2(128)
+        index: faiss.IndexIVFFlat = \
+            faiss.IndexIVFFlat(quantizer, 128, nlist, faiss.METRIC_L2)
+        
+        assert not index.is_trained
+        print('training FAISS index...', end=' ')
+        index.train(vectors)
+        print('done')
+        assert index.is_trained
 
-    assert not index.is_trained
-    print('training FAISS index...', end=' ')
-    index.train(vectors)
-    print('done')
-    assert index.is_trained
+        print('adding vectors to index...', end=' ')
+        index.add(vectors)
+        print('done')
 
-    print('adding vectors to index...', end=' ')
-    index.add(vectors)
-    print('done')
-
-    print('saving to disk...', end=' ')
-    faiss.write_index(index, os.path.join(args.save_dir, 'faiss.index')) 
-    print('done')
+        print('saving to disk...', end=' ')
+        faiss.write_index(index, os.path.join(args.save_dir, 'faiss.index')) 
+        print('done')
+    else:
+        print('reading to disk...', end=' ')
+        index = faiss.read_index(os.path.join(args.save_dir, 'faiss.index'))
+        print('done')
 
     print('computing neighbors')
     distances: List[np.array] = []
@@ -45,7 +50,7 @@ def main(args: Any):
 
     for i in tqdm(range(num_batches)):
         query: np.array = vectors[batch_size*i:batch_size*(i+1)]
-        D, I = index.search(query)
+        D, I = index.search(query, args.k)
         distances.append(D)
         neighbors.append(I)
 
@@ -62,7 +67,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('vectors_npy', type=str, help='path to trained word2vec vectors.')
-    parser.add_argument('save_dir', type=str, help='where to save outpouts.')
+    parser.add_argument('save_dir', type=str, help='where to save outputs.')
+    parser.add_argument('--index-file', type=str, default=None,
+                        help='optional path to cached index file')
     parser.add_argument('--k', type=int, default=10, help='number of neighbors to find.')
     args: Any = parser.parse_args()
 
