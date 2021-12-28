@@ -8,7 +8,7 @@ from typing import Dict, Optional, List, Any, Set
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
-    TornadoDeposit, TornadoWithdraw
+    TornadoDeposit, TornadoWithdraw, Embedding
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
@@ -16,7 +16,8 @@ from app.utils import \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
     AddressRequestChecker, TornadoPoolRequestChecker, \
     default_address_response, default_tornado_response, \
-    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE
+    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, \
+    DIFF2VEC_HEUR, UNKNOWN, NODE
 from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
@@ -259,7 +260,9 @@ def search_address(request: Request) -> Response:
         addr: Address,
         exchange_weight: float = 0.1,
         slope: float = 0.1,
-        ) -> float:
+        extra_cluster_sizes: List[int] = [],
+        extra_cluster_confs: List[float] = []
+    ) -> float:
         """
         Only EOA addresses have an anonymity score. If we get an exchange,
         we return an anonymity score of 0. If we get a deposit, we return -1,
@@ -279,8 +282,8 @@ def search_address(request: Request) -> Response:
         assert addr.entity == entity_to_int(EOA), \
             f'Unknown entity: {entity_to_str(addr.entity)}'
 
-        cluster_confs: List[float] = []
-        cluster_sizes: List[float] = []
+        cluster_confs: List[float] = extra_cluster_sizes
+        cluster_sizes: List[float] = extra_cluster_confs
 
         if addr.user_cluster is not None:
             # find all other EOA addresses with same `dar_user_cluster`.
@@ -402,11 +405,48 @@ def search_address(request: Request) -> Response:
         )
         return stats
 
+    def query_diff2vec(address: str) -> List[Dict[str, Any]]:
+        """
+        Search the embedding table to fetch neighbors from Diff2Vec cluster.
+        """
+        entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+        cluster: List[Dict[str, Any]] = []
+        cluster_conf: float = 0
+
+        if entry is not None:
+            neighbors: List[int] = json.loads(entry.neighbors)
+            distances: List[float] = json.loads(entry.distances)
+
+            for neighbor, distance in zip(neighbors, distances):
+                # swap terms b/c of upload accident
+                neighbor, distance = distance, neighbor
+                if neighbor == address: continue  # skip
+                member: Dict[str, Any] = {
+                    'address': neighbor,
+                    '_distance': distance,
+                    'conf': float(1./abs(10.*distance+1.)),  # add one to make max 1
+                    'heuristic': DIFF2VEC_HEUR, 
+                    'entity': NODE,
+                    'ens_name': get_ens_name(neighbor, ns),
+                }
+                cluster.append(member)
+                cluster_conf += member['conf']
+
+        cluster_size: int = len(cluster)
+        cluster_conf: float = cluster_conf / float(cluster_size)
+
+        return cluster, cluster_size, cluster_conf
+
 
     if len(address) > 0:
         offset: int = page * size
 
-        # --- search for address ---
+        # --- check tornado queries ---
+        # Note that this is out of the `Address` existence check
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        output['data']['tornado']['summary']['address'].update(tornado_dict)
+
+        # --- search for address in DAR/Diff2Vec tables ---
         addr: Optional[Address] = Address.query.filter_by(address = address).first()
 
         if addr is not None:  # make sure address exists
@@ -418,6 +458,7 @@ def search_address(request: Request) -> Response:
 
             # store the clusters in here
             cluster: List[Address] = []
+
             # stores cluster size with filters. This is necessary to reflect changes
             # in # of elements with new filters.
             cluster_size: int = 0
@@ -531,12 +572,36 @@ def search_address(request: Request) -> Response:
             else:
                 raise Exception(f'Entity {entity} not supported.')
 
+            # find Diff2Vec embeddings and add to front of cluster
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(address)
+            cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
+            cluster_size += len(diff2vec_cluster)
+
             output['data']['cluster'] = cluster
             output['data']['metadata']['cluster_size'] = cluster_size
             output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
 
             # --- compute anonymity score using hyperbolic fn ---
-            anon_score = compute_anonymity_score(addr)
+            anon_score = compute_anonymity_score(
+                addr,
+                # seed computing anonymity score with diff2vec + tcash reveals
+                extra_cluster_sizes = [
+                    diff2vec_size,
+                    tornado_dict['num_compromised']['num_compromised_exact_match'],
+                    tornado_dict['num_compromised']['num_compromised_gas_price'],
+                    tornado_dict['num_compromised']['num_compromised_multi_denom'],
+                    tornado_dict['num_compromised']['num_compromised_linked_tx'],
+                    tornado_dict['num_compromised']['num_compromised_torn_mine'],
+                ], 
+                extra_cluster_confs = [
+                    diff2vec_conf,
+                    1.,
+                    1.,
+                    0.5,
+                    0.25,
+                    0.25,
+                ],
+            )
             anon_score: float = round(anon_score, 3)  # brevity is a virtue
             output['data']['query']['anonymity_score'] = anon_score
 
@@ -550,11 +615,6 @@ def search_address(request: Request) -> Response:
         if len(known_lookup) > 0:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
-
-        # --- check tornado queries ---
-        # Note that this is out of the `Address` existence check
-        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
-        output['data']['tornado']['summary']['address'].update(tornado_dict)
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
