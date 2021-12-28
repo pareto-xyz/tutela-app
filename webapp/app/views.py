@@ -737,6 +737,7 @@ def search_transaction():
         request,
         default_page = 0,
         default_limit = PAGE_LIMIT,
+        default_window = '1yr',
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_transaction_response()
@@ -747,6 +748,7 @@ def search_transaction():
     address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
+    window: str = checker.get('window')
 
     request_repr: str = checker.to_str()
 
@@ -757,6 +759,7 @@ def search_transaction():
     output['data']['query']['address'] = address
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
+    output['data']['metadata']['window'] = window
 
     # --
 
@@ -780,13 +783,29 @@ def search_transaction():
              'metadata': {'deposit': row.deposit}} for row in rows]
         return rows
 
-    transactions: List[Dict[str, Any]] = \
-        find_dar_matches(address) + \
-        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR)) + \
-        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR)) + \
-        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR)) + \
-        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR)) + \
+    dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
+    same_addr_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR))
+    gas_price_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR))
+    same_num_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR))
+    linked_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR))
+    torn_mine_matches: List[Dict[str, Any]] = \
         find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR))
+
+    transactions: List[Dict[str, Any]] = \
+        dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
+        linked_tx_matches + torn_mine_matches
+
+    output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
+    output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][GAS_PRICE_HEUR] += len(gas_price_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][SAME_NUM_TX_HEUR] += len(same_num_tx_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][LINKED_TX_HEUR] += len(linked_tx_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][TORN_MINE_HEUR] += len(torn_mine_matches)
 
     # sort by timestamp
     transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
