@@ -32,8 +32,8 @@ class Embedding(db.Model):
         unique = True,
         nullable = False,
     )
-    neighbors: db.Column(db.String(512), nullable = False)
-    distances: db.Column(db.String(512), nullable = False)
+    neighbors: db.Column = db.Column(db.String(512), nullable = False)
+    distances: db.Column = db.Column(db.String(512), nullable = False)
 
     def __repr__(self) -> str:
         return f'<Embedding {self.address}>'
