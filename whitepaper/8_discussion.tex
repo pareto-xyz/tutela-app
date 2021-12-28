@@ -1,0 +1,26 @@
+\section{Discussion and Future Work} \label{sec:discussion}
+
+We conclude with a few discussion points and final remarks. In particular, we present possible limitations and extensions to the proposed system.
+
+\subsection{Limitations}
+
+Generally, we acknowledge that heuristics are not perfect measures. In return for their simplicity, there may be false positives in practice, e.g., addresses in a cluster that should not be there, or faithful TC transactions labeled as compromised.
+
+For the Ethereum heuristics, we emphasize that picking proper hyperparameters is a challenge. In DAR, the quality of the algorithm is very sensitive to the choice of maximum thresholds $\alpha$ and $\tau$. With too small thresholds, no clusters will be found; with too large thresholds, clusters will be low quality, containing many addresses they should not. Currently, the best practice is to tune these by hand. In NODE, the size of subgraph $l$ and the dimensionality $d$ similarly determine the resulting quality. The choice of $l$ should reflect the size of the full graph $G$: a bigger graph requires the embedding to summarize a larger neighborhood. Other NODE hyperparameters, such as window size or optimization choices, are less important to the final embedding. Running the DAR or NODE on Ethereum is computationally expensive, requiring both a large RAM and storage.
+
+On the other hand, the Tornado Cash heuristics are much simpler than the Ethereum ones, and more deterministic.
+However, given that only a small subset of Ethereum addresses are Tornado Cash users, they have limited applicability to the majority of potential Tutela users.
+
+% \istvan{We could also mention that we solely use publicly available data, i.e., blockchain data. We do not log and use off-chain data (who, when and where broadcasted a transaction on the P2P level) that could lead to more powerful deanonymization attacks.}
+% \mike{see paragraph below.}
+
+\subsection{Extensions}
+
+As described, Tutela uses only on-chain data to access anonymity. However, extensions can be made to include off-chain data, such as from decentralized applications (e.g. DeFI, NFT, games, etc.), layer two data, external blockchains, and more. The inclusion of off-chain data could lead to more powerful de-anonymization attacks.
+
+\subsection{Broader Impact}
+
+There is a need for greater privacy on the blockchain to accelerate adoption. Consumers would not be willing to receive their salaries publically or have their online purchasing history in the public for all to see. Businesses would not pay suppliers on the blockchain if their competitors could see who and how much they pay for supplies. Similarly, investment funds want to keep their strategies private and not copied before their trades have even been recorded on-chain.
+
+That said, blockchain privacy is a difficult issue to navigate. Currently, blockchain privacy and finality create opportunities for money laundering and nefarious activities, so privacy solutions combined with regulation will need to account for these considerations.
+In the meantime, we hope that Tutela will help law-abiding blockchain users better protect themselves in the current ecosystem.

@@ -22,6 +22,7 @@ class Heuristic(Enum):
     SAME_NUM_TX = 3
     LINKED_TX = 4
     TORN_MINE = 5
+    DIFF2VEC = 6
 
 
 class JSONSetEncoder(json.JSONEncoder):
