@@ -849,6 +849,7 @@ def make_weekly_plot(
     cur_start: datetime = copy.copy(start)
     cur_end: datetime = cur_start + relativedelta(weeks=1)
     count: int = 0
+
     while cur_end <= today:
         counts: Dict[str, int] = {
             DEPO_REUSE_HEUR: 0,
