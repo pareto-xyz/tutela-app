@@ -453,12 +453,12 @@ def search_address(request: Request) -> Response:
         # --- check web3 for information ---
         web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
         metadata_: Dict[str, Any] = output['data']['query']['metadata']
-        output['data']['query']['metadata'] = {**metadata_, **web3_resp}
+        # output['data']['query']['metadata'] = {**metadata_, **web3_resp}
 
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
         tornado_dict: Dict[str, Any] = query_tornado_stats(address)
-        output['data']['tornado']['summary']['address'].update(tornado_dict)
+        # output['data']['tornado']['summary']['address'].update(tornado_dict)
 
         # --- search for address in DAR and Dff2Vec tables ---
         addr: Optional[Address] = Address.query.filter_by(address = address).first()
