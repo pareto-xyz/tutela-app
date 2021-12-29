@@ -108,7 +108,7 @@ function ClusterPage(props) {
                 // response = schemaResponse;
                 // response = example;
                 // response = exchangeData;
-                response = JSON.parse(response);
+                // response = JSON.parse(response);
                 console.log('expecting success, data, and is_tornado', response.data, typeof(response.data));
                 const { success, data, is_tornado } = response.data;
                 console.log(success, data, is_tornado);
