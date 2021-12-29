@@ -464,7 +464,7 @@ def search_address(request: Request) -> Response:
         addr: Optional[Address] = Address.query.filter_by(address = address).first()
         node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
 
-        return Response(json.dumps({'output': output, 'addr': addr, 'node': node}))
+        return Response(json.dumps({'output': output, 'addr': entity_to_str(addr.entity), 'node': node}))
 
         # --- Case #1 : address can be found in the DAR Address table --- 
         if addr is not None: 
