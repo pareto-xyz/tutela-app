@@ -659,6 +659,8 @@ def search_address(request: Request) -> Response:
             output['data']['metadata']['cluster_size'] = cluster_size
             output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
 
+            print(output)
+
         # Check if we know existing information about this address 
         known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
         if len(known_lookup) > 0:
@@ -672,7 +674,7 @@ def search_address(request: Request) -> Response:
         output['success'] = 1
 
     response: str = json.dumps(output)
-    # rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
 
