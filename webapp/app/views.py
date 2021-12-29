@@ -650,11 +650,10 @@ def search_address(request: Request) -> Response:
                     0.25,
                 ],
             )
-            anon_score: float = round(anon_score, 3)
-            output['data']['query']['anonymity_score'] = anon_score
-
             return Response(json.dumps(output))
 
+            anon_score: float = round(anon_score, 3)
+            output['data']['query']['anonymity_score'] = anon_score
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
