@@ -17,6 +17,7 @@ import AddressSearchBar from '../components/AddressSearchBar';
 import AccordionOfResults from '../components/AccordionOfResults';
 import HaveIBeenCompromised from './HaveIBeenCompromised';
 import ChooseTornadoPool from '../components/ChooseTornadoPool';
+import exchangeData from '../../data/exchange';
 
 
 //to be displayed instead of listed cluster, if no clusters were found. 
@@ -106,6 +107,7 @@ function ClusterPage(props) {
                 setLoadingCluster(false);
                 // response = schemaResponse;
                 // response = example;
+                // response = exchangeData;
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;
