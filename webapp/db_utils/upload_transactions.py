@@ -1,5 +1,5 @@
 """
-Upload multi-denomiantion clusters to  SQL.
+Upload linked transaction clusters to  SQL.
 """
 
 import os
@@ -14,7 +14,7 @@ def main(args: Any):
     cursor = conn.cursor()
 
     cursor.execute(
-        f"COPY multi_denom(address, transaction, block_number, block_ts, meta_data, cluster) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
+        f"COPY deposit_transaction(address, deposit, transaction, block_number, block_ts, conf) FROM '{csv_path}' DELIMITER ',' CSV HEADER;"
     )
     conn.commit()
 

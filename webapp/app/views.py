@@ -1,23 +1,27 @@
 import bz2
 import math
 import json
+import copy
 import numpy as np
 import pandas as pd
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta 
 from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
-    TornadoDeposit, TornadoWithdraw, Embedding
+    TornadoDeposit, TornadoWithdraw, Embedding, DepositTransaction
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
     heuristic_to_str, is_valid_address, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
-    AddressRequestChecker, TornadoPoolRequestChecker, \
-    default_address_response, default_tornado_response, \
-    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, \
-    DIFF2VEC_HEUR, UNKNOWN, NODE
+    AddressRequestChecker, TornadoPoolRequestChecker, TransactionRequestChecker, \
+    default_address_response, default_tornado_response, default_transaction_response, \
+    NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, NODE, \
+    GAS_PRICE_HEUR, DEPO_REUSE_HEUR, DIFF2VEC_HEUR, SAME_NUM_TX_HEUR, \
+    SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR, DIFF2VEC_HEUR
 from app.lib.w3 import query_web3, get_ens_name, resolve_address
 
 from flask import request, Request, Response
@@ -25,6 +29,7 @@ from flask import render_template
 from sqlalchemy import or_
 
 from app.utils import get_known_attrs, get_display_aliases
+from webapp.app.utils import heuristic_to_int
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
@@ -35,6 +40,7 @@ HARD_MAX: int = 1000
 @app.route('/cluster', methods=['GET'])
 def index():
     return render_template('index.html')
+
 
 @app.route('/utils/aliases', methods=['GET'])
 def alias():
@@ -79,6 +85,7 @@ def istornado():
     response: str = json.dumps(output)
     return Response(response)
 
+
 @app.route('/utils/gettornadopools', methods=['GET'])
 def get_tornado_pools():
 
@@ -99,10 +106,6 @@ def get_tornado_pools():
     }
     response: str = json.dumps(output) 
     return Response(response)
-
-@app.route('/transaction', methods=['GET'])
-def transaction():
-    return render_template('transaction.html')
 
 
 @app.route('/search', methods=['GET'])
@@ -714,3 +717,174 @@ def search_tornado(request: Request) -> Response:
     response: str = json.dumps(output)
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))
     return Response(response=response)
+
+
+@app.route('/transaction', methods=['GET'])
+def transaction():
+    return render_template('transaction.html')
+
+
+@app.route('/search/transaction', methods=['GET'])
+def search_transaction():
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
+    if not is_valid_address(address):
+        return default_transaction_response()
+
+    request.args = dict(request.args)
+    request.args['address'] = address
+
+    checker: TransactionRequestChecker = TransactionRequestChecker(
+        request,
+        default_page = 0,
+        default_limit = PAGE_LIMIT,
+        default_window = '1yr',
+    )
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_transaction_response()
+
+    if not is_valid_request:
+        return Response(output)
+
+    address: str = checker.get('address').lower()
+    page: int = checker.get('page')
+    size: int = checker.get('limit')
+    window: str = checker.get('window')
+
+    request_repr: str = checker.to_str()
+
+    if rds.exists(request_repr):
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
+
+    output['data']['query']['address'] = address
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+    output['data']['metadata']['window'] = window
+
+    # --
+
+    def find_tcash_matches(address: str, Heuristic: Any, identifier: int
+    ) -> List[Dict[str, Any]]:
+
+        rows: List[Heuristic] = \
+            Heuristic.query.filter(Heuristic.address == address).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': identifier,
+             'metadata': {}} for row in rows]
+        return rows
+
+    def find_dar_matches(address: str) -> List[Dict[str, Any]]:
+        rows: List[DepositTransaction] = \
+            DepositTransaction.query.filter(DepositTransaction.address == address).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,
+             'metadata': {'deposit': row.deposit}} for row in rows]
+        return rows
+
+    dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
+    same_addr_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR))
+    gas_price_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR))
+    same_num_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR))
+    linked_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR))
+    torn_mine_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR))
+
+    transactions: List[Dict[str, Any]] = \
+        dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
+        linked_tx_matches + torn_mine_matches
+
+    plotdata: List[Dict[str, Any]] = make_weekly_plot(transactions)
+
+    output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
+    output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][GAS_PRICE_HEUR] += len(gas_price_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][SAME_NUM_TX_HEUR] += len(same_num_tx_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][LINKED_TX_HEUR] += len(linked_tx_matches)
+    output['data']['query']['metadata']['stats']['num_tcash'][TORN_MINE_HEUR] += len(torn_mine_matches)
+
+    # sort by timestamp
+    transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
+
+    def tx_datetime_to_str(raw_transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        transactions: List[Dict[str, Any]] = []
+        for tx in raw_transactions:
+            tx['timestamp'] = tx['timestamp'].strftime('%m/%d/%Y')
+            transactions.append(tx)
+        return transactions
+
+    # remove datetime objects
+    transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
+
+    output['data']['transactions'] = transactions
+    output['data']['plotdata'] = plotdata
+    output['success'] = 1
+
+    response: str = json.dumps(output)
+    rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
+
+    return Response(response=response)
+
+
+def make_weekly_plot(
+    transactions: List[Dict[str, Any]], window = '1yr') -> List[Dict[str, Any]]:
+    """
+    Make the data grouped by heuristics by week.
+
+    @window: [6mth, 1yr, 5yr]
+    """
+    assert window in ['6mth', '1yr', '5yr'], f'Invalid window: {window}.'
+    today: datetime = datetime.today()
+    
+    if window == '6mth':
+        delta: relativedelta = relativedelta(months=6)
+    elif window == '1yr':
+        delta: relativedelta = relativedelta(months=12)
+    elif window == '5yr':
+        delta: relativedelta = relativedelta(months=12*5)
+    else:
+        raise Exception(f'Window {window} not supported.')
+
+    start: datetime = today - delta
+    data: List[Dict[str, Any]] = []
+    cur_start: datetime = copy.copy(start)
+    cur_end: datetime = cur_start + relativedelta(weeks=1)
+    count: int = 0
+
+    while cur_end <= today:
+        counts: Dict[str, int] = {
+            DEPO_REUSE_HEUR: 0,
+            SAME_ADDR_HEUR: 0,
+            GAS_PRICE_HEUR: 0,
+            SAME_NUM_TX_HEUR: 0,
+            LINKED_TX_HEUR: 0,
+            TORN_MINE_HEUR: 0,
+        }
+        for transaction in transactions:
+            ts: datetime = transaction['timestamp']
+            if (ts >= cur_start) and (ts <= cur_end):
+                counts[transaction['heuristic']] += 1
+
+        row: Dict[str, Any] = {
+            'index': count,
+            'start_date': cur_start.strftime('%m/%d/%Y'),
+            'end_date': cur_end.strftime('%m/%d/%Y'),
+            'counts': counts,
+        }
+        data.append(row)
+
+        cur_start: datetime = copy.copy(cur_end)
+        cur_end: datetime = cur_start + relativedelta(weeks=1)
+        count += 1
+
+    return data
+

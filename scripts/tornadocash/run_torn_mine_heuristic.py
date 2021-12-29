@@ -52,15 +52,20 @@ def main(args: Any):
         apply_anonymity_mining_heuristic(total_linked_txs)
 
     clusters, tx2addr = build_clusters(w2d)
+    tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
     address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
     address_metadata: List[Dict[str, Any]] = get_metadata(address_sets)
 
     clusters_file: str = os.path.join(args.save_dir, 'torn_mine_clusters.json')
     tx2addr_file: str = os.path.join(args.save_dir, 'torn_mine_tx2addr.json')
+    tx2block_file: str = os.path.join(args.save_dir, 'torn_mine_tx2block.json')
+    tx2ts_file: str = os.path.join(args.save_dir, 'torn_mine_tx2ts.json')
     address_file: str = os.path.join(args.save_dir, 'torn_mine_address_set.json')
     metadata_file: str = os.path.join(args.save_dir, 'torn_mine_metadata.csv')
     to_json(clusters, clusters_file)
     to_json(tx2addr, tx2addr_file)
+    to_json(tx2block, tx2block_file)
+    to_json(tx2ts, tx2ts_file)
     to_json(address_sets, address_file)
     address_metadata.to_csv(metadata_file, index=False)
 
@@ -84,6 +89,20 @@ def build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
         c for c in nx.weakly_connected_components(graph) if len(c) > 1]
 
     return clusters, tx2addr
+
+
+def get_transaction_info(
+    withdraw_df: pd.DataFrame, 
+    deposit_df: pd.DataFrame
+) -> Tuple[Dict[str, int], Dict[str, Any]]:
+    hashes: pd.DataFrame = pd.concat([withdraw_df.hash, deposit_df.hash])
+    block_numbers: pd.DataFrame = \
+        pd.concat([withdraw_df.block_number, deposit_df.block_number])
+    block_timestamps: pd.DataFrame = \
+        pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    tx2block = dict(zip(hashes, block_numbers))
+    tx2ts = dict(zip(hashes, block_timestamps))
+    return tx2block, tx2ts
 
 
 def get_address_sets(

@@ -23,6 +23,35 @@ class Address(db.Model):
         return f'<Address {self.address}>'
 
 
+class DepositTransaction(db.Model):
+    """
+    Store transactions from EOA to deposit addresses computed during DAR.
+    """
+    __tablename__: str = 'deposit_transaction'
+    id: db.Column = db.Column(db.Integer, primary_key = True)
+    address: db.Column = db.Column(
+        db.String(128),
+        index = True,
+        nullable = False,
+    )
+    deposit: db.Column = db.Column(
+        db.String(128),
+        nullable = False,
+    )
+    transaction: db.Column = db.Column(
+        db.String(256),
+        index = True,
+        unique = True,
+        nullable = False,
+    )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
+    conf: db.Column = db.Column(db.Float)
+
+    def __repr__(self) -> str:
+        return f'<DepositTransaction {self.address}>'
+
+
 class Embedding(db.Model):
     __tablename__: str = 'embedding'
     id: db.Column = db.Column(db.Integer, primary_key = True)
@@ -52,6 +81,8 @@ class ExactMatch(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -72,6 +103,8 @@ class GasPrice(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -93,6 +126,8 @@ class MultiDenom(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -114,6 +149,8 @@ class LinkedTransaction(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 
@@ -135,6 +172,8 @@ class TornMining(db.Model):
         index = True,
         nullable = False,
     )
+    block_number: db.Column = db.Column(db.Integer)
+    block_ts: db.Column = db.Column(db.DateTime)
     meta_data: db.Column = db.Column(db.String(256))
     cluster: db.Column = db.Column(db.Integer)
 

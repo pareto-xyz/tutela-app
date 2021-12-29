@@ -378,6 +378,55 @@ def default_tornado_response() -> Dict[str, Any]:
     return output
 
 
+def default_transaction_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'data': {
+            'query': {
+                'address': '',
+                'metadata': {
+                    'stats': {
+                        'num_transactions': 0,
+                        'num_ethereum': {
+                            DEPO_REUSE_HEUR: 0, 
+                        },
+                        'num_tcash': {
+                            SAME_ADDR_HEUR: 0, 
+                            GAS_PRICE_HEUR: 0, 
+                            SAME_NUM_TX_HEUR: 0,
+                            LINKED_TX_HEUR: 0,
+                            TORN_MINE_HEUR: 0,
+                        },
+                    },
+                },
+            },
+            'transactions': [],
+            'plotdata': [],
+            'metadata': {
+                'num_pages': 0,
+                'page': 0,
+                'limit': 50,
+                'window': '1yr',
+                'schema': {
+                    HEURISTIC_COL: {
+                        'type': 'category',
+                        'values': [
+                            DEPO_REUSE_HEUR, 
+                            SAME_ADDR_HEUR, 
+                            GAS_PRICE_HEUR, 
+                            SAME_NUM_TX_HEUR,
+                            LINKED_TX_HEUR,
+                            TORN_MINE_HEUR,
+                            DIFF2VEC_HEUR,
+                        ],
+                    },
+                },
+            },
+        },
+        'success': 1,
+    }
+    return output
+
+
 def is_valid_address(address: str) -> bool:
     address: str = address.lower().strip()
 
@@ -392,6 +441,75 @@ def is_valid_address(address: str) -> bool:
         return False
 
     return True
+
+
+class TransactionRequestChecker:
+
+    def __init__(
+        self,
+        request: Any,
+        default_page: int = 0,
+        default_limit: int = 50,
+        default_window: str = '1yr',
+    ):
+        self._request: Any = request
+        self._default_page: int = default_page
+        self._default_limit: int = default_limit
+        self._default_window: str = default_window
+
+        self._params: Dict[str, Any] = {}
+
+    def check(self):
+        return (self._check_address() and
+                self._check_page() and
+                self._check_limit() and 
+                self._check_window())
+
+    def _check_address(self) -> bool:
+        """
+        Check that the first two chars are 0x and that the string
+        is 42 chars long. Check that there are no spaces.
+        """
+        address: str = self._request.args.get('address', '')
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
+
+    def _check_page(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on page
+        default: int = self._default_page
+        page: Union[str, int] = self._request.args.get('page', default)
+        page: int = safe_int(page, default)
+        page: int = max(page, 0)  # at least 0
+        self._params['page'] = page
+        return True
+
+    def _check_limit(self) -> bool:
+        # intentionally only returns True as we don't want to block a user
+        # bc of typo on limit
+        default: int = self._default_limit
+        limit: Union[str, int] = self._request.args.get('limit', default)
+        limit: int = safe_int(limit, default)
+        limit: int = min(max(limit, 1), default)  # at least 1
+        self._params['limit'] = limit
+        return True
+
+    def _check_window(self) -> str:
+        default: int = self._default_window
+        window: str = self._request.args.get('window', default)
+        if window not in ['6mth', '1yr', '5yr']:
+            window: str = '1yr'
+        self._params['window'] = window
+        return True
+
+    def get(self, k: str) -> Optional[Any]:
+        return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = copy(self._params)
+        return json.dumps(_repr, sort_keys=True)
 
 
 class AddressRequestChecker:
