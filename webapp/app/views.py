@@ -254,7 +254,6 @@ def search_address(request: Request) -> Response:
 
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
-    return Response(json.dumps(output))
 
 
     def compute_anonymity_score(
@@ -653,6 +652,9 @@ def search_address(request: Request) -> Response:
             )
             anon_score: float = round(anon_score, 3)
             output['data']['query']['anonymity_score'] = anon_score
+
+            return Response(json.dumps(output))
+
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
