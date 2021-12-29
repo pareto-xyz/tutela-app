@@ -230,6 +230,7 @@ def search_address(request: Request) -> Response:
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_address_response()
+    return json.dumps(output)
 
     if not is_valid_request:   # if not, bunt
         return Response(output)
@@ -247,13 +248,13 @@ def search_address(request: Request) -> Response:
         response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
-    # --- fill out some of the known response fields ---
-    # output['data']['query']['address'] = address
-    # output['data']['metadata']['page'] = page
-    # output['data']['metadata']['limit'] = size
+    --- fill out some of the known response fields ---
+    output['data']['query']['address'] = address
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
 
-    # for k in output['data']['metadata']['filter_by'].keys():
-    #     output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
+    for k in output['data']['metadata']['filter_by'].keys():
+        output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
 
 
     def compute_anonymity_score(
