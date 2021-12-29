@@ -1,9 +1,11 @@
 import bz2
 import math
 import json
+import copy
 import numpy as np
 import pandas as pd
-from datetime import date
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta 
 from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
@@ -800,9 +802,7 @@ def search_transaction():
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
         linked_tx_matches + torn_mine_matches
 
-    plotdata: Dict[str, List[int]] = make_weekly_plot(
-        dar_matches, same_addr_matches, gas_price_matches, same_num_tx_matches,
-        linked_tx_matches, torn_mine_matches)
+    plotdata: List[Dict[str, Any]] = make_weekly_plot(transactions)
 
     output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
     output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
@@ -826,15 +826,54 @@ def search_transaction():
 
 
 def make_weekly_plot(
-    dar_reveals: List[Dict[str, Any]],
-    same_addr_reveals: List[Dict[str, Any]],
-    gas_price_reveals: List[Dict[str, Any]],
-    same_num_tx_reveals: List[Dict[str, Any]],
-    linked_tx_reveals: List[Dict[str, Any]],
-    torn_mine_reveals:  List[Dict[str, Any]]
-) -> Dict[str, List[int]]:
+    transactions: List[Dict[str, Any]], window = '1yr') -> List[Dict[str, Any]]:
     """
     Make the data grouped by heuristics by week.
+
+    @window: [6mth, 1yr, 5yr]
     """
-    today = date.today()
-    breakpoint()
+    assert window in ['6mth', '1yr', '5yr'], f'Invalid window: {window}.'
+    today: datetime = datetime.today()
+    
+    if window == '6mth':
+        delta: relativedelta = relativedelta(months=6)
+    elif window == '1yr':
+        delta: relativedelta = relativedelta(months=12)
+    elif window == '5yr':
+        delta: relativedelta = relativedelta(months=12*5)
+    else:
+        raise Exception(f'Window {window} not supported.')
+
+    start: datetime = today - delta
+    data: List[Dict[str, Any]] = []
+    cur_start: datetime = copy.copy(start)
+    cur_end: datetime = cur_start + relativedelta(weeks=1)
+    count: int = 0
+    while cur_end <= today:
+        counts: Dict[str, int] = {
+            DEPO_REUSE_HEUR: 0,
+            SAME_ADDR_HEUR: 0,
+            GAS_PRICE_HEUR: 0,
+            SAME_NUM_TX_HEUR: 0,
+            LINKED_TX_HEUR: 0,
+            TORN_MINE_HEUR: 0,
+        }
+        for transaction in transactions:
+            ts: datetime = transaction['timestamp']
+            if (ts >= cur_start) and (ts <= cur_end):
+                counts[transaction['heuristic']] += 1
+
+        row: Dict[str, Any] = {
+            'index': count,
+            'start_date': cur_start.strftime('%m/%d/%Y'),
+            'end_date': cur_end.strftime('%m/%d/%Y'),
+            'counts': counts,
+        }
+        data.append(row)
+
+        cur_start: datetime = copy.copy(cur_end)
+        cur_end: datetime = cur_start + relativedelta(weeks=1)
+        count += 1
+
+    return data
+

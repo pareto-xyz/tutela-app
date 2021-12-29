@@ -509,7 +509,6 @@ class TransactionRequestChecker:
 
     def to_str(self):
         _repr: Dict[str, Any] = copy(self._params)
-        del _repr['filter_by']
         return json.dumps(_repr, sort_keys=True)
 
 
