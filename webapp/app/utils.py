@@ -86,7 +86,7 @@ def get_anonymity_score(
     score as 1 - np.tanh(slope * cluster_conf * cluster_size) where 
     slope is a hyperparameter controlling the slope of the TanH.
     """
-    return 1 - np.tanh(slope * np.dot(cluster_confs, cluster_sizes))
+    return float(1 - np.tanh(slope * np.dot(cluster_confs, cluster_sizes)))
 
 
 def get_display_aliases() -> Dict[str, str]:
