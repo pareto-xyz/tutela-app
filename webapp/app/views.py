@@ -650,16 +650,16 @@ def search_address(request: Request) -> Response:
                     0.25,
                 ],
             )
-            anon_score: float = round(anon_score, 3)
-            output['data']['query']['anonymity_score'] = anon_score
-            output['data']['query']['heuristic'] = DIFF2VEC_HEUR
-            output['data']['query']['entity'] = NODE
-            output['data']['query']['conf'] = round(conf, 3)
-            output['data']['cluster'] = cluster
-            output['data']['metadata']['cluster_size'] = cluster_size
-            output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
+            # anon_score: float = round(anon_score, 3)
+            # output['data']['query']['anonymity_score'] = anon_score
+            # output['data']['query']['heuristic'] = DIFF2VEC_HEUR
+            # output['data']['query']['entity'] = NODE
+            # output['data']['query']['conf'] = round(conf, 3)
+            # output['data']['cluster'] = cluster
+            # output['data']['metadata']['cluster_size'] = cluster_size
+            # output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
 
-            print(output)
+            # print(output)
 
         # Check if we know existing information about this address 
         known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
