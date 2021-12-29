@@ -654,7 +654,7 @@ def search_address(request: Request) -> Response:
             output['data']['query']['anonymity_score'] = anon_score
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
-            output['data']['query']['conf'] = conf
+            output['data']['query']['conf'] = round(conf, 3)
             output['data']['cluster'] = cluster
             output['data']['metadata']['cluster_size'] = cluster_size
             output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))

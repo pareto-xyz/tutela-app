@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 
 def get_balance(address: str, w3: Web3) -> float:
     # returns balance in ETH
-    return w3.eth.get_balance(address) / 10**18
+    return round(w3.eth.get_balance(address) / 10**18, 3)
 
 
 def get_ens_name(address: str, ns: ENS) -> str:
