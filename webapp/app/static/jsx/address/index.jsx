@@ -108,6 +108,7 @@ function ClusterPage(props) {
                 // response = schemaResponse;
                 // response = example;
                 // response = exchangeData;
+                console.log('expecting success, data, and is_tornado', response.data);
                 const { success, data, is_tornado } = response.data;
                 if (is_tornado === 1) {
                     const { query } = data;
@@ -115,6 +116,7 @@ function ClusterPage(props) {
                     setSearchType('tornadoPool');
                 } else if (is_tornado === 0) {
                     const { cluster, metadata, query, tornado } = data;
+                    console.log('expecting cluster, metadata, query, tornado', data);
                     const { cluster_size, limit, num_pages, page } = metadata;
                     setPaginationData({ total: cluster_size, limit, num_pages, page });
                     const { sort_default } = metadata;
