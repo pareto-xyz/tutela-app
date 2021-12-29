@@ -3,6 +3,7 @@ import math
 import json
 import numpy as np
 import pandas as pd
+from datetime import date
 from typing import Dict, Optional, List, Any, Set
 
 from app import app, w3, ns, rds, known_addresses, tornado_pools
@@ -799,6 +800,10 @@ def search_transaction():
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
         linked_tx_matches + torn_mine_matches
 
+    plotdata: Dict[str, List[int]] = make_weekly_plot(
+        dar_matches, same_addr_matches, gas_price_matches, same_num_tx_matches,
+        linked_tx_matches, torn_mine_matches)
+
     output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
     output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
     output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
@@ -811,9 +816,25 @@ def search_transaction():
     transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
 
     output['data']['transactions'] = transactions
+    output['data']['plotdata'] = plotdata
     output['success'] = 1
 
     response: str = json.dumps(output)
     rds.set(request_repr, bz2.compress(response.encode('utf-8')))  # add to cache
 
     return Response(response=response)
+
+
+def make_weekly_plot(
+    dar_reveals: List[Dict[str, Any]],
+    same_addr_reveals: List[Dict[str, Any]],
+    gas_price_reveals: List[Dict[str, Any]],
+    same_num_tx_reveals: List[Dict[str, Any]],
+    linked_tx_reveals: List[Dict[str, Any]],
+    torn_mine_reveals:  List[Dict[str, Any]]
+) -> Dict[str, List[int]]:
+    """
+    Make the data grouped by heuristics by week.
+    """
+    today = date.today()
+    breakpoint()
