@@ -431,8 +431,9 @@ def search_address(request: Request) -> Response:
                 if neighbor == address: continue  # skip
                 member: Dict[str, Any] = {
                     'address': neighbor,
-                    '_distance': distance,
-                    'conf': float(1./abs(10.*distance+1.)),  # add one to make max 1
+                    # '_distance': distance,
+                     # add one to make max 1
+                    'conf': round(float(1./abs(10.*distance+1.)), 3),
                     'heuristic': DIFF2VEC_HEUR, 
                     'entity': NODE,
                     'ens_name': get_ens_name(neighbor, ns),
@@ -649,7 +650,7 @@ def search_address(request: Request) -> Response:
                     0.25,
                 ],
             )
-            anon_score: float = round(anon_score, 3)  # brevity is a virtue
+            anon_score: float = round(anon_score, 3)
             output['data']['query']['anonymity_score'] = anon_score
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
