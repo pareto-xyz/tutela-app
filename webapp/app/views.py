@@ -261,6 +261,7 @@ def search_address(request: Request) -> Response:
 
     def compute_anonymity_score(
         addr: Address,
+        ens_name: str = '',
         exchange_weight: float = 0.1,
         slope: float = 0.1,
         extra_cluster_sizes: List[int] = [],
@@ -312,6 +313,10 @@ def search_address(request: Request) -> Response:
         cluster_sizes: np.array = np.array(cluster_sizes)
         score: float = get_anonymity_score(
             cluster_confs, cluster_sizes, slope = slope)
+
+        if len(ens_name) > 0 and '.eth' in ens_name:
+            # having an ENS name caps your maximum anonymity score
+            score: float = min(score, 0.90)
 
         return score
 
@@ -457,6 +462,9 @@ def search_address(request: Request) -> Response:
             if addr.meta_data is None:
                 addr.meta_data = '{}'
             addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
+            override_ens: Optional[str] = get_ens_name(addr.address, ns)
+            if override_ens is not None:  # in case ens info is outdated
+                addr_metadata['ens_name'] = addr_metadata
             output['data']['query']['metadata'] = addr_metadata
 
             # store the clusters in here
@@ -587,6 +595,7 @@ def search_address(request: Request) -> Response:
             # --- compute anonymity score using hyperbolic fn ---
             anon_score = compute_anonymity_score(
                 addr,
+                ens_name = addr_metadata['ens_name'],
                 # seed computing anonymity score with diff2vec + tcash reveals
                 extra_cluster_sizes = [
                     diff2vec_size,
@@ -618,6 +627,9 @@ def search_address(request: Request) -> Response:
         if len(known_lookup) > 0:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
+
+            # if you are on the top 20k users list, no anonymity
+            output['data']['query']['anonymity_score'] = 0
 
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
