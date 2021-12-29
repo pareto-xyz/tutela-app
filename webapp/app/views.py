@@ -815,6 +815,16 @@ def search_transaction():
     # sort by timestamp
     transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
 
+    def tx_datetime_to_str(raw_transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        transactions: List[Dict[str, Any]] = []
+        for tx in raw_transactions:
+            tx['timestamp'] = tx['timestamp'].strftime('%m/%d/%Y')
+            transactions.append(tx)
+        return transactions
+
+    # remove datetime objects
+    transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
+
     output['data']['transactions'] = transactions
     output['data']['plotdata'] = plotdata
     output['success'] = 1
