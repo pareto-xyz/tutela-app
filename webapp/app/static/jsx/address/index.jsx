@@ -109,7 +109,7 @@ function ClusterPage(props) {
                 // response = example;
                 // response = exchangeData;
                 console.log('expecting success, data, and is_tornado', response.data, typeof(response.data));
-                const { success, data, is_tornado } = JSON.parse(response.data);
+                const { success, data, is_tornado } = Object(response.data);
                 if (is_tornado === 1) {
                     const { query } = data;
                     setQueryInfo(query);
