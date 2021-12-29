@@ -230,7 +230,6 @@ def search_address(request: Request) -> Response:
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_address_response()
-    return Response(json.dumps(output))
 
     if not is_valid_request:   # if not, bunt
         return Response(output)
@@ -255,6 +254,7 @@ def search_address(request: Request) -> Response:
 
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
+    return Response(json.dumps(output))
 
 
     def compute_anonymity_score(
