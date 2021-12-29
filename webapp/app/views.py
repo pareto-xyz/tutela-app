@@ -628,6 +628,10 @@ def search_address(request: Request) -> Response:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
 
+            if addr is not None:  # if address also exists and ...
+                # if you are on the top 20k users list, stop
+                output['data']['query']['anonymity_score'] = 0
+
         # if `addr` doesnt exist, then we assume no clustering
         output['success'] = 1
 
