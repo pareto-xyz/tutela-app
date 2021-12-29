@@ -29,7 +29,7 @@ from flask import render_template
 from sqlalchemy import or_
 
 from app.utils import get_known_attrs, get_display_aliases
-from webapp.app.utils import heuristic_to_int
+from app.utils import heuristic_to_int
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
