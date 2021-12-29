@@ -243,17 +243,17 @@ def search_address(request: Request) -> Response:
 
     request_repr: str = checker.to_str()
 
-    # if rds.exists(request_repr):  # check if this exists in our cache
-    #     response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
-    #     return Response(response=response)
+    if rds.exists(request_repr):  # check if this exists in our cache
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
 
     # --- fill out some of the known response fields ---
-    output['data']['query']['address'] = address
-    output['data']['metadata']['page'] = page
-    output['data']['metadata']['limit'] = size
+    # output['data']['query']['address'] = address
+    # output['data']['metadata']['page'] = page
+    # output['data']['metadata']['limit'] = size
 
-    for k in output['data']['metadata']['filter_by'].keys():
-        output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
+    # for k in output['data']['metadata']['filter_by'].keys():
+    #     output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
 
 
     def compute_anonymity_score(
