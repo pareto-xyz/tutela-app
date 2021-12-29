@@ -251,12 +251,13 @@ def search_address(request: Request) -> Response:
     output['data']['query']['address'] = address
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
+
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
 
 
     def compute_anonymity_score(
-        addr: Address,
+        addr: Optional[Address],
         ens_name: str = '',
         exchange_weight: float = 0.1,
         slope: float = 0.1,
@@ -273,37 +274,41 @@ def search_address(request: Request) -> Response:
         and number of other exchanges in the same cluster (which we find through
         the deposits this address interacts with). Exchange interactions are 
         discounted (by `exchange_weight` factor) compared to other EOAs.
+
+        If ens_name is provided and not empty, we cap the anonymity score at 90.
+        If addr is None, we assume clusters are specified in extra_cluster_*.
         """
-        if addr.entity == entity_to_int(DEPOSIT):
-            return -1  # represents N/A
-        elif addr.entity == entity_to_int(EXCHANGE):
-            return 0   # CEX have no anonymity
-
-        assert addr.entity == entity_to_int(EOA), \
-            f'Unknown entity: {entity_to_str(addr.entity)}'
-
         cluster_confs: List[float] = extra_cluster_sizes
         cluster_sizes: List[float] = extra_cluster_confs
 
-        if addr.user_cluster is not None:
-            # find all other EOA addresses with same `dar_user_cluster`.
-            num_cluster: int = Address.query.filter(
-                Address.user_cluster == addr.user_cluster,
-                or_(Address.entity == entity_to_int(EOA)),
-            ).limit(HARD_MAX).count()
-            cluster_confs.append(addr.conf)
-            cluster_sizes.append(num_cluster)
+        if addr is not None:
+            if addr.entity == entity_to_int(DEPOSIT):
+                return -1  # represents N/A
+            elif addr.entity == entity_to_int(EXCHANGE):
+                return 0   # CEX have no anonymity
 
-            # find all DEPOSIT address with same `user_cluster`.
-            deposits: Optional[List[Address]] = Address.query.filter(
-                Address.user_cluster == addr.user_cluster,
-                Address.entity == entity_to_int(DEPOSIT),
-            ).limit(HARD_MAX).all()
+            assert addr.entity == entity_to_int(EOA), \
+                f'Unknown entity: {entity_to_str(addr.entity)}'
 
-            exchanges: Set[str] = set([
-                deposit.exchange_cluster for deposit in deposits])
-            cluster_confs.append(addr.conf * exchange_weight)
-            cluster_sizes.append(len(exchanges))
+            if addr.user_cluster is not None:
+                # find all other EOA addresses with same `dar_user_cluster`.
+                num_cluster: int = Address.query.filter(
+                    Address.user_cluster == addr.user_cluster,
+                    or_(Address.entity == entity_to_int(EOA)),
+                ).limit(HARD_MAX).count()
+                cluster_confs.append(addr.conf)
+                cluster_sizes.append(num_cluster)
+
+                # find all DEPOSIT address with same `user_cluster`.
+                deposits: Optional[List[Address]] = Address.query.filter(
+                    Address.user_cluster == addr.user_cluster,
+                    Address.entity == entity_to_int(DEPOSIT),
+                ).limit(HARD_MAX).all()
+
+                exchanges: Set[str] = set([
+                    deposit.exchange_cluster for deposit in deposits])
+                cluster_confs.append(addr.conf * exchange_weight)
+                cluster_sizes.append(len(exchanges))
 
         cluster_confs: np.array = np.array(cluster_confs)
         cluster_sizes: np.array = np.array(cluster_sizes)
@@ -409,17 +414,16 @@ def search_address(request: Request) -> Response:
         )
         return stats
 
-    def query_diff2vec(address: str) -> List[Dict[str, Any]]:
+    def query_diff2vec(node: Embedding) -> List[Dict[str, Any]]:
         """
         Search the embedding table to fetch neighbors from Diff2Vec cluster.
         """
-        entry: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
         cluster: List[Dict[str, Any]] = []
         cluster_conf: float = 0
 
-        if entry is not None:
-            neighbors: List[int] = json.loads(entry.neighbors)
-            distances: List[float] = json.loads(entry.distances)
+        if node is not None:
+            neighbors: List[int] = json.loads(node.neighbors)
+            distances: List[float] = json.loads(node.distances)
 
             for neighbor, distance in zip(neighbors, distances):
                 # swap terms b/c of upload accident
@@ -445,23 +449,28 @@ def search_address(request: Request) -> Response:
     if len(address) > 0:
         offset: int = page * size
 
+        # --- check web3 for information ---
+        web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
+        metadata_: Dict[str, Any] = output['data']['query']['metadata']
+        output['data']['query']['metadata'] = {**metadata_, **web3_resp}
+
         # --- check tornado queries ---
         # Note that this is out of the `Address` existence check
         tornado_dict: Dict[str, Any] = query_tornado_stats(address)
         output['data']['tornado']['summary']['address'].update(tornado_dict)
 
-        # --- search for address in DAR/Diff2Vec tables ---
+        # --- search for address in DAR and Dff2Vec tables ---
         addr: Optional[Address] = Address.query.filter_by(address = address).first()
+        node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
 
-        if addr is not None:  # make sure address exists
+        # --- Case #1 : address can be found in the DAR Address table --- 
+        if addr is not None: 
             entity: str = entity_to_str(addr.entity)
-            if addr.meta_data is None:
-                addr.meta_data = '{}'
+            if addr.meta_data is None: addr.meta_data = '{}'
             addr_metadata: Dict[str, Any] = json.loads(addr.meta_data)  # load metadata
-            override_ens: Optional[str] = get_ens_name(addr.address, ns)
-            if override_ens is not None:  # in case ens info is outdated
-                addr_metadata['ens_name'] = addr_metadata
-            output['data']['query']['metadata'] = addr_metadata
+            if 'ens_name' in addr_metadata: del addr_metadata['ens_name']  # no override
+            metadata_: Dict[str, Any] = output['data']['query']['metadata']
+            output['data']['query']['metadata'] = {**metadata_, **addr_metadata}
 
             # store the clusters in here
             cluster: List[Address] = []
@@ -580,7 +589,7 @@ def search_address(request: Request) -> Response:
                 raise Exception(f'Entity {entity} not supported.')
 
             # find Diff2Vec embeddings and add to front of cluster
-            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(address)
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node)
             cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
             cluster_size += len(diff2vec_cluster)
 
@@ -591,7 +600,7 @@ def search_address(request: Request) -> Response:
             # --- compute anonymity score using hyperbolic fn ---
             anon_score = compute_anonymity_score(
                 addr,
-                ens_name = addr_metadata['ens_name'],
+                ens_name = web3_resp['ens_name'],
                 # seed computing anonymity score with diff2vec + tcash reveals
                 extra_cluster_sizes = [
                     diff2vec_size,
@@ -613,12 +622,43 @@ def search_address(request: Request) -> Response:
             anon_score: float = round(anon_score, 3)  # brevity is a virtue
             output['data']['query']['anonymity_score'] = anon_score
 
-            # --- query web3 to get current information about this address ---
-            web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
-            query_metadata: Dict[str, Any] = output['data']['query']['metadata']
-            output['data']['query']['metadata'] = {**query_metadata, **web3_resp}
+        # --- Case #2: address is not in the DAR Address table but is 
+        #              in Embedding (Diff2Vec) table --- 
+        elif node is not None:
+            # find Diff2Vec embeddings and add to front of cluster
+            cluster, cluster_size, conf = query_diff2vec(node)
 
-        # --- check if we know existing information about this address ---
+            anon_score = compute_anonymity_score(
+                None,
+                ens_name = web3_resp['ens_name'],
+                # seed computing anonymity score with diff2vec + tcash reveals
+                extra_cluster_sizes = [
+                    cluster_size,
+                    tornado_dict['num_compromised']['num_compromised_exact_match'],
+                    tornado_dict['num_compromised']['num_compromised_gas_price'],
+                    tornado_dict['num_compromised']['num_compromised_multi_denom'],
+                    tornado_dict['num_compromised']['num_compromised_linked_tx'],
+                    tornado_dict['num_compromised']['num_compromised_torn_mine'],
+                ], 
+                extra_cluster_confs = [
+                    conf,
+                    1.,
+                    1.,
+                    0.5,
+                    0.25,
+                    0.25,
+                ],
+            )
+            anon_score: float = round(anon_score, 3)  # brevity is a virtue
+            output['data']['query']['anonymity_score'] = anon_score
+            output['data']['query']['heuristic'] = DIFF2VEC_HEUR
+            output['data']['query']['entity'] = NODE
+            output['data']['query']['conf'] = conf
+            output['data']['cluster'] = cluster
+            output['data']['metadata']['cluster_size'] = cluster_size
+            output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
+
+        # Check if we know existing information about this address 
         known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
         if len(known_lookup) > 0:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
