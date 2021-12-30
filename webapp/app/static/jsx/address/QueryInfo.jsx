@@ -11,6 +11,8 @@ export default function QueryInfo({ data, loading, aliases }) {
     }
     const combined = { ...data, ...metadata };
 
+    const displayedScore = (anonymity_score * 100).toFixed(3);
+
     return (
         <div className="col-md-12 col-lg-6">
             <div className="query-info ">
@@ -20,7 +22,7 @@ export default function QueryInfo({ data, loading, aliases }) {
                 </div>
 
                 {anonymity_score >= 0 && <div className="anon-score-group">
-                    anonymity score: &nbsp;{anonymity_score * 100} &nbsp;/ 100
+                    anonymity score: &nbsp;{displayedScore} &nbsp;/ 100
                     <MyTooltip tooltipText={'The higher the anonymity score, the less we believe this address or transaction has revealed about its privacy. Number of reveals, the connectedness of addresses and the types of reveal affect this.'} />
                 </div>}
                 
