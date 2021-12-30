@@ -141,6 +141,9 @@ def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, An
     if 'label' in result and 'legitimacy' not in result:
         result['legitimacy'] = result['label']
         del result['label']
+    if 'tags' in result:
+        if len(result['tags']) == 0:
+            del result['tags']
     return result
 
 
