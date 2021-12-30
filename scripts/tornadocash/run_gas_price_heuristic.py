@@ -71,6 +71,8 @@ def get_transaction_info(
         pd.concat([withdraw_df.block_number, deposit_df.block_number])
     block_timestamps: pd.DataFrame = \
         pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    block_timestamps: pd.Series = \
+        block_timestamps.apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
     tx2block = dict(zip(hashes, block_numbers))
     tx2ts = dict(zip(hashes, block_timestamps))
     return tx2block, tx2ts
