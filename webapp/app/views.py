@@ -791,7 +791,6 @@ def search_transaction():
         request,
         default_page = 0,
         default_limit = PAGE_LIMIT,
-        default_window = '1yr',
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_transaction_response()
@@ -802,7 +801,6 @@ def search_transaction():
     address: str = checker.get('address').lower()
     page: int = checker.get('page')
     size: int = checker.get('limit')
-    window: str = checker.get('window')
 
     request_repr: str = checker.to_str()
 
@@ -813,7 +811,6 @@ def search_transaction():
     output['data']['query']['address'] = address
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
-    output['data']['metadata']['window'] = window
 
     # --
 
@@ -853,8 +850,6 @@ def search_transaction():
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
         linked_tx_matches + torn_mine_matches
 
-    plotdata: List[Dict[str, Any]] = make_weekly_plot(transactions)
-
     output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
     output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
     output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
@@ -877,7 +872,6 @@ def search_transaction():
     transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
 
     output['data']['transactions'] = transactions
-    output['data']['plotdata'] = plotdata
     output['success'] = 1
 
     response: str = json.dumps(output)
@@ -886,14 +880,19 @@ def search_transaction():
     return Response(response=response)
 
 
-def make_weekly_plot(
-    transactions: List[Dict[str, Any]], window = '1yr') -> List[Dict[str, Any]]:
+@app.route('/plot/transaction', methods=['GET'])
+def make_weekly_plot():
     """
-    Make the data grouped by heuristics by week.
+    Pass in `transactions` object from `/search/transaction` endpoint.
+    We treat this as a seperate endpoint to allow for efficient repeated 
+    calls to this w/o requerying `/search/transaction`.
+    """
+    transactions: str = request.args.get('transactions', '[]')
+    transactions: List[Dict[str, Any]] = json.loads(transactions)
+    
+    window: str = request.args.get('window', '1yr')
+    if window not in ['6mth', '1yr', '5yr']:  window = '1yr'
 
-    @window: [6mth, 1yr, 5yr]
-    """
-    assert window in ['6mth', '1yr', '5yr'], f'Invalid window: {window}.'
     today: datetime = datetime.today()
     
     if window == '6mth':
@@ -921,7 +920,7 @@ def make_weekly_plot(
             TORN_MINE_HEUR: 0,
         }
         for transaction in transactions:
-            ts: datetime = transaction['timestamp']
+            ts: datetime = datetime.strptime(transaction['timestamp'], '%m/%d/%Y')
             if (ts >= cur_start) and (ts <= cur_end):
                 counts[transaction['heuristic']] += 1
 
@@ -941,5 +940,16 @@ def make_weekly_plot(
         cur_end: datetime = cur_start + relativedelta(weeks=1)
         count += 1
 
-    return data
-
+    output: Dict[str, Any] = {
+        'query': {
+            'window': window, 
+            'metadata': {
+                'num_points': len(data),
+                'today': today.strftime('%m/%d/%Y'),
+            }
+        },
+        'data': data,
+        'success': 1,
+    }
+    response: str = json.dumps(output)
+    return Response(response=response)
