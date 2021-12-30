@@ -925,11 +925,15 @@ def make_weekly_plot(
             if (ts >= cur_start) and (ts <= cur_end):
                 counts[transaction['heuristic']] += 1
 
+        start_date: str = cur_start.strftime('%m/%d/%Y')
+        end_date: str = cur_end.strftime('%m/%d/%Y')
+
         row: Dict[str, Any] = {
             'index': count,
-            'start_date': cur_start.strftime('%m/%d/%Y'),
-            'end_date': cur_end.strftime('%m/%d/%Y'),
-            'counts': counts,
+            'start_date': start_date,
+            'end_date': end_date,
+            'name': f'{start_date}-{end_date}',
+            **counts,
         }
         data.append(row)
 
