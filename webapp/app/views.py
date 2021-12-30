@@ -258,7 +258,7 @@ def search_address(request: Request) -> Response:
 
     def compute_anonymity_score(
         addr: Optional[Address],
-        ens_name: str = '',
+        ens_name: Optional[str] = None,
         exchange_weight: float = 0.1,
         slope: float = 0.1,
         extra_cluster_sizes: List[int] = [],
@@ -315,9 +315,10 @@ def search_address(request: Request) -> Response:
         score: float = get_anonymity_score(
             cluster_confs, cluster_sizes, slope = slope)
 
-        if len(ens_name) > 0 and '.eth' in ens_name:
-            # having an ENS name caps your maximum anonymity score
-            score: float = min(score, 0.90)
+        if ens_name is not None:
+            if len(ens_name) > 0 and '.eth' in ens_name:
+                # having an ENS name caps your maximum anonymity score
+                score: float = min(score, 0.90)
 
         return score
 
