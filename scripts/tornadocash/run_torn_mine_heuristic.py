@@ -30,12 +30,11 @@ def main(args: Any):
     if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
 
     cache_file: str = os.path.join(args.data_dir, 'heuristic_5_linked_txs.json')
+    deposit_df, withdraw_df, miner_df = load_data(args.data_dir)
 
     if os.path.isfile(cache_file):
         total_linked_txs: Dict[str, Dict[str, Any]] = from_json(cache_file)
     else:
-        deposit_df, withdraw_df, miner_df = load_data(args.data_dir)
-
         deposit_df: pd.DataFrame = deposit_df[deposit_df['tcash_pool'].isin(MINE_POOL)]
         withdraw_df: pd.DataFrame = withdraw_df[withdraw_df['tcash_pool'].isin(MINE_POOL)]
 
@@ -100,6 +99,7 @@ def get_transaction_info(
         pd.concat([withdraw_df.block_number, deposit_df.block_number])
     block_timestamps: pd.DataFrame = \
         pd.concat([withdraw_df.block_timestamp, deposit_df.block_timestamp])
+    block_timestamps: pd.DataFrame = block_timestamps.apply(pd.Timestamp)
     block_timestamps: pd.Series = \
         block_timestamps.apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
     tx2block = dict(zip(hashes, block_numbers))
