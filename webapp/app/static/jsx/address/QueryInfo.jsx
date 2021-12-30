@@ -2,9 +2,9 @@ import React from 'react';
 import AgnosticTable from '../components/AgnosticTable';
 import MyTooltip from '../components/MyTooltip';
 
-const TO_IGNORE = new Set(['metadata', 'address', 'id', 'anonymity_score']);
+const TO_IGNORE = new Set(['metadata', 'id', 'anonymity_score']);
 
-export default function QueryInfo({ data, loading, aliases }) {
+export default function QueryInfo({ data, loading=false, aliases }) {
     let { metadata, anonymity_score } = data;
     if (anonymity_score === undefined) {
         anonymity_score = 1;

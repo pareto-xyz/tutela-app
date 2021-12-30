@@ -30,7 +30,7 @@ function buildQueryString(query) {
 }
 
 function getApi(url, thenFunction, finallyFunction=() => {}) {
-    axios.get(url).then(thenFunction).catch(err => console.log(err)).finally(finallFunction);
+    axios.get(url).then(thenFunction).catch(err => console.log(err)).finally(finallyFunction);
 }
 
 export { isValid, buildQueryString, getApi }

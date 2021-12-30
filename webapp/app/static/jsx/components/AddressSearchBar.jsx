@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { isValid } from './utils';
+import { isValid } from '../../js/utils';
 //import isTornado from '../../data/istornado';
 
 export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress, 
