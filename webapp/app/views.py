@@ -39,6 +39,7 @@ HARD_MAX: int = 1000
 @app.route('/', methods=['GET'])
 @app.route('/index', methods=['GET'])
 @app.route('/cluster', methods=['GET'])
+@app.route('/transactions', methods=['GET'])
 def index():
     return render_template('index.html')
 

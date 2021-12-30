@@ -4,7 +4,9 @@ import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bo
 import { isValid } from './utils';
 //import isTornado from '../../data/istornado';
 
-export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress }) {
+export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress, 
+    myClassName="fixed-width mb-1 col-sm-12 col-md-6 col-lg-8", 
+    showTornadoHovers=true }) {
 
     const inputEl = useRef(null);
     const [invalid, setInvalid] = useState(false);
@@ -64,7 +66,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
     return (
         <>
             <OverlayTrigger
-                show={tornadoTooltip.length > 0}
+                show={showTornadoHovers && tornadoTooltip.length > 0}
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
@@ -80,6 +82,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                             className="search-bar"
                             isInvalid={invalid}
                             ref={inputEl}
+                            area-describedby='addressSearchHelp'
                         >
                         </FormControl>
 

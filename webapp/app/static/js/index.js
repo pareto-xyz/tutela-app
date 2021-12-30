@@ -19,7 +19,7 @@ if (url.pathname === '/' || url.pathname === '/index') {
 else if (url.pathname === '/cluster') {
     ReactDOM.render(<ClusterPage params={params} />, root);
 }
-else if (url.pathname === "/transaction") {
+else if (url.pathname === "/transactions") {
     ReactDOM.render(<TransactionPage params={params} />, root);
 }
 

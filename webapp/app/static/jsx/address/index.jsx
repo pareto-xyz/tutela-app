@@ -158,7 +158,6 @@ function ClusterPage(props) {
         if (params.get('address') !== addr) {
             window.location.href = '/cluster?address=' + addr;
         }
-        // window.history.pushState(null, null, "?address=" + addr);
     }
 
 
