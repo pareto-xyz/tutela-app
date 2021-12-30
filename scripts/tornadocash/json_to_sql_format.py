@@ -5,6 +5,7 @@ Process same gas price clusters to CSV (same table format).
 import json
 import pandas as pd
 from tqdm import tqdm
+from datetime import datetime
 from typing import Any, Dict, List, Set, Tuple
 
 
@@ -24,6 +25,8 @@ def main(args: Any):
     addresses: List[str] = [tx2addr[tx] for tx in transactions]
     block_numbers: List[int] = [tx2block[tx] for tx in transactions]
     block_timestamps: List[Any] = [tx2ts[tx] for tx in transactions]
+    block_timestamps: List[datetime] = [
+        datetime.strptime(ts, '%Y-%m-%d %H:%M:%S') for ts in block_timestamps]
     clusters: List[int] = [tx2cluster[tx] for tx in transactions]
     meta_datas:  List[str] = [json.dumps({}) for _ in transactions]
 
@@ -35,7 +38,6 @@ def main(args: Any):
         'meta_data': meta_datas,
         'cluster': clusters,
     }
-
     df: pd.DataFrame = pd.DataFrame.from_dict(dataset)
     df.to_csv(args.out_file, index=False)
 
