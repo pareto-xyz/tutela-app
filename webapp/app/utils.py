@@ -134,6 +134,7 @@ def get_known_attrs(known_addresses: pd.DataFrame, address: str) -> Dict[str, An
     result: pd.DataFrame = known_addresses[known_addresses.address == address]
     if len(result) == 0:
         return {}
+    result: pd.DataFrame = result.fillna('')
     result: pd.Series = result.iloc[0]
     result: Dict[str, Any] = result.to_dict()
     del result['address']

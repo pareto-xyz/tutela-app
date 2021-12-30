@@ -8,8 +8,9 @@ def get_balance(address: str, w3: Web3) -> float:
     return round(w3.eth.get_balance(address) / 10**18, 3)
 
 
-def get_ens_name(address: str, ns: ENS) -> str:
-    return ns.name(address)
+def get_ens_name(address: str, ns: ENS) -> Optional[str]:
+    ens_name: Optional[str] = ns.name(address)
+    return ens_name
 
 
 def query_web3(address: str, w3: Web3, ns: ENS) -> Dict[str, Any]:

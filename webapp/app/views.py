@@ -661,6 +661,7 @@ def search_address(request: Request) -> Response:
 
         # Check if we know existing information about this address 
         known_lookup: Dict[str, Any] = get_known_attrs(known_addresses, address)
+        
         if len(known_lookup) > 0:
             query_metadata: Dict[str, Any] = output['data']['query']['metadata']
             output['data']['query']['metadata'] = {**query_metadata, **known_lookup}
