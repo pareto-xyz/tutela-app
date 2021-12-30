@@ -1,0 +1,11 @@
+
+
+.top-margin {
+    margin-top: 90px;
+}
+
+/** CHART **/
+
+.recharts-rectangle.recharts-tooltip-cursor {
+    fill: var(--fadedgrey);
+}
