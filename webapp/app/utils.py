@@ -454,15 +454,20 @@ class TransactionRequestChecker:
         request: Any,
         default_page: int = 0,
         default_limit: int = 50,
+        default_window: str = '1yr',
     ):
         self._request: Any = request
         self._default_page: int = default_page
         self._default_limit: int = default_limit
+        self._default_window: str = default_window
 
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page() and self._check_limit()
+        return (self._check_address() and
+                self._check_page() and
+                self._check_limit() and 
+                self._check_window())
 
     def _check_address(self) -> bool:
         """
@@ -493,6 +498,14 @@ class TransactionRequestChecker:
         limit: int = safe_int(limit, default)
         limit: int = min(max(limit, 1), default)  # at least 1
         self._params['limit'] = limit
+        return True
+
+    def _check_window(self) -> str:
+        default: int = self._default_window
+        window: str = self._request.args.get('window', default)
+        if window not in ['6mth', '1yr', '5yr']:
+            window: str = '1yr'
+        self._params['window'] = window
         return True
 
     def get(self, k: str) -> Optional[Any]:
