@@ -32,7 +32,6 @@ function TransactionPage({ params, aliases }) {
     const [firstView, setFirstView] = useState(true);
     const [loadingOverall, setLoadingOverall] = useState(false);
     const [queryInfo, setQueryInfo] = useState({});
-    const [plotData, setPlotData] = useState([]);
     const [transactions, setTransactions] = useState([]);
 
     //in case url already sets it up. 
@@ -47,13 +46,11 @@ function TransactionPage({ params, aliases }) {
     const loadNewData = addr => {
         setLoadingOverall(true);
         getApi('/search/transaction?address=' + addr, response => {
-            response = responseExample;
+            // response = responseExample;
             const { data, success } = response.data;
-            console.log(data);
             if (success === 1) {
-                const { metadata, plotdata, query, transactions } = data;
+                const { metadata, query, transactions } = data;
                 setQueryInfo(query);
-                setPlotData(plotdata);
                 setTransactions(transactions);
             }
         }, () => { //this is the finally.
@@ -96,7 +93,7 @@ function TransactionPage({ params, aliases }) {
 
                 {!firstView && <div className="row results-section">
                     <QueryInfo data={queryInfo} aliases={aliases} />
-                    <RevealTimeline plotData={plotData} />
+                    <RevealTimeline addr={params.get('address')} aliases={aliases}/>
                 </div>}
                 <AccordionOfResults
                     myClassName="linked-adress"

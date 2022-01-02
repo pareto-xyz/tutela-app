@@ -1,11 +1,21 @@
-
-
 .top-margin {
     margin-top: 90px;
 }
+
 
 /** CHART **/
 
 .recharts-rectangle.recharts-tooltip-cursor {
     fill: var(--fadedgrey);
+}
+
+.select-window-button {
+    padding: 3px 5px;
+    background-color: transparent;
+    color: white;
+    font-family: "PT Sans", sans-serif;
+}
+
+.select-window {
+    text-align: right;
 }
