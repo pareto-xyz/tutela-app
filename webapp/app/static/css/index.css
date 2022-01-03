@@ -4,15 +4,15 @@ GENERIC
 
 html {
   scroll-behavior: smooth;
-  /* background-color: #202020; */
+  background-color: #202020;
   bottom: 0px;
 }
 
-html.ombre {
+body {
   background: linear-gradient(
     180deg,
-    rgba(125, 125, 125, 0.39) -0.79%,
-    rgba(54, 54, 54, 0.87) -0.79%,
+    rgb(124, 124, 124) -0.79%,
+    rgb(73, 73, 73) -0.79%,
     #000000 38.83%
   );
 }
@@ -95,7 +95,7 @@ header.fixed {
   justify-content: space-between;
 }
 .nav.scrolled {
-  background-color: hsla(0, 0%, 13%, 0.7) !important;
+  background-color: hsla(0, 0%, 13%, 0.9) !important;
   transition: background-color 500ms linear;
   -webkit-transition: background-color 500ms linear;
   -moz-transition: background-color 500ms linear;
