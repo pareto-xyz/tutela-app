@@ -50,8 +50,7 @@ div {
 
 .full-page {
   min-height: 100vh;
-  /* Contains absolute positions */
-  position: relative;
+  padding-top: 5rem;
 }
 .full-page:last-of-type {
   padding-bottom: 80px;

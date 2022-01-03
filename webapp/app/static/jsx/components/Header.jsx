@@ -32,7 +32,7 @@ export default function Header(props) {
             <div className="my-2 my-lg-0 collapse navbar-collapse col-md-12 col-lg-4" id="navbarSupportedContent">
                 <ul className="navbar-nav">
                     <li className="nav-item">
-                        <a className="nav-link" href="/">{getDisplayText('home', current)}</a>
+                        <a className="nav-link" href="/#">{getDisplayText('home', current)}</a>
                     </li>
                     <li className="nav-item">
                         <a className="nav-link" href="/cluster">{getDisplayText('address', current)}</a>
