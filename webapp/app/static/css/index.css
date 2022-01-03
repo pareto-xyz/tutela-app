@@ -147,11 +147,6 @@ a:hover {
 MAIN PAGE SEARCH SECTION
 */
 
-.main {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
 .main-react {
   margin-top: 90px;
 }
