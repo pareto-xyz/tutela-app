@@ -17,8 +17,10 @@ from app.utils import \
     entity_to_int, entity_to_str, to_dict, \
     heuristic_to_str, is_valid_address, get_today_date_str, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
-    AddressRequestChecker, TornadoPoolRequestChecker, TransactionRequestChecker, \
-    default_address_response, default_tornado_response, default_transaction_response, \
+    AddressRequestChecker, TornadoPoolRequestChecker, \
+    TransactionRequestChecker, PlotRequestChecker, \
+    default_address_response, default_tornado_response, \
+    default_transaction_response, default_plot_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, NODE, \
     GAS_PRICE_HEUR, DEPO_REUSE_HEUR, DIFF2VEC_HEUR, SAME_NUM_TX_HEUR, \
     SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR, DIFF2VEC_HEUR
@@ -29,7 +31,6 @@ from flask import render_template
 from sqlalchemy import or_
 
 from app.utils import get_known_attrs, get_display_aliases
-from app.utils import heuristic_to_int
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
@@ -930,14 +931,27 @@ def make_weekly_plot():
     We treat this as a seperate endpoint to allow for efficient repeated 
     calls to this w/o requerying `/search/transaction`.
     """
-    transactions: str = request.args.get('transactions', '[]')
-    transactions: List[Dict[str, Any]] = json.loads(transactions)
-    
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
+    request.args = dict(request.args)
+    request.args['address'] = address
+
+    if not is_valid_address(address):
+        return default_plot_response()
+
     window: str = request.args.get('window', '1yr')
-    if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:  window = '1yr'
+
+    checker: PlotRequestChecker = PlotRequestChecker(request, default_window = window)
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_plot_response()
+
+    if not is_valid_request:
+        return Response(output)
 
     today: datetime = datetime.today()
-   
+
     if window == '1mth':
         delta: relativedelta = relativedelta(months=1)
     elif window == '3mth':
@@ -953,9 +967,13 @@ def make_weekly_plot():
     else:
         raise Exception(f'Window {window} not supported.')
 
-    start: datetime = today - delta
+    start_date_obj: datetime = today - delta
+    search_output: Dict[str, List[Dict[str, Any]]] = \
+        _search_transaction(address, start_date_obj, today)
+    transactions: List[Dict[str, Any]] = search_output['transactions']
+
     data: List[Dict[str, Any]] = []
-    cur_start: datetime = copy.copy(start)
+    cur_start: datetime = copy.copy(start_date_obj)
     cur_end: datetime = cur_start + relativedelta(weeks=1)
     count: int = 0
 
@@ -989,16 +1007,13 @@ def make_weekly_plot():
         cur_end: datetime = cur_start + relativedelta(weeks=1)
         count += 1
 
-    output: Dict[str, Any] = {
-        'query': {
-            'window': window, 
-            'metadata': {
-                'num_points': len(data),
-                'today': today.strftime('%m/%d/%Y'),
-            }
-        },
-        'data': data,
-        'success': 1,
-    }
+    output['query']['window'] = window
+    output['query']['start_time'] = start_date_obj.strftime('%m/%d/%Y')
+    output['query']['end_time'] = today.strftime('%m/%d/%Y')
+    output['query']['metadata']['num_points'] = len(data)
+    output['query']['metadata']['today'] = today.strftime('%m/%d/%Y')
+    output['data'] = data
+    output['success'] = 1
+
     response: str = json.dumps(output)
     return Response(response=response)

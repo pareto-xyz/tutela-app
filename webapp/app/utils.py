@@ -440,6 +440,23 @@ def default_transaction_response() -> Dict[str, Any]:
     return output
 
 
+def default_plot_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'query': {
+            'window': '1yr', 
+            'start_date': '',
+            'end_date': '',
+            'metadata': {
+                'num_points': 0,
+                'today': get_today_date_str(),
+            }
+        },
+        'data': [],
+        'success': 1,
+    }
+    return output
+
+
 def is_valid_address(address: str) -> bool:
     address: str = address.lower().strip()
 
@@ -454,6 +471,41 @@ def is_valid_address(address: str) -> bool:
         return False
 
     return True
+
+
+class PlotRequestChecker:
+
+    def __init__(
+        self,
+        request: Any,
+        default_window: str = '1yr',
+    ):
+        self._request: Any = request
+        self._default_window: str = default_window
+
+        self._params: Dict[str, Any] = {}
+
+    def check(self):
+        return self._check_address() and self._check_window()
+
+    def _check_address(self) -> bool:
+        """
+        Check that the first two chars are 0x and that the string
+        is 42 chars long. Check that there are no spaces.
+        """
+        address: str = self._request.args.get('address', '')
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
+
+    def _check_window(self) -> bool:
+        default: str = self._default_window
+        window: Union[str, str] = self._request.args.get('window', default)
+        if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:
+            window = '1yr'
+        self._params['window'] = window
+        return True
 
 
 class TransactionRequestChecker:
