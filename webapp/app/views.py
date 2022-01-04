@@ -891,14 +891,20 @@ def make_weekly_plot():
     transactions: List[Dict[str, Any]] = json.loads(transactions)
     
     window: str = request.args.get('window', '1yr')
-    if window not in ['6mth', '1yr', '5yr']:  window = '1yr'
+    if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:  window = '1yr'
 
     today: datetime = datetime.today()
-    
-    if window == '6mth':
+   
+    if window == '1mth':
+        delta: relativedelta = relativedelta(months=1)
+    elif window == '3mth':
+        delta: relativedelta = relativedelta(months=3)
+    elif window == '6mth':
         delta: relativedelta = relativedelta(months=6)
     elif window == '1yr':
         delta: relativedelta = relativedelta(months=12)
+    elif window == '3yr':
+        delta: relativedelta = relativedelta(months=12*3)
     elif window == '5yr':
         delta: relativedelta = relativedelta(months=12*5)
     else:
