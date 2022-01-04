@@ -7,6 +7,7 @@ have deposited), compute a distribution over number of tornado specific reveals.
 import os
 import numpy as np
 from tqdm import tqdm
+from collections import Counter
 from typing import Dict, List, Any
 from app.models import ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
                        TornMining, TornadoDeposit
@@ -33,7 +34,7 @@ def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
     return addresses.tolist()
 
 
-def get_tornado_scores(addresses: List[str]) -> Dict[str, List[float]]:
+def get_tornado_scores(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     scores: Dict[str, List[str]] = {}
     for name in NAMES: 
         scores[name] = []
@@ -47,9 +48,9 @@ def get_tornado_scores(addresses: List[str]) -> Dict[str, List[float]]:
         pbar.update()
     pbar.close()
 
-    dist: Dict[str, List[float]] = {}
+    dist: Dict[str, Dict[int, int]] = {}
     for name in NAMES:
-        dist[name] = [float(np.mean(scores)), float(np.std(scores))]
+        dist[name] =  dict(Counter(scores[name]))
     return dist
 
 
@@ -62,7 +63,7 @@ def find_num_tcash_matches(address: str, Heuristic: Any) -> int:
 def main(args: Any):
     rs: np.random.RandomState = np.random.RandomState(args.seed)
     addresses: List[str] = get_tornado_cash_users(args.size, rs)
-    score_dists: Dict[str, List[float]] = get_tornado_scores(addresses)
+    score_dists: Dict[str, Dict[int, int]] = get_tornado_scores(addresses)
 
     out_file: str = os.path.join(args.data_dir, 'transaction_reveal_dist.json')
     to_json(score_dists, out_file)
