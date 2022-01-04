@@ -36,6 +36,8 @@ def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
 
 def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     scores: Dict[str, List[str]] = {}
+    
+    scores[DEPO_REUSE_HEUR] = []
     for name in NAMES: 
         scores[name] = []
 
