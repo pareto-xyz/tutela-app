@@ -53,6 +53,7 @@ def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     pbar.close()
 
     dist: Dict[str, Dict[int, int]] = {}
+    scores[DEPO_REUSE_HEUR] = dict(Counter(scores[DEPO_REUSE_HEUR]))
     for name in NAMES:
         dist[name] =  dict(Counter(scores[name]))
     return dist
