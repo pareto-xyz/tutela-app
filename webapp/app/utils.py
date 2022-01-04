@@ -410,6 +410,19 @@ def default_transaction_response() -> Dict[str, Any]:
                             TORN_MINE_HEUR: 0,
                         },
                     },
+                    'ranks': {
+                        'num_transactions': 0,
+                        'num_ethereum': {
+                            DEPO_REUSE_HEUR: 0, 
+                        },
+                        'num_tcash': {
+                            SAME_ADDR_HEUR: 0, 
+                            GAS_PRICE_HEUR: 0, 
+                            SAME_NUM_TX_HEUR: 0,
+                            LINKED_TX_HEUR: 0,
+                            TORN_MINE_HEUR: 0,
+                        },
+                    },
                 },
             },
             'transactions': [],

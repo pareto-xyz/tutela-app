@@ -4,11 +4,11 @@ import json
 import copy
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta 
 from typing import Dict, Optional, List, Any, Set
 
-from app import app, w3, ns, rds, known_addresses, tornado_pools
+from app import app, w3, ns, rds, known_addresses, tornado_pools, reveal_dists
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
     TornadoDeposit, TornadoWithdraw, Embedding, DepositTransaction
@@ -908,6 +908,8 @@ def search_transaction():
         },
     }
 
+    ranks: Dict[str, int] = get_relative_rank(stats)
+
     # --
     output['data']['query']['address'] = address
     output['data']['query']['start_date'] = start_date
@@ -915,6 +917,7 @@ def search_transaction():
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
     output['data']['query']['metadata']['stats'] = stats
+    output['data']['query']['metadata']['ranks'] = ranks
     output['data']['transactions'] = transactions
     output['success'] = 1
 
@@ -1017,3 +1020,7 @@ def make_weekly_plot():
 
     response: str = json.dumps(output)
     return Response(response=response)
+
+
+def get_relative_rank(my_stats: Dict[str, int]):
+    pass
