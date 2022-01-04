@@ -1,5 +1,6 @@
 import os
 import redis
+import pickle
 import pandas as pd
 from typing import Any, Dict
 from flask import Flask
@@ -53,5 +54,7 @@ known_addresses: pd.DataFrame = pd.read_csv(
 tornado_pools: pd.DataFrame = pd.read_csv(
     get_realpath('static/data/tornado.csv'))
 
+with open(get_realpath('static/data/transaction_reveal_dist.pickle'), 'rb') as fp:
+    reveal_dists: Dict[str, Dict[int, int]] = pickle.load(fp) 
 
 from app import views, models

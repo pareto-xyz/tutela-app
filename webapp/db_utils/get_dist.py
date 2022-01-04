@@ -13,7 +13,7 @@ from app.models import ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
                        TornMining, TornadoDeposit, DepositTransaction
 from app.utils import GAS_PRICE_HEUR, DEPO_REUSE_HEUR, SAME_NUM_TX_HEUR, \
                       SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR
-from src.utils.utils import to_json
+from src.utils.utils import to_json, to_pickle
 
 HEURISTICS: List[Any] = [ExactMatch, GasPrice, MultiDenom, 
                          LinkedTransaction, TornMining]
@@ -53,7 +53,7 @@ def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     pbar.close()
 
     dist: Dict[str, Dict[int, int]] = {}
-    scores[DEPO_REUSE_HEUR] = dict(Counter(scores[DEPO_REUSE_HEUR]))
+    dist[DEPO_REUSE_HEUR] = dict(Counter(scores[DEPO_REUSE_HEUR]))
     for name in NAMES:
         dist[name] =  dict(Counter(scores[name]))
     return dist
@@ -76,8 +76,8 @@ def main(args: Any):
     addresses: List[str] = get_tornado_cash_users(args.size, rs)
     score_dists: Dict[str, Dict[int, int]] = get_score_dist(addresses)
 
-    out_file: str = os.path.join(args.data_dir, 'transaction_reveal_dist.json')
-    to_json(score_dists, out_file)
+    out_file: str = os.path.join(args.data_dir, 'transaction_reveal_dist.pickle')
+    to_pickle(score_dists, out_file)
 
 
 if __name__ == "__main__":
