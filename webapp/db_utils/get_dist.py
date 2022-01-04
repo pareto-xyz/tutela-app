@@ -10,7 +10,7 @@ from tqdm import tqdm
 from collections import Counter
 from typing import Dict, List, Any
 from app.models import ExactMatch, GasPrice, MultiDenom, LinkedTransaction, \
-                       TornMining, TornadoDeposit
+                       TornMining, TornadoDeposit, DepositTransaction
 from app.utils import GAS_PRICE_HEUR, DEPO_REUSE_HEUR, SAME_NUM_TX_HEUR, \
                       SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR
 from src.utils.utils import to_json
@@ -34,14 +34,16 @@ def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
     return addresses.tolist()
 
 
-def get_tornado_scores(addresses: List[str]) -> Dict[str, Dict[int, int]]:
+def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     scores: Dict[str, List[str]] = {}
     for name in NAMES: 
         scores[name] = []
 
-    print('processing tcash users...')
+    print('processing users...')
     pbar = tqdm(total=len(addresses))
     for address in addresses:
+        num: int = find_num_dar_matches(address)
+        scores[DEPO_REUSE_HEUR].append(num)
         for name, heuristic in zip(NAMES, HEURISTICS):
             num: int = find_num_tcash_matches(address, heuristic)
             scores[name].append(num)
@@ -60,10 +62,16 @@ def find_num_tcash_matches(address: str, Heuristic: Any) -> int:
     return len(rows)
 
 
+def find_num_dar_matches(address: str) -> int:
+    rows: List[DepositTransaction] = \
+        DepositTransaction.query.filter(DepositTransaction.address == address).all()
+    return len(rows)
+
+
 def main(args: Any):
     rs: np.random.RandomState = np.random.RandomState(args.seed)
     addresses: List[str] = get_tornado_cash_users(args.size, rs)
-    score_dists: Dict[str, Dict[int, int]] = get_tornado_scores(addresses)
+    score_dists: Dict[str, Dict[int, int]] = get_score_dist(addresses)
 
     out_file: str = os.path.join(args.data_dir, 'transaction_reveal_dist.json')
     to_json(score_dists, out_file)
