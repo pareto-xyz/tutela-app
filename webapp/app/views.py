@@ -908,7 +908,7 @@ def search_transaction():
         },
     }
 
-    ranks: Dict[str, Dict[str, float]] = get_relative_rank(stats)
+    ranks: Dict[str, Dict[str, int]] = get_relative_rank(stats)
 
     # --
     output['data']['query']['address'] = address
@@ -1022,23 +1022,23 @@ def make_weekly_plot():
     return Response(response=response)
 
 
-def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, float]]:
-    ranks: Dict[str, Dict[str, float]] = {
-        'overall': None,  # todo
+def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, int]]:
+    ranks: Dict[str, Dict[str, int]] = {
+        'overall': 0,
         'ethereum': {},
         'tcash': {},
     }
     overall: List[float] = []
     for heuristic in my_stats['num_ethereum']:
         rank: float = compute_rank(my_stats['num_ethereum'][heuristic], reveal_dists[heuristic])
-        ranks['ethereum'][heuristic] = round(rank, 3)
+        ranks['ethereum'][heuristic] = int(100 * rank)
         overall.append(rank)
     for heuristic in my_stats['num_tcash']:
         rank: float = compute_rank(my_stats['num_tcash'][heuristic], reveal_dists[heuristic])
-        ranks['tcash'][heuristic] = round(rank, 3)
+        ranks['tcash'][heuristic] = int(100 * rank)
         overall.append(rank)
 
-    overall: float = round(float(np.mean(overall)), 3)
+    overall: int = int(100 * float(np.mean(overall)))
     ranks['overall'] = overall
 
     return ranks
