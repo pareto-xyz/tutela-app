@@ -1030,11 +1030,11 @@ def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, float]]:
     }
     overall: List[float] = []
     for heuristic in my_stats['num_ethereum']:
-        rank: float = compute_rank(my_stats[heuristic], reveal_dists[heuristic])
+        rank: float = compute_rank(my_stats['num_ethereum'][heuristic], reveal_dists[heuristic])
         ranks['ethereum'][heuristic] = round(rank, 3)
         overall.append(rank)
     for heuristic in my_stats['num_tcash']:
-        rank: float = compute_rank(my_stats[heuristic], reveal_dists[heuristic])
+        rank: float = compute_rank(my_stats['num_tcash'][heuristic], reveal_dists[heuristic])
         ranks['tcash'][heuristic] = round(rank, 3)
         overall.append(rank)
 
