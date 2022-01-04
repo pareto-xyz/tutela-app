@@ -95,7 +95,7 @@ function TransactionPage({ params, aliases }) {
                     <QueryInfo data={queryInfo} aliases={aliases} />
                     <RevealTimeline addr={params.get('address')} aliases={aliases}/>
                 </div>}
-                <AccordionOfResults
+                {!firstView && <AccordionOfResults
                     myClassName="linked-adress"
                     sectionHeader={TransactionsListHeader}
                     rowTitle='transaction'
@@ -103,7 +103,7 @@ function TransactionPage({ params, aliases }) {
                     results={transactions}
                     aliases={aliases}
                     noDataComponent={NoReveals}
-                />
+                /> }
 
             </div>
 
