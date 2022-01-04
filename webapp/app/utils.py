@@ -2,6 +2,8 @@ import json
 import numpy as np
 import pandas as pd
 from copy import copy
+from datetime import date
+from datetime import datetime
 from typing import Dict, Any, List, Tuple, Optional, Union, Set
 from sqlalchemy import desc, cast, Float
 from app.models import Address, TornadoPool
@@ -54,6 +56,11 @@ def safe_bool(x, default=False):
         return bool(x)
     except:
         return default
+
+
+def get_today_date_str():
+    today = date.today()
+    return today.strftime('%m/%d/%Y')
 
 
 def get_order_command(s, descending):
@@ -387,6 +394,8 @@ def default_transaction_response() -> Dict[str, Any]:
         'data': {
             'query': {
                 'address': '',
+                'start_date': '',
+                'end_date': '',
                 'metadata': {
                     'stats': {
                         'num_transactions': 0,
@@ -431,6 +440,23 @@ def default_transaction_response() -> Dict[str, Any]:
     return output
 
 
+def default_plot_response() -> Dict[str, Any]:
+    output: Dict[str, Any] = {
+        'query': {
+            'window': '1yr', 
+            'start_date': '',
+            'end_date': '',
+            'metadata': {
+                'num_points': 0,
+                'today': get_today_date_str(),
+            }
+        },
+        'data': [],
+        'success': 1,
+    }
+    return output
+
+
 def is_valid_address(address: str) -> bool:
     address: str = address.lower().strip()
 
@@ -447,6 +473,48 @@ def is_valid_address(address: str) -> bool:
     return True
 
 
+class PlotRequestChecker:
+
+    def __init__(
+        self,
+        request: Any,
+        default_window: str = '1yr',
+    ):
+        self._request: Any = request
+        self._default_window: str = default_window
+
+        self._params: Dict[str, Any] = {}
+
+    def check(self):
+        return self._check_address() and self._check_window()
+
+    def _check_address(self) -> bool:
+        """
+        Check that the first two chars are 0x and that the string
+        is 42 chars long. Check that there are no spaces.
+        """
+        address: str = self._request.args.get('address', '')
+        is_valid: bool = is_valid_address(address)
+        if is_valid:  # if not valid, don't save this
+            self._params['address'] = address
+        return is_valid
+
+    def _check_window(self) -> bool:
+        default: str = self._default_window
+        window: Union[str, str] = self._request.args.get('window', default)
+        if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:
+            window = '1yr'
+        self._params['window'] = window
+        return True
+
+    def get(self, k: str) -> Optional[Any]:
+        return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = copy(self._params)
+        return json.dumps(_repr, sort_keys=True)
+
+
 class TransactionRequestChecker:
 
     def __init__(
@@ -454,15 +522,20 @@ class TransactionRequestChecker:
         request: Any,
         default_page: int = 0,
         default_limit: int = 50,
+        default_start_date: str = '01/01/2013',  # pick a date pre-ethereum
+        default_end_date: str = get_today_date_str(),
     ):
         self._request: Any = request
         self._default_page: int = default_page
         self._default_limit: int = default_limit
+        self._default_start_date: str = default_start_date
+        self._default_end_date: str = default_end_date
 
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page() and self._check_limit()
+        return (self._check_address() and self._check_page() and self._check_limit() and
+                self._check_start_date() and self._check_end_date())
 
     def _check_address(self) -> bool:
         """
@@ -495,11 +568,34 @@ class TransactionRequestChecker:
         self._params['limit'] = limit
         return True
 
+    def _check_start_date(self) -> bool:
+        default: int = self._default_start_date
+        start_date = self._request.args.get('start_date', default)
+        try:
+            start_date_obj = datetime.strptime(start_date, '%m/%d/%Y')
+            self._params['start_date'] = start_date
+            self._params['start_date_obj'] = start_date_obj
+            return True
+        except:
+            return False
+
+    def _check_end_date(self) -> bool:
+        default: int = self._default_end_date
+        end_date = self._request.args.get('end_date', default)
+        try:
+            end_date_obj = datetime.strptime(end_date, '%m/%d/%Y')
+            self._params['end_date'] = end_date
+            self._params['end_date_obj'] = end_date_obj
+            return True
+        except:
+            return False
+
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
 
     def to_str(self):
         _repr: Dict[str, Any] = copy(self._params)
+        del _repr['start_date_obj'], _repr['end_date_obj']
         return json.dumps(_repr, sort_keys=True)
 
 

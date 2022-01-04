@@ -15,10 +15,12 @@ from app.models import \
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
-    heuristic_to_str, is_valid_address, \
+    heuristic_to_str, is_valid_address, get_today_date_str, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
-    AddressRequestChecker, TornadoPoolRequestChecker, TransactionRequestChecker, \
-    default_address_response, default_tornado_response, default_transaction_response, \
+    AddressRequestChecker, TornadoPoolRequestChecker, \
+    TransactionRequestChecker, PlotRequestChecker, \
+    default_address_response, default_tornado_response, \
+    default_transaction_response, default_plot_response, \
     NAME_COL, ENTITY_COL, CONF_COL, EOA, DEPOSIT, EXCHANGE, NODE, \
     GAS_PRICE_HEUR, DEPO_REUSE_HEUR, DIFF2VEC_HEUR, SAME_NUM_TX_HEUR, \
     SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR, DIFF2VEC_HEUR
@@ -29,7 +31,6 @@ from flask import render_template
 from sqlalchemy import or_
 
 from app.utils import get_known_attrs, get_display_aliases
-from app.utils import heuristic_to_int
 
 PAGE_LIMIT = 50
 HARD_MAX: int = 1000
@@ -775,50 +776,19 @@ def transaction():
     return render_template('transaction.html')
 
 
-@app.route('/search/transaction', methods=['GET'])
-def search_transaction():
-    address: str = request.args.get('address', '')
-    address: str = resolve_address(address, ns)
-    address: str = address.lower()
-
-    if not is_valid_address(address):
-        return default_transaction_response()
-
-    request.args = dict(request.args)
-    request.args['address'] = address
-
-    checker: TransactionRequestChecker = TransactionRequestChecker(
-        request,
-        default_page = 0,
-        default_limit = PAGE_LIMIT,
-    )
-    is_valid_request: bool = checker.check()
-    output: Dict[str, Any] = default_transaction_response()
-
-    if not is_valid_request:
-        return Response(output)
-
-    address: str = checker.get('address').lower()
-    page: int = checker.get('page')
-    size: int = checker.get('limit')
-
-    request_repr: str = checker.to_str()
-
-    if rds.exists(request_repr):
-        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
-        return Response(response=response)
-
-    output['data']['query']['address'] = address
-    output['data']['metadata']['page'] = page
-    output['data']['metadata']['limit'] = size
-
-    # --
-
+def _search_transaction(
+    address: str, 
+    start_date: datetime, 
+    end_date: datetime,
+) -> Dict[str, List[Dict[str, Any]]]:
+    
     def find_tcash_matches(address: str, Heuristic: Any, identifier: int
     ) -> List[Dict[str, Any]]:
-
-        rows: List[Heuristic] = \
-            Heuristic.query.filter(Heuristic.address == address).all()
+        rows: List[Heuristic] = Heuristic.query.filter(
+            Heuristic.address == address,
+            Heuristic.block_ts >= start_date,
+            Heuristic.block_ts < end_date,
+        ).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
              'timestamp': row.block_ts, 'heuristic': identifier,
@@ -826,8 +796,11 @@ def search_transaction():
         return rows
 
     def find_dar_matches(address: str) -> List[Dict[str, Any]]:
-        rows: List[DepositTransaction] = \
-            DepositTransaction.query.filter(DepositTransaction.address == address).all()
+        rows: List[DepositTransaction] = DepositTransaction.query.filter(
+            DepositTransaction.address == address,
+            DepositTransaction.block_ts >= start_date,
+            DepositTransaction.block_ts < end_date,
+        ).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
              'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,
@@ -850,14 +823,6 @@ def search_transaction():
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
         linked_tx_matches + torn_mine_matches
 
-    output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
-    output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][GAS_PRICE_HEUR] += len(gas_price_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][SAME_NUM_TX_HEUR] += len(same_num_tx_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][LINKED_TX_HEUR] += len(linked_tx_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][TORN_MINE_HEUR] += len(torn_mine_matches)
-
     # sort by timestamp
     transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
 
@@ -871,6 +836,85 @@ def search_transaction():
     # remove datetime objects
     transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
 
+    output: Dict[str, List[Dict[str, Any]]] = {
+        'transactions': transactions,
+        'dar_matches': dar_matches,
+        'same_addr_matches': same_addr_matches,
+        'gas_price_matches': gas_price_matches,
+        'same_num_tx_matches': same_num_tx_matches,
+        'linked_tx_matches': linked_tx_matches,
+        'torn_mine_matches': torn_mine_matches,
+    }
+    return output
+
+
+@app.route('/search/transaction', methods=['GET'])
+def search_transaction():
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
+    if not is_valid_address(address):
+        return default_transaction_response()
+
+    request.args = dict(request.args)
+    request.args['address'] = address
+
+    checker: TransactionRequestChecker = TransactionRequestChecker(
+        request,
+        default_page = 0,
+        default_limit = PAGE_LIMIT,
+        default_start_date='01/01/2013',
+        default_end_date=get_today_date_str(),
+    )
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_transaction_response()
+
+    if not is_valid_request:
+        return Response(output)
+
+    address: str = checker.get('address').lower()
+
+    start_date: str = checker.get('start_date')
+    start_date_obj: datetime = checker.get('start_date_obj')
+
+    end_date: str = checker.get('end_date')
+    end_date_obj: datetime = checker.get('end_date_obj')
+
+    page: int = checker.get('page')
+    size: int = checker.get('limit')
+
+    request_repr: str = checker.to_str()
+
+    if rds.exists(request_repr):
+        response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
+        return Response(response=response)
+
+    search_output: Dict[str, List[Dict[str, Any]]] = \
+        _search_transaction(address, start_date_obj, end_date_obj)
+    transactions: List[Dict[str, Any]] = search_output['transactions']
+
+    stats: Dict[str, int] = {
+        'num_transactions': len(transactions),
+        'num_ethereum': {
+            DEPO_REUSE_HEUR: len(search_output['dar_matches']),
+        },
+        'num_tcash': {
+            SAME_ADDR_HEUR: len(search_output['same_addr_matches']), 
+            GAS_PRICE_HEUR: len(search_output['gas_price_matches']), 
+            SAME_NUM_TX_HEUR: len(search_output['same_num_tx_matches']),
+            LINKED_TX_HEUR: len(search_output['linked_tx_matches']),
+            TORN_MINE_HEUR: len(search_output['torn_mine_matches']),
+        },
+    }
+
+    # --
+    output['data']['query']['address'] = address
+    output['data']['query']['start_date'] = start_date
+    output['data']['query']['end_date'] = end_date
+    output['data']['metadata']['page'] = page
+    output['data']['metadata']['limit'] = size
+    output['data']['query']['metadata']['stats'] = stats
     output['data']['transactions'] = transactions
     output['success'] = 1
 
@@ -887,14 +931,27 @@ def make_weekly_plot():
     We treat this as a seperate endpoint to allow for efficient repeated 
     calls to this w/o requerying `/search/transaction`.
     """
-    transactions: str = request.args.get('transactions', '[]')
-    transactions: List[Dict[str, Any]] = json.loads(transactions)
-    
+    address: str = request.args.get('address', '')
+    address: str = resolve_address(address, ns)
+    address: str = address.lower()
+
+    request.args = dict(request.args)
+    request.args['address'] = address
+
+    if not is_valid_address(address):
+        return default_plot_response()
+
     window: str = request.args.get('window', '1yr')
-    if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:  window = '1yr'
+
+    checker: PlotRequestChecker = PlotRequestChecker(request, default_window=window)
+    is_valid_request: bool = checker.check()
+    output: Dict[str, Any] = default_plot_response()
+
+    if not is_valid_request:
+        return Response(output)
 
     today: datetime = datetime.today()
-   
+
     if window == '1mth':
         delta: relativedelta = relativedelta(months=1)
     elif window == '3mth':
@@ -910,9 +967,13 @@ def make_weekly_plot():
     else:
         raise Exception(f'Window {window} not supported.')
 
-    start: datetime = today - delta
+    start_date_obj: datetime = today - delta
+    search_output: Dict[str, List[Dict[str, Any]]] = \
+        _search_transaction(address, start_date_obj, today)
+    transactions: List[Dict[str, Any]] = search_output['transactions']
+
     data: List[Dict[str, Any]] = []
-    cur_start: datetime = copy.copy(start)
+    cur_start: datetime = copy.copy(start_date_obj)
     cur_end: datetime = cur_start + relativedelta(weeks=1)
     count: int = 0
 
@@ -946,16 +1007,13 @@ def make_weekly_plot():
         cur_end: datetime = cur_start + relativedelta(weeks=1)
         count += 1
 
-    output: Dict[str, Any] = {
-        'query': {
-            'window': window, 
-            'metadata': {
-                'num_points': len(data),
-                'today': today.strftime('%m/%d/%Y'),
-            }
-        },
-        'data': data,
-        'success': 1,
-    }
+    output['query']['window'] = window
+    output['query']['start_time'] = start_date_obj.strftime('%m/%d/%Y')
+    output['query']['end_time'] = today.strftime('%m/%d/%Y')
+    output['query']['metadata']['num_points'] = len(data)
+    output['query']['metadata']['today'] = today.strftime('%m/%d/%Y')
+    output['data'] = data
+    output['success'] = 1
+
     response: str = json.dumps(output)
     return Response(response=response)
