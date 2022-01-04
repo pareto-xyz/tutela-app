@@ -801,8 +801,12 @@ def search_transaction():
         return Response(output)
 
     address: str = checker.get('address').lower()
+
     start_date: str = checker.get('start_date')
+    start_date_obj: datetime = checker.get('start_date_obj')
+
     end_date: str = checker.get('end_date')
+    end_date_obj: datetime = checker.get('end_date_obj')
 
     page: int = checker.get('page')
     size: int = checker.get('limit')
@@ -816,6 +820,7 @@ def search_transaction():
     output['data']['query']['address'] = address
     output['data']['query']['start_date'] = start_date
     output['data']['query']['end_date'] = end_date
+
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
 
@@ -823,9 +828,11 @@ def search_transaction():
 
     def find_tcash_matches(address: str, Heuristic: Any, identifier: int
     ) -> List[Dict[str, Any]]:
-
-        rows: List[Heuristic] = \
-            Heuristic.query.filter(Heuristic.address == address).all()
+        rows: List[Heuristic] = Heuristic.query.filter(
+            Heuristic.address == address,
+            Heuristic.block_ts >= start_date_obj,
+            Heuristic.block_ts < end_date_obj,
+        ).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
              'timestamp': row.block_ts, 'heuristic': identifier,
@@ -833,8 +840,11 @@ def search_transaction():
         return rows
 
     def find_dar_matches(address: str) -> List[Dict[str, Any]]:
-        rows: List[DepositTransaction] = \
-            DepositTransaction.query.filter(DepositTransaction.address == address).all()
+        rows: List[DepositTransaction] = DepositTransaction.query.filter(
+            DepositTransaction.address == address,
+            DepositTransaction.block_ts >= start_date_obj,
+            DepositTransaction.block_ts < end_date_obj,
+        ).all()
         rows: List[Dict[str, Any]] = [
             {'transaction': row.transaction, 'block': row.block_number, 
              'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,

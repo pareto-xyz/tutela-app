@@ -513,8 +513,9 @@ class TransactionRequestChecker:
         default: int = self._default_start_date
         start_date = self._request.args.get('start_date', default)
         try:
-            datetime.strptime(start_date, '%m/%d/%Y')
+            start_date_obj = datetime.strptime(start_date, '%m/%d/%Y')
             self._params['start_date'] = start_date
+            self._params['start_date_obj'] = start_date_obj
             return True
         except:
             return False
@@ -523,8 +524,9 @@ class TransactionRequestChecker:
         default: int = self._default_end_date
         end_date = self._request.args.get('end_date', default)
         try:
-            datetime.strptime(end_date, '%m/%d/%Y')
+            end_date_obj = datetime.strptime(end_date, '%m/%d/%Y')
             self._params['end_date'] = end_date
+            self._params['start_date_obj'] = end_date_obj
             return True
         except:
             return False
