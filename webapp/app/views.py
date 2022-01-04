@@ -836,15 +836,15 @@ def search_transaction():
 
     dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
     same_addr_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR))
+        find_tcash_matches(address, ExactMatch, SAME_ADDR_HEUR)
     gas_price_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR))
+        find_tcash_matches(address, GasPrice, GAS_PRICE_HEUR)
     same_num_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR))
+        find_tcash_matches(address, MultiDenom, SAME_NUM_TX_HEUR)
     linked_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR))
+        find_tcash_matches(address, LinkedTransaction, LINKED_TX_HEUR)
     torn_mine_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR))
+        find_tcash_matches(address, TornMining, TORN_MINE_HEUR)
 
     transactions: List[Dict[str, Any]] = \
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
