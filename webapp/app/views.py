@@ -894,7 +894,7 @@ def search_transaction():
         _search_transaction(address, start_date_obj, end_date_obj)
     transactions: List[Dict[str, Any]] = search_output['transactions']
 
-    stats: Dict[str, int] = {
+    stats: Dict[str, Dict[str, int]] = {
         'num_transactions': len(transactions),
         'num_ethereum': {
             DEPO_REUSE_HEUR: len(search_output['dar_matches']),
@@ -908,7 +908,7 @@ def search_transaction():
         },
     }
 
-    ranks: Dict[str, int] = get_relative_rank(stats)
+    ranks: Dict[str, Dict[str, float]] = get_relative_rank(stats)
 
     # --
     output['data']['query']['address'] = address
@@ -1022,5 +1022,34 @@ def make_weekly_plot():
     return Response(response=response)
 
 
-def get_relative_rank(my_stats: Dict[str, int]):
-    pass
+def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, float]]:
+    ranks: Dict[str, Dict[str, float]] = {
+        'overall': None,  # todo
+        'ethereum': {},
+        'tcash': {},
+    }
+    overall: List[float] = []
+    for heuristic in my_stats['num_ethereum']:
+        rank: float = compute_rank(my_stats[heuristic], reveal_dists[heuristic])
+        ranks['ethereum'][heuristic] = round(rank, 3)
+        overall.append(rank)
+    for heuristic in my_stats['num_tcash']:
+        rank: float = compute_rank(my_stats[heuristic], reveal_dists[heuristic])
+        ranks['tcash'][heuristic] = round(rank, 3)
+        overall.append(rank)
+
+    overall: float = round(float(np.mean(overall)), 3)
+    ranks['overall'] = overall
+
+    return ranks
+
+
+def compute_rank(count: int, dist: Dict[int, int]) -> float:
+    total: int = int(sum(dist.values()))
+    bins: List[int] = sorted(list(dist.keys()))
+    vals: List[int] = [dist[bin] for bin in bins]
+    bins: np.array = np.array(bins)
+    vals: np.array = np.array(vals)
+    cdf: int = int(np.sum(vals[bins < count]))
+    prob: float = cdf / float(total)
+    return prob

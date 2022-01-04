@@ -411,11 +411,11 @@ def default_transaction_response() -> Dict[str, Any]:
                         },
                     },
                     'ranks': {
-                        'num_transactions': 0,
-                        'num_ethereum': {
+                        'overall': 0,
+                        'ethereum': {
                             DEPO_REUSE_HEUR: 0, 
                         },
-                        'num_tcash': {
+                        'tcash': {
                             SAME_ADDR_HEUR: 0, 
                             GAS_PRICE_HEUR: 0, 
                             SAME_NUM_TX_HEUR: 0,
