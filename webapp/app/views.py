@@ -775,6 +775,78 @@ def transaction():
     return render_template('transaction.html')
 
 
+def _search_transaction(
+    address: str, 
+    start_date: datetime, 
+    end_date: datetime,
+) -> Dict[str, List[Dict[str, Any]]]:
+    
+    def find_tcash_matches(address: str, Heuristic: Any, identifier: int
+    ) -> List[Dict[str, Any]]:
+        rows: List[Heuristic] = Heuristic.query.filter(
+            Heuristic.address == address,
+            Heuristic.block_ts >= start_date,
+            Heuristic.block_ts < end_date,
+        ).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': identifier,
+             'metadata': {}} for row in rows]
+        return rows
+
+    def find_dar_matches(address: str) -> List[Dict[str, Any]]:
+        rows: List[DepositTransaction] = DepositTransaction.query.filter(
+            DepositTransaction.address == address,
+            DepositTransaction.block_ts >= start_date,
+            DepositTransaction.block_ts < end_date,
+        ).all()
+        rows: List[Dict[str, Any]] = [
+            {'transaction': row.transaction, 'block': row.block_number, 
+             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,
+             'metadata': {'deposit': row.deposit}} for row in rows]
+        return rows
+
+    dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
+    same_addr_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, ExactMatch, SAME_ADDR_HEUR)
+    gas_price_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, GasPrice, GAS_PRICE_HEUR)
+    same_num_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, MultiDenom, SAME_NUM_TX_HEUR)
+    linked_tx_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, LinkedTransaction, LINKED_TX_HEUR)
+    torn_mine_matches: List[Dict[str, Any]] = \
+        find_tcash_matches(address, TornMining, TORN_MINE_HEUR)
+
+    transactions: List[Dict[str, Any]] = \
+        dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
+        linked_tx_matches + torn_mine_matches
+
+    # sort by timestamp
+    transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
+
+    def tx_datetime_to_str(raw_transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        transactions: List[Dict[str, Any]] = []
+        for tx in raw_transactions:
+            tx['timestamp'] = tx['timestamp'].strftime('%m/%d/%Y')
+            transactions.append(tx)
+        return transactions
+
+    # remove datetime objects
+    transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
+
+    output: Dict[str, List[Dict[str, Any]]] = {
+        'transactions': transactions,
+        'dar_matches': dar_matches,
+        'same_addr_matches': same_addr_matches,
+        'gas_price_matches': gas_price_matches,
+        'same_num_tx_matches': same_num_tx_matches,
+        'linked_tx_matches': linked_tx_matches,
+        'torn_mine_matches': torn_mine_matches,
+    }
+    return output
+
+
 @app.route('/search/transaction', methods=['GET'])
 def search_transaction():
     address: str = request.args.get('address', '')
@@ -817,77 +889,31 @@ def search_transaction():
         response: str = bz2.decompress(rds.get(request_repr)).decode('utf-8')
         return Response(response=response)
 
+    search_output: Dict[str, List[Dict[str, Any]]] = \
+        _search_transaction(address, start_date_obj, end_date_obj)
+    transactions: List[Dict[str, Any]] = search_output['transactions']
+
+    stats: Dict[str, int] = {
+        'num_transactions': len(transactions),
+        'num_ethereum': {
+            DEPO_REUSE_HEUR: len(search_output['dar_matches']),
+        },
+        'num_tcash': {
+            SAME_ADDR_HEUR: len(search_output['same_addr_matches']), 
+            GAS_PRICE_HEUR: len(search_output['gas_price_matches']), 
+            SAME_NUM_TX_HEUR: len(search_output['same_num_tx_matches']),
+            LINKED_TX_HEUR: len(search_output['linked_tx_matches']),
+            TORN_MINE_HEUR: len(search_output['torn_mine_matches']),
+        },
+    }
+
+    # --
     output['data']['query']['address'] = address
     output['data']['query']['start_date'] = start_date
     output['data']['query']['end_date'] = end_date
-
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
-
-    # --
-
-    def find_tcash_matches(address: str, Heuristic: Any, identifier: int
-    ) -> List[Dict[str, Any]]:
-        rows: List[Heuristic] = Heuristic.query.filter(
-            Heuristic.address == address,
-            Heuristic.block_ts >= start_date_obj,
-            Heuristic.block_ts < end_date_obj,
-        ).all()
-        rows: List[Dict[str, Any]] = [
-            {'transaction': row.transaction, 'block': row.block_number, 
-             'timestamp': row.block_ts, 'heuristic': identifier,
-             'metadata': {}} for row in rows]
-        return rows
-
-    def find_dar_matches(address: str) -> List[Dict[str, Any]]:
-        rows: List[DepositTransaction] = DepositTransaction.query.filter(
-            DepositTransaction.address == address,
-            DepositTransaction.block_ts >= start_date_obj,
-            DepositTransaction.block_ts < end_date_obj,
-        ).all()
-        rows: List[Dict[str, Any]] = [
-            {'transaction': row.transaction, 'block': row.block_number, 
-             'timestamp': row.block_ts, 'heuristic': DEPO_REUSE_HEUR,
-             'metadata': {'deposit': row.deposit}} for row in rows]
-        return rows
-
-    dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
-    same_addr_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, ExactMatch, SAME_ADDR_HEUR)
-    gas_price_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, GasPrice, GAS_PRICE_HEUR)
-    same_num_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, MultiDenom, SAME_NUM_TX_HEUR)
-    linked_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, LinkedTransaction, LINKED_TX_HEUR)
-    torn_mine_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, TornMining, TORN_MINE_HEUR)
-
-    transactions: List[Dict[str, Any]] = \
-        dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
-        linked_tx_matches + torn_mine_matches
-
-    output['data']['query']['metadata']['stats']['num_transactions'] += len(transactions)
-    output['data']['query']['metadata']['stats']['num_ethereum'][DEPO_REUSE_HEUR] += len(dar_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][SAME_ADDR_HEUR] += len(same_addr_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][GAS_PRICE_HEUR] += len(gas_price_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][SAME_NUM_TX_HEUR] += len(same_num_tx_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][LINKED_TX_HEUR] += len(linked_tx_matches)
-    output['data']['query']['metadata']['stats']['num_tcash'][TORN_MINE_HEUR] += len(torn_mine_matches)
-
-    # sort by timestamp
-    transactions: List[Dict[str, Any]] = sorted(transactions, key = lambda x: x['timestamp'])
-
-    def tx_datetime_to_str(raw_transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        transactions: List[Dict[str, Any]] = []
-        for tx in raw_transactions:
-            tx['timestamp'] = tx['timestamp'].strftime('%m/%d/%Y')
-            transactions.append(tx)
-        return transactions
-
-    # remove datetime objects
-    transactions: List[Dict[str, Any]] = tx_datetime_to_str(transactions)
-
+    output['data']['query']['metadata']['stats'] = stats
     output['data']['transactions'] = transactions
     output['success'] = 1
 
