@@ -4,11 +4,11 @@ import json
 import copy
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta 
 from typing import Dict, Optional, List, Any, Set
 
-from app import app, w3, ns, rds, known_addresses, tornado_pools
+from app import app, w3, ns, rds, known_addresses, tornado_pools, reveal_dists
 from app.models import \
     Address, ExactMatch, GasPrice, MultiDenom, LinkedTransaction, TornMining, \
     TornadoDeposit, TornadoWithdraw, Embedding, DepositTransaction
@@ -894,7 +894,7 @@ def search_transaction():
         _search_transaction(address, start_date_obj, end_date_obj)
     transactions: List[Dict[str, Any]] = search_output['transactions']
 
-    stats: Dict[str, int] = {
+    stats: Dict[str, Dict[str, int]] = {
         'num_transactions': len(transactions),
         'num_ethereum': {
             DEPO_REUSE_HEUR: len(search_output['dar_matches']),
@@ -908,6 +908,8 @@ def search_transaction():
         },
     }
 
+    ranks: Dict[str, Dict[str, int]] = get_relative_rank(stats)
+
     # --
     output['data']['query']['address'] = address
     output['data']['query']['start_date'] = start_date
@@ -915,6 +917,7 @@ def search_transaction():
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
     output['data']['query']['metadata']['stats'] = stats
+    output['data']['query']['metadata']['ranks'] = ranks
     output['data']['transactions'] = transactions
     output['success'] = 1
 
@@ -1017,3 +1020,36 @@ def make_weekly_plot():
 
     response: str = json.dumps(output)
     return Response(response=response)
+
+
+def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, int]]:
+    ranks: Dict[str, Dict[str, int]] = {
+        'overall': 0,
+        'ethereum': {},
+        'tcash': {},
+    }
+    overall: List[float] = []
+    for heuristic in my_stats['num_ethereum']:
+        rank: float = compute_rank(my_stats['num_ethereum'][heuristic], reveal_dists[heuristic])
+        ranks['ethereum'][heuristic] = int(100 * rank)
+        overall.append(rank)
+    for heuristic in my_stats['num_tcash']:
+        rank: float = compute_rank(my_stats['num_tcash'][heuristic], reveal_dists[heuristic])
+        ranks['tcash'][heuristic] = int(100 * rank)
+        overall.append(rank)
+
+    overall: int = int(100 * float(np.mean(overall)))
+    ranks['overall'] = overall
+
+    return ranks
+
+
+def compute_rank(count: int, dist: Dict[int, int]) -> float:
+    total: int = int(sum(dist.values()))
+    bins: List[int] = sorted(list(dist.keys()))
+    vals: List[int] = [dist[bin] for bin in bins]
+    bins: np.array = np.array(bins)
+    vals: np.array = np.array(vals)
+    cdf: int = int(np.sum(vals[bins < count]))
+    prob: float = cdf / float(total)
+    return prob
