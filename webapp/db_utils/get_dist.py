@@ -21,6 +21,7 @@ NAMES: List[Any] = [SAME_ADDR_HEUR, GAS_PRICE_HEUR, SAME_NUM_TX_HEUR,
 
 
 def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
+    print('sampling tcash users...')
     rows: List[TornadoDeposit] = TornadoDeposit.query.all()
     addresses: List[str] = [row.from_address for row in rows]
     addresses: np.array = np.array(addresses)
@@ -37,7 +38,7 @@ def get_tornado_scores(addresses: List[str]) -> Dict[str, List[float]]:
     for name in NAMES: 
         scores[name] = []
 
-    print('sampling tcash users...')
+    print('processing tcash users...')
     pbar = tqdm(total=len(addresses))
     for address in addresses:
         for name, heuristic in zip(NAMES, HEURISTICS):
