@@ -15,7 +15,7 @@ from app.models import \
 from app.utils import \
     get_anonymity_score, get_order_command, \
     entity_to_int, entity_to_str, to_dict, \
-    heuristic_to_str, is_valid_address, \
+    heuristic_to_str, is_valid_address, get_today_date_str, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
     AddressRequestChecker, TornadoPoolRequestChecker, TransactionRequestChecker, \
     default_address_response, default_tornado_response, default_transaction_response, \
@@ -791,6 +791,8 @@ def search_transaction():
         request,
         default_page = 0,
         default_limit = PAGE_LIMIT,
+        default_start_date='01/01/2013',
+        default_start_date=get_today_date_str(),
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_transaction_response()
@@ -799,6 +801,9 @@ def search_transaction():
         return Response(output)
 
     address: str = checker.get('address').lower()
+    start_date: str = checker.get('start_date')
+    end_date: str = checker.get('end_date')
+
     page: int = checker.get('page')
     size: int = checker.get('limit')
 
@@ -809,6 +814,8 @@ def search_transaction():
         return Response(response=response)
 
     output['data']['query']['address'] = address
+    output['data']['query']['start_date'] = start_date
+    output['data']['query']['end_date'] = end_date
     output['data']['metadata']['page'] = page
     output['data']['metadata']['limit'] = size
 

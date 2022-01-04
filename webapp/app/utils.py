@@ -2,6 +2,8 @@ import json
 import numpy as np
 import pandas as pd
 from copy import copy
+from datetime import date
+from datetime import datetime
 from typing import Dict, Any, List, Tuple, Optional, Union, Set
 from sqlalchemy import desc, cast, Float
 from app.models import Address, TornadoPool
@@ -54,6 +56,11 @@ def safe_bool(x, default=False):
         return bool(x)
     except:
         return default
+
+
+def get_today_date_str():
+    today = date.today()
+    return today.strftime('%m/%d/%Y')
 
 
 def get_order_command(s, descending):
@@ -387,6 +394,8 @@ def default_transaction_response() -> Dict[str, Any]:
         'data': {
             'query': {
                 'address': '',
+                'start_date': '',
+                'end_date': '',
                 'metadata': {
                     'stats': {
                         'num_transactions': 0,
@@ -454,15 +463,20 @@ class TransactionRequestChecker:
         request: Any,
         default_page: int = 0,
         default_limit: int = 50,
+        default_start_date: str = '01/01/2013',  # pick a date pre-ethereum
+        default_end_date: str = get_today_date_str(),
     ):
         self._request: Any = request
         self._default_page: int = default_page
         self._default_limit: int = default_limit
+        self._default_start_date: str = default_start_date
+        self._default_end_date: str = default_end_date
 
         self._params: Dict[str, Any] = {}
 
     def check(self):
-        return self._check_address() and self._check_page() and self._check_limit()
+        return (self._check_address() and self._check_page() and self._check_limit() and
+                self._check_start_date() and self._check_end_date())
 
     def _check_address(self) -> bool:
         """
@@ -494,6 +508,26 @@ class TransactionRequestChecker:
         limit: int = min(max(limit, 1), default)  # at least 1
         self._params['limit'] = limit
         return True
+
+    def _check_start_date(self) -> bool:
+        default: int = self._default_start_date
+        start_date = self._request.args.get('start_date', default)
+        try:
+            datetime.strptime(start_date, '%m/%d/%Y')
+            self._params['start_date'] = start_date
+            return True
+        except:
+            return False
+
+    def _check_end_date(self) -> bool:
+        default: int = self._default_end_date
+        end_date = self._request.args.get('end_date', default)
+        try:
+            datetime.strptime(end_date, '%m/%d/%Y')
+            self._params['end_date'] = end_date
+            return True
+        except:
+            return False
 
     def get(self, k: str) -> Optional[Any]:
         return self._params.get(k, None)
