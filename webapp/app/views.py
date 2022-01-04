@@ -836,15 +836,15 @@ def search_transaction():
 
     dar_matches: List[Dict[str, Any]] = find_dar_matches(address)
     same_addr_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, ExactMatch, heuristic_to_int(SAME_ADDR_HEUR))
+        find_tcash_matches(address, ExactMatch, SAME_ADDR_HEUR)
     gas_price_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, GasPrice, heuristic_to_int(GAS_PRICE_HEUR))
+        find_tcash_matches(address, GasPrice, GAS_PRICE_HEUR)
     same_num_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, MultiDenom, heuristic_to_int(SAME_NUM_TX_HEUR))
+        find_tcash_matches(address, MultiDenom, SAME_NUM_TX_HEUR)
     linked_tx_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, LinkedTransaction, heuristic_to_int(LINKED_TX_HEUR))
+        find_tcash_matches(address, LinkedTransaction, LINKED_TX_HEUR)
     torn_mine_matches: List[Dict[str, Any]] = \
-        find_tcash_matches(address, TornMining, heuristic_to_int(TORN_MINE_HEUR))
+        find_tcash_matches(address, TornMining, TORN_MINE_HEUR)
 
     transactions: List[Dict[str, Any]] = \
         dar_matches + same_addr_matches + gas_price_matches + same_num_tx_matches + \
@@ -891,14 +891,20 @@ def make_weekly_plot():
     transactions: List[Dict[str, Any]] = json.loads(transactions)
     
     window: str = request.args.get('window', '1yr')
-    if window not in ['6mth', '1yr', '5yr']:  window = '1yr'
+    if window not in ['1mth', '3mth', '6mth', '1yr', '3yr', '5yr']:  window = '1yr'
 
     today: datetime = datetime.today()
-    
-    if window == '6mth':
+   
+    if window == '1mth':
+        delta: relativedelta = relativedelta(months=1)
+    elif window == '3mth':
+        delta: relativedelta = relativedelta(months=3)
+    elif window == '6mth':
         delta: relativedelta = relativedelta(months=6)
     elif window == '1yr':
         delta: relativedelta = relativedelta(months=12)
+    elif window == '3yr':
+        delta: relativedelta = relativedelta(months=12*3)
     elif window == '5yr':
         delta: relativedelta = relativedelta(months=12*5)
     else:
