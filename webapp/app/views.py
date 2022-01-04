@@ -865,7 +865,7 @@ def search_transaction():
         default_page = 0,
         default_limit = PAGE_LIMIT,
         default_start_date='01/01/2013',
-        default_start_date=get_today_date_str(),
+        default_end_date=get_today_date_str(),
     )
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_transaction_response()
@@ -943,7 +943,7 @@ def make_weekly_plot():
 
     window: str = request.args.get('window', '1yr')
 
-    checker: PlotRequestChecker = PlotRequestChecker(request, default_window = window)
+    checker: PlotRequestChecker = PlotRequestChecker(request, default_window=window)
     is_valid_request: bool = checker.check()
     output: Dict[str, Any] = default_plot_response()
 
