@@ -507,6 +507,13 @@ class PlotRequestChecker:
         self._params['window'] = window
         return True
 
+    def get(self, k: str) -> Optional[Any]:
+        return self._params.get(k, None)
+
+    def to_str(self):
+        _repr: Dict[str, Any] = copy(self._params)
+        return json.dumps(_repr, sort_keys=True)
+
 
 class TransactionRequestChecker:
 
@@ -578,7 +585,7 @@ class TransactionRequestChecker:
         try:
             end_date_obj = datetime.strptime(end_date, '%m/%d/%Y')
             self._params['end_date'] = end_date
-            self._params['start_date_obj'] = end_date_obj
+            self._params['end_date_obj'] = end_date_obj
             return True
         except:
             return False
@@ -588,6 +595,7 @@ class TransactionRequestChecker:
 
     def to_str(self):
         _repr: Dict[str, Any] = copy(self._params)
+        del _repr['start_date_obj'], _repr['end_date_obj']
         return json.dumps(_repr, sort_keys=True)
 
 
