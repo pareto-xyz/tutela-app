@@ -18,14 +18,12 @@ export default function ChooseTornadoPool() {
 
 
     return (
-        <Dropdown className="col-md-12 col-lg-4" onSelect={onSelect}>
-            <div className="row">
-                <div className="col-12">
-                <Dropdown.Toggle variant="dark" size="md">
-                <img width="20px" src="static/img/tornado_logo.svg"></img> investigate a tornado cash pool
-                </Dropdown.Toggle>
-                <div className="col-12">
-                    <div className="row">
+        <Dropdown className="col-md-12 col-lg-4 investigate" onSelect={onSelect}>
+            <Dropdown.Toggle variant="dark" size="md">
+            <img width="20px" src="static/img/tornado_logo.svg"></img> investigate a tornado cash pool
+            </Dropdown.Toggle>
+            <div className="col-12">
+                <div className="row">
                         <Dropdown.Menu className="col-12">
                             <div className="row">
                                 <div className="col-12">
@@ -41,8 +39,6 @@ export default function ChooseTornadoPool() {
                         </Dropdown.Menu>
                     </div>
                 </div>
-                </div>
-            </div>
         </Dropdown>
     )
 }

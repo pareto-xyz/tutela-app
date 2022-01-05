@@ -95,14 +95,6 @@ header.fixed {
   z-index: 1000;
   justify-content: space-between;
 }
-.nav.scrolled {
-  background-color: hsla(0, 0%, 13%, 0.9) !important;
-  transition: background-color 500ms linear;
-  -webkit-transition: background-color 500ms linear;
-  -moz-transition: background-color 500ms linear;
-  -ms-transition: background-color 500ms linear;
-  -o-transition: background-color 500ms linear;
-}
 header ul {
   margin: 0;
 }
@@ -115,7 +107,7 @@ header ul {
   -o-transition: background-color 200ms linear;
 }
 .nav.scrolled {
-  background-color: hsla(0, 0%, 13%, 0.9) !important;
+  background-color: hsla(154, 5%, 12%, 0.9) !important;
   transition: background-color 500ms linear;
   -webkit-transition: background-color 500ms linear;
   -moz-transition: background-color 500ms linear;
@@ -202,6 +194,11 @@ MAIN PAGE SEARCH SECTION
 
 .instruct {
   justify-content: center;
+}
+
+.investigate {
+  height: 2.7rem;
+  align-self: flex-start;
 }
 
 /**

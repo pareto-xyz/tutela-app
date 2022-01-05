@@ -306,12 +306,12 @@ input.form-control.rounded {
   background-color: transparent;
   border: transparent;
   box-shadow: none;
-  text-align: left;
+  text-align: center;
   word-wrap: initial;
   position: absolute;
   top: -20px;
-  left: auto;
-  right: auto;
+  left: -11px;
+  right: -11px;
 }
 
 .copy {
@@ -357,7 +357,6 @@ input.form-control.rounded {
 
 .all-input-search {
   margin-right: -15px;
-  align-items: center;
   gap: 1.5rem 0;
 }
 
