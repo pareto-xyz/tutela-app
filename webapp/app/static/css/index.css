@@ -10,10 +10,12 @@ html {
 
 body {
   background: linear-gradient(
-    180deg,
-    rgb(124, 124, 124) -0.79%,
-    rgb(73, 73, 73) -0.79%,
-    #000000 38.83%
+    rgb(50, 50, 50) 5rem,
+    rgb(40, 40, 40) 10rem,
+    rgb(30, 30, 30) 20rem,
+    rgb(20, 20, 20) 30rem,
+    rgb(10, 10, 10) 40rem,
+    rgb(5, 5, 5) 50rem
   );
 }
 
@@ -28,7 +30,6 @@ body {
 body,
 input {
   font-family: "PT Sans", sans-serif;
-  background-color: transparent;
   font-weight: 400;
 }
 
@@ -188,7 +189,6 @@ MAIN PAGE SEARCH SECTION
   background-color: white;
   border: transparent;
   border-radius: 0px 6px 6px 0px;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   flex-wrap: nowrap;
 }
 
@@ -198,6 +198,10 @@ MAIN PAGE SEARCH SECTION
   min-width: 200px;
   font-size: 1.2rem;
   border: transparent;
+}
+
+.instruct {
+  justify-content: center;
 }
 
 /**
