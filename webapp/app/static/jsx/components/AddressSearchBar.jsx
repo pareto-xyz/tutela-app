@@ -69,7 +69,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                 overlay={renderTcashTooltip}
             >
 
-                    <InputGroup onSubmit={submitInputAddress} className="fixed-width mb-1 col-sm-12 col-md-8" hasValidation>
+                    <InputGroup onSubmit={submitInputAddress} className="fixed-width col-md-12 col-lg-8" hasValidation>
                         <FormControl onKeyPress={(e) => {
                             if (e.key !== 'Enter') return;
                             e.preventDefault();

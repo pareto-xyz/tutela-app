@@ -162,27 +162,14 @@ TOP
   padding: 90px 10px;
 }
 
-.halved-bar > * {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: stretch;
-  align-items: center;
-}
-
 .anon-score-group {
   display: flex;
   align-items: center;
   font-size: 1rem;
-  white-space: nowrap;
 }
 
 .fa-question-circle {
   margin-left: 5px;
-}
-
-.instruct {
-  justify-content: center;
 }
 
 #instructions {
@@ -274,17 +261,17 @@ input.form-control.rounded {
 /* results list ------------------ */
 .adress-row {
   justify-content: space-between;
-}
-
-.text {
-  width: 100%;
-  max-width: 405px;
-  text-align: left;
+  position: relative;
 }
 
 .adress-copy {
-  display: flex;
-  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+}
+.expand-symbol {
+  position: absolute;
+  top: 0;
+  right: 10px;
 }
 
 .results-section {
@@ -323,7 +310,7 @@ input.form-control.rounded {
   word-wrap: initial;
   position: absolute;
   top: -20px;
-  left: -20px;
+  left: 20px;
 }
 
 .copy {
@@ -369,6 +356,7 @@ input.form-control.rounded {
 
 .all-input-search {
   margin-right: -15px;
+  align-items: center;
 }
 
 .entry-entity {
@@ -424,11 +412,16 @@ ul.dropdown-menu {
   align-items: center;
 }
 
-.dropdown > .dropdown-menu {
-  padding: 0px;
-  min-width: 92%;
+.dropdown .dropdown-menu {
   background-color: #1d2124;
   color: var(--almostwhite);
+  overflow-x: hidden;
+  padding-right: 15px !important;
+  padding-left: 15px !important;
+}
+
+.dropdown .dropdown-menu > div {
+  max-height: 250px;
 }
 
 .dropdown-menu > .dropdown-item:hover,
