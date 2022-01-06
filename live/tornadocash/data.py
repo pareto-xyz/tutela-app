@@ -193,7 +193,7 @@ def main():
     log_path: str = utils.CONSTANTS['log_path']
     os.makedirs(log_path, exist_ok=True)
 
-    log_file: str = join(log_path, 'tornadocash.log')
+    log_file: str = join(log_path, 'tornadocash-data.log')
     os.remove(log_file)  # remove old file (yesterday's)
 
     logger = utils.get_logger(log_file)
