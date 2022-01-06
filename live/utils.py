@@ -41,8 +41,13 @@ def delete_bucket_contents(bucket: str) -> bool:
         return False
 
 
-def export_cloud_bucket_to_csv() -> bool:
-    pass
+def export_cloud_bucket_to_csv(bucket: str, out_dir: str) -> bool:
+    handler: EthereumStorage = EthereumStorage()
+    try:
+        handler.export_to_csv(bucket, out_dir)
+        return True
+    except: 
+        return False
 
 
 def execute_bash(cmd: str) -> bool:

@@ -128,6 +128,18 @@ def update_bucket() -> bool:
     return trace_success and transaction_success
 
 
+def download_bucket() -> bool:
+    """
+    Make sure nothing is in bucket (we want to overwrite).
+    """
+    data_path:  str = utils.CONSTANTS['data_path']
+    out_dir = join(data_path, 'live')
+    trace_success: bool = utils.export_cloud_bucket_to_csv('tornado-trace', out_dir)
+    transaction_success: bool = utils.export_cloud_bucket_to_csv('tornado-transaction', out_dir)
+
+    return trace_success and transaction_success
+
+
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
     transaction_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -166,6 +178,13 @@ def main():
 
     if not success:
         logger.error('failed on updating cloud buckets')
+        sys.exit(0)
+
+    logger.info('entering download_bucket')
+    success: bool = download_bucket()
+
+    if not success:
+        logger.error('failed on downloading cloud buckets')
         sys.exit(0)
 
 
