@@ -123,7 +123,11 @@ def main(args: Any):
         names=['address', 'token', 'value', 'name','abi'],
         sep='|')
 
-    decode_transactions(address_df, transaction_df, trace_df)
+    deposit_df, withdraw_df = decode_transactions(address_df, transaction_df, trace_df)
+    withdraw_df.to_csv(
+        os.path.join(args.data_dir, 'complete_withdraw_txs.csv'), index=False)
+    deposit_df.to_csv(
+        os.path.join(args.data_dir, 'complete_deposit_txs.csv'), index=False)
 
 
 
