@@ -114,6 +114,9 @@ def decode_transactions(
 
     complete_withdraw_df: pd.DataFrame = pd.concat([tcash_withdraw_df, proxy_withdraw_df])
 
+    del complete_deposit_df['input']
+    del complete_withdraw_df['input']
+
     return complete_deposit_df, complete_withdraw_df
 
 
