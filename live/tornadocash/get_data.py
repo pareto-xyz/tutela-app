@@ -177,7 +177,7 @@ def get_deposit_and_withdraw(
     return success, data
 
 
-def cache_merged_file(df: pd.DataFrame, name: str):
+def save_file(df: pd.DataFrame, name: str):
     data_path:  str = utils.CONSTANTS['data_path']
     out_dir = join(data_path, 'live/tornado_cash')
     df.to_csv(join(out_dir, name), index=False)
@@ -247,9 +247,9 @@ def main():
     transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
 
     logger.info('deleting trace chunks')
-    cache_merged_file(trace_df, 'tornado_traces.csv')
+    save_file(trace_df, 'tornado_traces.csv')
     logger.info('deleting transaction chunks')
-    cache_merged_file(transaction_df, 'tornado_transactions.csv')
+    save_file(transaction_df, 'tornado_transactions.csv')
 
     delete_files(trace_files)
     delete_files(transaction_files)
@@ -264,8 +264,8 @@ def main():
     deposit_df: pd.DataFrame = data['deposit']
     withdraw_df: pd.DataFrame = data['withdraw']
 
-    # TODO: run heuristics on these dataframes
-
+    save_file(deposit_df, 'deposit_txs.csv')
+    save_file(withdraw_df, 'withdraw_txs.csv')
 
 if __name__ == "__main__":
     main()
