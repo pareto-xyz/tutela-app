@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python tornadocash/run.py
-python depositreuse/run.py
+python live/tornadocash/run.py
+python live/depositreuse/run.py
 
