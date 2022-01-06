@@ -30,6 +30,7 @@ from os.path import join
 from typing import Tuple, Optional, List, Dict, Any
 
 from live import utils
+from src.tcash.data import decode_transactions
 
 
 def get_last_block():
@@ -153,9 +154,26 @@ def download_bucket() -> Tuple[bool, Any]:
 
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
-    transaction_df: pd.DataFrame) -> Tuple[bool, Tuple[pd.DataFrame, pd.DataFrame]]:
-    success: bool = True
-    data = {'withdraw': None, 'deposit': None}
+    transaction_df: pd.DataFrame) -> Tuple[bool, Dict[str, pd.DataFrame]]:
+    data_path:  str = utils.CONSTANTS['data_path']
+    contract_dir = join(data_path, 'static/tcash')
+
+    try:
+        address_df: pd.DataFrame = pd.read_csv(
+            join(contract_dir, 'tornado_contract_abi.csv'),
+            names=['address', 'token', 'value', 'name','abi'],
+            sep='|')
+        proxy_df = pd.read_csv(
+            join(contract_dir, 'tornado_proxy_abi.csv'), 
+            names=['address', 'abi'],
+            sep='|')
+        deposit_df, withdraw_df = decode_transactions(
+            address_df, proxy_df, transaction_df, trace_df)
+        success: bool = True
+        data = {'withdraw': withdraw_df, 'deposit': deposit_df}
+    except:
+        success: bool = False
+        data: Dict[str, pd.DataFrame] = {}
     return success, data
 
 
