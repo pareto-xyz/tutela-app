@@ -1,0 +1,121 @@
+[
+  {
+    "description": "Transaction hash where this trace was in",
+    "mode": "NULLABLE",
+    "name": "transaction_hash",
+    "type": "STRING"
+  },
+  {
+    "description": "Integer of the transactions index position in the block",
+    "mode": "NULLABLE",
+    "name": "transaction_index",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Address of the sender, null when trace_type is genesis or reward",
+    "mode": "NULLABLE",
+    "name": "from_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Address of the receiver if trace_type is call, address of new contract or null if trace_type is create, beneficiary address if trace_type is suicide, miner address if trace_type is reward, shareholder address if trace_type is genesis, WithdrawDAO address if trace_type is daofork",
+    "mode": "NULLABLE",
+    "name": "to_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Value transferred in Wei",
+    "mode": "NULLABLE",
+    "name": "value",
+    "type": "NUMERIC"
+  },
+  {
+    "description": "The data sent along with the message call",
+    "mode": "NULLABLE",
+    "name": "input",
+    "type": "STRING"
+  },
+  {
+    "description": "The output of the message call, bytecode of contract when trace_type is create",
+    "mode": "NULLABLE",
+    "name": "output",
+    "type": "STRING"
+  },
+  {
+    "description": "One of call, create, suicide, reward, genesis, daofork",
+    "mode": "REQUIRED",
+    "name": "trace_type",
+    "type": "STRING"
+  },
+  {
+    "description": "One of call, callcode, delegatecall, staticcall",
+    "mode": "NULLABLE",
+    "name": "call_type",
+    "type": "STRING"
+  },
+  {
+    "description": "One of block, uncle",
+    "mode": "NULLABLE",
+    "name": "reward_type",
+    "type": "STRING"
+  },
+  {
+    "description": "Gas provided with the message call",
+    "mode": "NULLABLE",
+    "name": "gas",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Gas used by the message call",
+    "mode": "NULLABLE",
+    "name": "gas_used",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Number of subtraces",
+    "mode": "NULLABLE",
+    "name": "subtraces",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Comma separated list of trace address in call tree",
+    "mode": "NULLABLE",
+    "name": "trace_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Error if message call failed. This field doesn't contain top-level trace errors.",
+    "mode": "NULLABLE",
+    "name": "error",
+    "type": "STRING"
+  },
+  {
+    "description": "Either 1 (success) or 0 (failure, due to any operation that can cause the call itself or any top-level call to revert)",
+    "mode": "NULLABLE",
+    "name": "status",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Timestamp of the block where this trace was in",
+    "mode": "REQUIRED",
+    "name": "block_timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "Block number where this trace was in",
+    "mode": "REQUIRED",
+    "name": "block_number",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Hash of the block where this trace was in",
+    "mode": "REQUIRED",
+    "name": "block_hash",
+    "type": "STRING"
+  },
+  {
+    "description": "Unique string that identifies the trace. For transaction-scoped traces it is {trace_type}_{transaction_hash}_{trace_address}. For block-scoped traces it is {trace_type}_{block_number}_{index_within_block}",
+    "name": "trace_id",
+    "type": "STRING"
+  }
+]
