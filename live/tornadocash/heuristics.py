@@ -18,12 +18,19 @@ each heuristic. We will not write any other files to disk.
 If possible look into ovewriting here rather than deleting rows.
 """
 import os
-import sys
 import pandas as pd
 from os.path import join
-from typing import Tuple, Optional, List, Dict, Any
+from typing import List
 
 from live import utils
+from src.tcash.heuristic import (
+    BaseHeuristic,
+    ExactMatchHeuristic,
+    GasPriceHeuristic,
+    SameNumTransactionsHeuristic,
+    LinkedTransactionHeuristic,
+    TornMiningHeuristic,
+)
 
 
 def load_input_data():
@@ -44,8 +51,25 @@ def main():
 
     logger = utils.get_logger(log_file)
 
-    logger.info('loading deposit/withdraw dataframes')
-    trace, transaction = load_input_data()
+    data_path: str = utils.CONSTANTS['data_path']
+    tx_root: str = join(data_path, 'live/tornado_cash')
+    tcash_root: str = join(data_path, 'static/tcash')
+
+    heuristics: List[BaseHeuristic] = [
+        # NOTE: these names are the same as the database names.
+        ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
+        GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
+        SameNumTransactionsHeuristic('multi_denom', tx_root, max_num_days=1),
+        LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
+        TornMiningHeuristic('torn_mine',tx_root, tcash_root),
+    ]
+
+    for i, heuristic in enumerate(heuristics):
+        logger.info(f'entering heuristic {i+1}')
+        try:
+            heuristic.run()
+        except:
+            logger.error(f'failed in heuristic {i+1}')
 
 
 if __name__ == "__main__":

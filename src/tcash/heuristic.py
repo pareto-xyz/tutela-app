@@ -84,8 +84,8 @@ class BaseHeuristic:
 
 class ExactMatchHeuristic(BaseHeuristic):
 
-    def __init__(self, name: str, tx_root: str, by_pool: bool = True):
-        super().__init__(tx_root)
+    def __init__(self, name: str, tx_root: str, tcash_root: str, by_pool: bool = True):
+        super().__init__(tx_root, tcash_root)
         self._by_pool: bool = by_pool
 
     def apply_heuristic(
@@ -154,6 +154,10 @@ class ExactMatchHeuristic(BaseHeuristic):
 
 
 class GasPriceHeuristic(BaseHeuristic):
+
+    def __init__(self, name: str, tx_root: str, tcash_root: str, by_pool: bool = True):
+        super().__init__(tx_root, tcash_root)
+        self._by_pool: bool = by_pool
 
     def load_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -286,8 +290,8 @@ class GasPriceHeuristic(BaseHeuristic):
 
 class SameNumTransactionsHeuristic(BaseHeuristic):
 
-    def __init__(self, name: str, tx_root: str, max_num_days: int = 1):
-        super().__init__(tx_root)
+    def __init__(self, name: str, tx_root: str, tcash_root: str, max_num_days: int = 1):
+        super().__init__(tx_root, tcash_root)
         self._max_num_days: int = max_num_days
 
     def apply_heuristic(
@@ -561,7 +565,6 @@ class TornMiningHeuristic(BaseHeuristic):
         '10 WBTC': 1000,
     }
     MINE_POOL: List[str] = list(MINE_POOL_RATES.keys())
-
 
 # -- Helper functions --
 
