@@ -10,11 +10,15 @@ from web3 import Web3
 from tqdm import tqdm
 from typing import Any, Dict, Tuple
 
+# disable chained assignments
+pd.options.mode.chained_assignment = None 
+
 
 def get_tornado_contracts(tornado_df) -> Dict[str, Any]:
     """
     Creates contract object given it address and abi.
     """
+    true = True; false = False  # contract abi
     w3: Web3 = Web3(Web3.HTTPProvider('https://cloudflare-eth.com'))
     contracts: Dict[str, Any] = {}
     for _, row in tornado_df.iterrows():
@@ -119,11 +123,11 @@ def main(args: Any):
     transaction_df: pd.DataFrame = pd.read_csv(
         os.path.join(args.data_dir, 'tornado_transactions.csv'))
     address_df: pd.DataFrame = pd.read_csv(
-        os.path.join(args.contract_dir, 'tornado_contracts_abi.csv'),
+        os.path.join(args.contract_dir, 'tornado_contract_abi.csv'),
         names=['address', 'token', 'value', 'name','abi'],
         sep='|')
     proxy_df = pd.read_csv(
-        os.path.join(args.tcash_dir, 'tornado_proxy_abis.csv'), 
+        os.path.join(args.contract_dir, 'tornado_proxy_abi.csv'), 
         names=['address', 'abi'],
         sep='|')
 
