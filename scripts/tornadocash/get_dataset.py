@@ -119,11 +119,11 @@ def main(args: Any):
     transaction_df: pd.DataFrame = pd.read_csv(
         os.path.join(args.data_dir, 'tornado_transactions.csv'))
     address_df: pd.DataFrame = pd.read_csv(
-        os.path.join(args.data_dir, 'tornado_contracts_abi.csv'),
+        os.path.join(args.contract_dir, 'tornado_contracts_abi.csv'),
         names=['address', 'token', 'value', 'name','abi'],
         sep='|')
     proxy_df = pd.read_csv(
-        os.path.join(args.data_dir, 'tornado_proxy_abis.csv'), 
+        os.path.join(args.tcash_dir, 'tornado_proxy_abis.csv'), 
         names=['address', 'abi'],
         sep='|')
 
@@ -139,6 +139,7 @@ def main(args: Any):
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser: ArgumentParser = ArgumentParser()
-    parser.add_argument('data_dir', type=str, help='path to tornado cash deposit data')
+    parser.add_argument('data_dir', type=str, help='path to trace and transaction data')
+    parser.add_argument('contract_dir', type=str, help='path to contract data')
     args: Any = parser.parse_args()
     main(args)
