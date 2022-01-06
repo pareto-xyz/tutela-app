@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { buildQueryString, getApi } from '../components/utils';
 import axios from 'axios';
-import example from '../../data/example';
+//import example from '../../data/example';
 import QueryInfo from './QueryInfo';
 import TornadoInfo from './TornadoInfo';
 //import schemaResponse from '../../data/schema';

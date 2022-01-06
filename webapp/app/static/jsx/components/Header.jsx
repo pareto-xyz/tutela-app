@@ -29,10 +29,10 @@ export default function Header(props) {
                 <i className="fas fa-bars fa-1x"></i>
             </span>
             </button>
-            <div className="my-2 my-lg-0 collapse navbar-collapse col-md-12 col-lg-4" id="navbarSupportedContent">
+            <div className="my-2 my-lg-0 collapse navbar-collapse col-md-12 col-lg-6" id="navbarSupportedContent">
                 <ul className="navbar-nav">
                     <li className="nav-item">
-                        <a className="nav-link" href="/">{getDisplayText('home', current)}</a>
+                        <a className="nav-link" href="/#">{getDisplayText('home', current)}</a>
                     </li>
                     <li className="nav-item">
                         <a className="nav-link" href="/cluster">{getDisplayText('address', current)}</a>

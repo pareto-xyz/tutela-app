@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, } from 'react-bootstrap';
-//import { compromisedTcashAddrResponse, failedCompromisedTcashResponse } from '../../data/ihavebeencompromised';
+import { compromisedTcashAddrResponse, failedCompromisedTcashResponse } from '../../data/ihavebeencompromised';
 import AccordionOfResults from '../components/AccordionOfResults';
 
 
@@ -14,7 +14,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
 
     const checkIfCompromised = address => {
         axios.get('/search/compromised?address=' + address + '&pool=' + tcashAddr).then(response => {
-            // response = compromisedTcashAddrResponse;
+             response = compromisedTcashAddrResponse;
             const { success, data } = response.data;
             if (!success) {
                 setNumCompromised(null);
@@ -59,7 +59,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
 
 
             {compromisedTxns && <AccordionOfResults
-                sectionHeader={numCompromised !== null && <div className="results-section">Total deposits compromised: {numCompromised}</div>}
+                sectionHeader={numCompromised !== null && <div className="results-section col-12">Total deposits compromised: {numCompromised}</div>}
                 rowTitle='transaction'
                 rowBadge='heuristic'
                 results={compromisedTxns}
