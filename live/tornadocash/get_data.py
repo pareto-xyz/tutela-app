@@ -154,7 +154,9 @@ def download_bucket() -> Tuple[bool, Any]:
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
     transaction_df: pd.DataFrame) -> Tuple[bool, Tuple[pd.DataFrame, pd.DataFrame]]:
-    pass
+    success: bool = True
+    data = {'withdraw': None, 'deposit': None}
+    return success, data
 
 
 def cache_merged_file(df: pd.DataFrame, name: str):
@@ -165,8 +167,8 @@ def cache_merged_file(df: pd.DataFrame, name: str):
 
 def delete_files(paths: List[str]):
     for path in paths:
-        os.remove(path)
-
+        if os.path.isdir(path):
+            os.remove(path)
 
 
 def main():
