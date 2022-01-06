@@ -267,5 +267,6 @@ def main():
     save_file(deposit_df, 'deposit_txs.csv')
     save_file(withdraw_df, 'withdraw_txs.csv')
 
+
 if __name__ == "__main__":
     main()
