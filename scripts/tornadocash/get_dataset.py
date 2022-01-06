@@ -119,11 +119,16 @@ def main(args: Any):
     transaction_df: pd.DataFrame = pd.read_csv(
         os.path.join(args.data_dir, 'tornado_transactions.csv'))
     address_df: pd.DataFrame = pd.read_csv(
-        os.path.join(args.data_dir, 'tornadocontracts_abi.csv'),
+        os.path.join(args.data_dir, 'tornado_contracts_abi.csv'),
         names=['address', 'token', 'value', 'name','abi'],
         sep='|')
+    proxy_df = pd.read_csv(
+        os.path.join(args.data_dir, 'tornado_proxy_abis.csv'), 
+        names=['address', 'abi'],
+        sep='|')
 
-    deposit_df, withdraw_df = decode_transactions(address_df, transaction_df, trace_df)
+    deposit_df, withdraw_df = decode_transactions(
+        address_df, proxy_df, transaction_df, trace_df)
     withdraw_df.to_csv(
         os.path.join(args.data_dir, 'complete_withdraw_txs.csv'), index=False)
     deposit_df.to_csv(
