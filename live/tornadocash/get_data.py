@@ -71,6 +71,7 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
         where_clauses = [
             f'to_address in ({contract_sql})',
             'substr(input, 1, 10) in ("0xb214faa5", "0x21a0adb6")',
+            f'block_number > {start_block}',
         ],
         flags = [
             f'--destination_table {project}:tornado_transactions.traces',
@@ -79,7 +80,10 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
     )
     transaction_query: str = make_bq_query(
         f'select * from {bq_transaction} as b',
-        where_clauses = [f'b.hash in ({subtrace_sql})'],
+        where_clauses = [
+            f'b.hash in ({subtrace_sql})',
+            f'b.block_number > {start_block}',
+        ],
         flags = [
             f'--destination_table {project}:tornado_transactions.transactions',
             '--use_legacy_sql=false',
@@ -149,7 +153,7 @@ def download_bucket() -> Tuple[bool, Any]:
 
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
-    transaction_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    transaction_df: pd.DataFrame) -> Tuple[bool, Tuple[pd.DataFrame, pd.DataFrame]]:
     pass
 
 
@@ -229,6 +233,18 @@ def main():
 
     delete_files(trace_files)
     delete_files(transaction_files)
+
+    logger.info('entering get_deposit_and_withdraw')
+    success, data = get_deposit_and_withdraw(trace_df, transaction_df)
+
+    if not success:
+        logger.error('failed on computing deposit and withdraw dataframes')
+        sys.exit(0)
+
+    deposit_df: pd.DataFrame = data['deposit']
+    withdraw_df: pd.DataFrame = data['withdraw']
+
+    # TODO: run heuristics on these dataframes
 
 
 if __name__ == "__main__":
