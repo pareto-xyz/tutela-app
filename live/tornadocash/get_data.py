@@ -26,7 +26,7 @@ and complete_deposit_tx.csv.
 import os
 import sys
 import pandas as pd
-from os.path import join, isdir
+from os.path import join
 from typing import Tuple, Optional, List
 
 from live import utils
@@ -100,6 +100,34 @@ def make_bq_query(
     return query
 
 
+def empty_bucket() -> bool:
+    """
+    Make sure nothing is in bucket (we want to overwrite).
+    """
+    trace_success: bool = utils.delete_bucket_contents('tornado-trace')
+    transaction_success: bool = utils.delete_bucket_contents('tornado-transaction')
+
+    return trace_success and transaction_success
+
+
+def update_bucket() -> bool:
+    """
+    Move the updated bigquery data to bucket.
+    """
+    project: str = utils.CONSTANTS['bigquery_project']
+    trace_success: bool = utils.export_bigquery_table_to_cloud_bucket(
+        f'{project}.tornado_transactions',
+        'traces',
+        'tornado-trace',
+    )
+    transaction_success: bool = utils.export_bigquery_table_to_cloud_bucket(
+        f'{project}.tornado_transactions',
+        'transactions',
+        'tornado-transaction',
+    )
+    return trace_success and transaction_success
+
+
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
     transaction_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -124,6 +152,20 @@ def main():
 
     if not success:
         logger.error('failed on updating bigquery tables')
+        sys.exit(0)
+
+    logger.info('entering empty_bucket')
+    success: bool = empty_bucket()
+
+    if not success:
+        logger.error('failed on emptying cloud buckets')
+        sys.exit(0)
+
+    logger.info('entering update_bucket')
+    success: bool = update_bucket()
+
+    if not success:
+        logger.error('failed on updating cloud buckets')
         sys.exit(0)
 
 

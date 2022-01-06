@@ -2,6 +2,9 @@ import logging
 import subprocess
 from os.path import join, dirname, realpath
 
+from src.utils.bigquery import EthereumBigQuery
+from src.utils.storage import EthereumStorage
+
 LIVE_DIR: str = realpath(join(dirname(__file__), '..'))
 ROOT_DIR: str = realpath(join(LIVE_DIR, '..'))
 DATA_DIR: str = realpath(join(ROOT_DIR, 'data'))
@@ -16,11 +19,29 @@ CONSTANTS = {
 }
 
 
-def export_bigquery_table_to_cloud_bucket():
-    pass
+def export_bigquery_table_to_cloud_bucket(
+    src_dataset: str,
+    src_table: str,
+    dest_bucket: str,
+) -> bool:
+    handler: EthereumBigQuery = EthereumBigQuery(src_dataset)
+    try:
+        handler.export_to_bucket(src_table, dest_bucket)
+        return True
+    except: 
+        return False
 
 
-def export_cloud_bucket_to_csv():
+def delete_bucket_contents(bucket: str) -> bool:
+    handler: EthereumStorage = EthereumStorage()
+    try:
+        handler.empty_bucket(bucket)
+        return True
+    except: 
+        return False
+
+
+def export_cloud_bucket_to_csv() -> bool:
     pass
 
 
