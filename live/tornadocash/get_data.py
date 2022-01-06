@@ -27,7 +27,7 @@ import os
 import sys
 import pandas as pd
 from os.path import join
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 
 from live import utils
 
@@ -38,14 +38,14 @@ def get_last_block():
     We will grab all data from the block and after.
     """
     data_path:  str = utils.CONSTANTS['data_path']
-    cache_path: str = join(data_path, 'live/tornado_cache')
+    cache_path: str = join(data_path, 'live/tornado_cash/tornado_cache')
     transactions: pd.DataFrame = pd.read_csv(join(cache_path, 'tornado_transactions.csv'))
     last_block: int = int(transactions.block_number.max())
 
     return last_block
 
 
-def update_bigquery(start_block: Optional[int] = None):
+def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, Any]]:
     """
     Run SQL queries against BigQuery to insert the most recent data into
     the following tables.
@@ -88,7 +88,8 @@ def update_bigquery(start_block: Optional[int] = None):
     trace_success: bool = utils.execute_bash(trace_query)
     transaction_success: bool = utils.execute_bash(transaction_query)
 
-    return trace_success and transaction_success
+    success: bool = trace_success and transaction_success
+    return success, {}
 
 
 def make_bq_query(
@@ -100,17 +101,18 @@ def make_bq_query(
     return query
 
 
-def empty_bucket() -> bool:
+def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
     """
     Make sure nothing is in bucket (we want to overwrite).
     """
     trace_success: bool = utils.delete_bucket_contents('tornado-trace')
     transaction_success: bool = utils.delete_bucket_contents('tornado-transaction')
 
-    return trace_success and transaction_success
+    success: bool = trace_success and transaction_success
+    return success, {}
 
 
-def update_bucket() -> bool:
+def update_bucket() -> Tuple[bool, Dict[str, Any]]:
     """
     Move the updated bigquery data to bucket.
     """
@@ -125,25 +127,42 @@ def update_bucket() -> bool:
         'transactions',
         'tornado-transaction',
     )
-    return trace_success and transaction_success
+    success: bool = trace_success and transaction_success
+
+    return success, {}
 
 
-def download_bucket() -> bool:
+def download_bucket() -> Tuple[bool, Any]:
     """
     Make sure nothing is in bucket (we want to overwrite).
     """
     data_path:  str = utils.CONSTANTS['data_path']
-    out_dir = join(data_path, 'live')
-    trace_success: bool = utils.export_cloud_bucket_to_csv('tornado-trace', out_dir)
-    transaction_success: bool = utils.export_cloud_bucket_to_csv('tornado-transaction', out_dir)
+    out_dir = join(data_path, 'live/tornado_cash')
+    trace_success, trace_files = utils.export_cloud_bucket_to_csv('tornado-trace', out_dir)
+    transaction_success, transaction_files = utils.export_cloud_bucket_to_csv('tornado-transaction', out_dir)
 
-    return trace_success and transaction_success
+    success: bool = trace_success and transaction_success
+    data = {'trace': trace_files, 'transaction': transaction_files}
+
+    return success, data
 
 
 def get_deposit_and_withdraw(
     trace_df: pd.DataFrame, 
     transaction_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     pass
+
+
+def cache_merged_file(df: pd.DataFrame, name: str):
+    data_path:  str = utils.CONSTANTS['data_path']
+    out_dir = join(data_path, 'live/tornado_cash')
+    df.to_csv(join(out_dir, name), index=False)
+
+
+def delete_files(paths: List[str]):
+    for path in paths:
+        os.remove(path)
+
 
 
 def main():
@@ -160,32 +179,56 @@ def main():
     logger.info(f'last_block={last_block}')
 
     logger.info('entering update_bigquery')
-    success: bool = update_bigquery(last_block)
+    success, _ = update_bigquery(last_block)
 
     if not success:
         logger.error('failed on updating bigquery tables')
         sys.exit(0)
 
     logger.info('entering empty_bucket')
-    success: bool = empty_bucket()
+    success, _ = empty_bucket()
 
     if not success:
         logger.error('failed on emptying cloud buckets')
         sys.exit(0)
 
     logger.info('entering update_bucket')
-    success: bool = update_bucket()
+    success, _ = update_bucket()
 
     if not success:
         logger.error('failed on updating cloud buckets')
         sys.exit(0)
 
     logger.info('entering download_bucket')
-    success: bool = download_bucket()
+    success, data = download_bucket()
 
     if not success:
         logger.error('failed on downloading cloud buckets')
         sys.exit(0)
+
+    trace_files: List[str] = data['trace']
+    transaction_files: List[str] = data['transaction']
+
+    if len(trace_files) == 0:
+        logger.error('found 0 files for tornado cash traces')
+        sys.exit(0)
+
+    if len(transaction_files) == 0:
+        logger.error('found 0 files for tornado cash transactions')
+        sys.exit(0)
+
+    logger.info('sorting and combining trace files')
+    trace_df: pd.DataFrame = utils.load_data_from_chunks(trace_files)
+    logger.info('sorting and combining transaction files')
+    transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
+
+    logger.info('deleting trace chunks')
+    cache_merged_file(trace_df, 'tornado_traces.csv')
+    logger.info('deleting transaction chunks')
+    cache_merged_file(transaction_df, 'tornado_transactions.csv')
+
+    delete_files(trace_files)
+    delete_files(transaction_files)
 
 
 if __name__ == "__main__":

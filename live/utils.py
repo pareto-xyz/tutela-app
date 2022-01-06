@@ -1,5 +1,7 @@
 import logging
 import subprocess
+import pandas as pd
+from typing import Tuple, List
 from os.path import join, dirname, realpath
 
 from src.utils.bigquery import EthereumBigQuery
@@ -41,13 +43,14 @@ def delete_bucket_contents(bucket: str) -> bool:
         return False
 
 
-def export_cloud_bucket_to_csv(bucket: str, out_dir: str) -> bool:
+def export_cloud_bucket_to_csv(
+    bucket: str, out_dir: str) -> Tuple[bool, List[str]]:
     handler: EthereumStorage = EthereumStorage()
     try:
-        handler.export_to_csv(bucket, out_dir)
-        return True
+        files: List[str] = handler.export_to_csv(bucket, out_dir)
+        return True, files
     except: 
-        return False
+        return False, []
 
 
 def execute_bash(cmd: str) -> bool:
@@ -69,3 +72,19 @@ def get_logger(log_file: str) -> logging.basicConfig:
 
     # add the file handler to the logger
     logger.addHandler(handler)
+
+
+def load_data_from_chunks(files: List[str]) -> pd.DataFrame:
+    """
+    Read dataframes from files and sort by block number.
+    """
+    chunks: List[pd.DataFrame] = []
+    for file_ in files:
+        chunk: pd.DataFrame = pd.read_csv(file_)
+        chunks.append(chunk)
+
+    data: pd.DataFrame = pd.concat(chunks)
+    data.reset_index(inplace=True)
+    data.sort_values('block_number', inplace=True)
+
+    return data

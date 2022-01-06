@@ -19,9 +19,14 @@ class EthereumStorage:
         for blob in blobs:
             blob.delete()
 
-    def export_to_csv(self, bucket: str, out_dir: str):
+    def export_to_csv(self, bucket: str, out_dir: str) -> List[str]:
         bucket: Bucket = self.client.get_bucket(bucket)
         blobs: List[Blob] = list(bucket.list_blobs())
+        paths: List[str] = []
         for i in range(len(blobs)):
             blob: Blob = blobs[i]
             blob.download_to_filename(os.path.join(out_dir, blob.name))
+            path: str = os.path.join(out_dir, blob.name)
+            paths.append(path)
+
+        return paths
