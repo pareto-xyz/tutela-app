@@ -1,7 +1,9 @@
-import os, json
+import os, json, re
 import itertools
+import numpy as np
 import pandas as pd
 import networkx as nx
+from web3 import Web3
 from os.path import join
 from datetime import datetime
 from collections import defaultdict
@@ -37,6 +39,9 @@ class BaseHeuristic:
             join(self._tcash_root, 'tornado.csv'))
         return deposit_df, withdraw_df, tornado_df
 
+    def load_custom_data(self):
+        pass
+
     def apply_heuristic(
         self,
         deposit_df: pd.DataFrame, 
@@ -52,6 +57,7 @@ class BaseHeuristic:
 
     def run(self):
         deposit_df, withdraw_df, tornado_df = self.load_data()
+        self.load_custom_data()
         clusters, tx2addr = self.apply_heuristic(deposit_df, withdraw_df, tornado_df)
         transactions, tx2cluster = get_transactions(clusters)
         tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
@@ -511,6 +517,7 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
 
     def run(self):
         deposit_df, withdraw_df, tornado_df = self.load_data()
+        self.load_custom_data()
         clusters, address_sets, tx2addr, addr2conf = \
             self.apply_heuristic(deposit_df, withdraw_df, tornado_df)
         transactions, tx2cluster = get_transactions(clusters)
@@ -547,7 +554,61 @@ class LinkedTransactionHeuristic(BaseHeuristic):
 
 
 class TornMiningHeuristic(BaseHeuristic):
-    MINE_POOL_RATES: Dict[str, int] ={
+    """
+    Through Anonimity Mining, TCash users are able to receive TORN 
+    token as a reward for using the application. This is done in a 
+    sequence of two steps:
+
+    Anonimity Points (AP) are claimed for already spent notes. The 
+    quantity of AP obtained depends on how many blocks the note was 
+    in a TCash pool, and the pool where it was.
+    
+    Using the TCash Automated Market Maker (AMM), users can exchange 
+    anonimity points for TORN. From a pure data point of view, this 
+    actions are seen as transactions with the TCash Miner. An example 
+    of transaction (1) can be seen here and an example of transaction 
+    (2) can be seen here.
+
+    What can be seen clearly by decoding the input data field of these 
+    transactions is that transactions of type (1) call the TCash miner 
+    method reward and the ones of type (2) the method withdraw. 
+    Transactions of type (2) are the ones we are interested in, since 
+    they give us the following information:
+
+    - Amount of AP being swapped to TORN.
+    - Address of TORN recipient.
+
+    Making the assumption that users are swapping the totality of 
+    their AP, and that those AP have been claimed for a single note, 
+    then we can link deposit and withdrawal transactions with the 
+    following procedure:
+
+    1. Check if the recipient address of a transaction of type (2) has 
+    done a deposit or a withdraw in TCash.
+    
+    2. If the address is included in the set of deposit (withdraw) 
+    addreses, then check all deposits (withdraws) of that address, 
+    convert AP into number of blocks according to the pool the deposit
+    was done, and then search for a withdraw transaction with block 
+    number equal to
+
+        deposit_blocks + AP_converted_blocks = withdraw_blocks
+
+    3. When such a withdraw (deposit) is found, then the two transactions 
+    are considered linked.
+
+    Results are given in a dictionary, each element has the 
+    following structure:
+
+        (withdraw_hash, withdraw_address, AP_converted_blocks): 
+        [(deposit_hash, deposit_address), ...]
+
+    In this compact manner we have the information about the withdraw 
+    transactions with their addresses and their linking to deposit 
+    transactions with their addresses. We also have the amount of blocks 
+    that the notes were deposited in the TCash pool.
+    """
+    MINE_POOL_RATES: Dict[str, int] = {
         '0.1 ETH': 4, 
         '1 ETH': 20, 
         '10 ETH': 50, 
@@ -564,7 +625,321 @@ class TornMiningHeuristic(BaseHeuristic):
         '1 WBTC': 120, 
         '10 WBTC': 1000,
     }
-    MINE_POOL: List[str] = list(MINE_POOL_RATES.keys())
+
+    def load_data(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        # load tornado pool information
+        tornado_df: pd.DataFrame = pd.read_csv(
+            join(self._tcash_root, 'tornado.csv'))
+        tornado_pools: Dict[str, str] = dict(
+            tornado_df.address,
+            tornado_df.name.apply(lambda x: x.replace('Tornado Cash Pool', '').strip()),
+        )
+
+        withdraw_df: pd.DataFrame = pd.read_csv(
+            join(self._tx_root, 'withdraw_txs.csv'))
+        withdraw_df['tcash_pool'] = withdraw_df['tornado_cash_address'].apply(
+            lambda addr: tornado_pools[addr])
+        withdraw_df['block_timestamp'] = \
+            withdraw_df['block_timestamp'].apply(pd.Timestamp)
+        deposit_df: pd.DataFrame = pd.read_csv(
+            join(self._tx_root, 'deposit_txs.csv'))
+        deposit_df['tcash_pool'] = deposit_df['tornado_cash_address'].apply(
+            lambda addr: tornado_pools[addr])
+
+        return deposit_df, withdraw_df, tornado_df
+
+    def load_custom_data(self):
+        miner_df: pd.DataFrame = pd.read_csv(
+            join(self._tx_root, 'miner_txs.csv'))
+        true = True; false = False
+
+        miner_abi_df: pd.DataFrame = pd.read_csv(
+            join(self._tcash_root, 'miner_abi.csv'), 
+            names=['address', 'abi'],
+            sep='|')
+        miner_address: str = miner_abi_df.address.iloc[0]
+        miner_abi: str = miner_abi_df.abi.iloc[0]
+
+        w3: Web3 = Web3(Web3.HTTPProvider("https://cloudflare-eth.com"))
+        contract: w3.eth.contract = w3.eth.contract(
+            address=w3.toChecksumAddress(miner_address), 
+            abi=eval(miner_abi))
+
+        def decode_miner_txs(tx, contract):
+            """
+            Decodes input field of a miner tx.
+
+            Returns a tuple of three elements:
+            1. Function call
+            2. Anonimity points
+            3. Recipient address
+
+            When function call is not of type 'withdraw', 2. and 3. are NaN.
+            """
+            func_object, func_params = contract.decode_function_input(tx.input)
+            f = str(func_object)
+            
+            fn_call = 'withdraw' if re.search('withdraw', f) else 'reward' \
+                if re.search('reward', f) else 'other'
+
+            if fn_call in ['reward', 'other']:
+                return (fn_call, np.nan, np.nan)
+            else:
+                anonimity_points = func_params['_args'][0]
+                recipient_address = func_params['_args'][2][1]
+                return (fn_call, anonimity_points, recipient_address.lower())
+
+        decoded_info: pd.DataFrame = miner_df.apply(
+            lambda row: decode_miner_txs(row, contract), axis=1)
+
+        # Get three lists from the decoded_info results
+        fn_calls = np.empty(len(decoded_info), dtype=str)
+        anonimity_points = np.empty(len(decoded_info), dtype=object)
+        recipient_addresses = np.empty(len(decoded_info), dtype=object)
+
+        for i in range(len(decoded_info)):
+            fn_calls[i] = decoded_info[i][0]
+            anonimity_points[i] = decoded_info[i][1]
+            recipient_addresses[i] = decoded_info[i][2]
+
+        miner_df['function_call'] = fn_calls
+        miner_df['anonimity_points'] = anonimity_points
+        miner_df['recipient_address'] = recipient_addresses
+
+        # drop input field so that data is lighter, now that we have 
+        # extracted the necessary information
+        miner_df = miner_df.drop(columns=['input'])
+
+        self.miner_df = miner_df
+
+    def apply_heuristic(
+        self, 
+        deposit_df: pd.DataFrame, 
+        withdraw_df: pd.DataFrame,
+        tornado_df: pd.DataFrame) -> Tuple[List[Set[str]], Dict[str, str]]:
+
+        miner_df = self.miner_df
+        miner_df = miner_df[miner_df['function_call'] == 'w']
+        miner_df.head()
+
+        mining_pools: List[str] = list(self.MINE_POOL_RATES.keys())
+
+        # drop all the txs that are not from the mining pools
+        deposit_df: pd.DataFrame = \
+            deposit_df[deposit_df['tcash_pool'].isin(mining_pools)]
+        withdraw_df: pd.DataFrame = \
+            withdraw_df[withdraw_df['tcash_pool'].isin(mining_pools)]
+
+        unique_deposits = set(deposit_df['from_address'])
+        unique_withdraws = set(withdraw_df['recipient_address'])
+
+        addr2deposits: Dict[str, Any] = \
+            self.__address_to_txs_and_blocks(deposit_df, 'deposit')
+        addr2withdraws: Dict[str, Any] = \
+            self.__address_to_txs_and_blocks(withdraw_df, 'withdraw')
+
+        total_linked_txs: Dict[str, Dict[str, Any]] = \
+            self.__get_total_linked_txs(
+                miner_df, unique_deposits, unique_withdraws, 
+                addr2deposits, addr2withdraws)
+
+        w2d: Dict[Tuple[str], List[Tuple[str]]] = \
+            self.__apply_anonymity_mining_heuristic(total_linked_txs)
+
+        clusters, tx2addr = self.__build_clusters(w2d)
+
+        return clusters, tx2addr
+
+    def __address_to_txs_and_blocks(
+        self, txs_df: pd.DataFrame, tx_type: str) -> Dict[str, Any]:
+        assert tx_type in ['deposit', 'withdraw'], 'Transaction type error'
+        address_field: str = 'from_address' if tx_type == 'deposit' else 'recipient_address'
+        addr_to_txs_and_blocks: Dict[str, Any] = {}
+
+        for _, row in txs_df.iterrows():
+            if row[address_field] not in addr_to_txs_and_blocks.keys():
+                addr_to_txs_and_blocks[row[address_field]] = \
+                    {row.tcash_pool: [(row.hash, row.block_number)]}
+            elif row.tcash_pool not in addr_to_txs_and_blocks[row[address_field]].keys():
+                addr_to_txs_and_blocks[row[address_field]].update(
+                    {row.tcash_pool: [(row.hash, row.block_number)]})
+            else:
+                addr_to_txs_and_blocks[row[address_field]][row.tcash_pool].append(
+                    (row.hash, row.block_number))
+
+        return addr_to_txs_and_blocks
+
+    def __apply_anonymity_mining_heuristic(
+        self,
+        total_linked_txs: Dict[str, Dict[str, Any]],
+    ) -> Dict[Tuple[str], List[Tuple[str]]]:
+        """
+        The final version of the results is obtained applying this function
+        to the output of the 'apply_anonimity_mining_heuristic' function.
+
+        w2d -> withdraws and blocks to deposits
+        """
+        w2d: Dict[Tuple[str], List[Tuple[str]]] = {}
+
+        for addr in total_linked_txs['W'].keys():
+            for hsh in total_linked_txs['W'][addr]:
+                delta_blocks: float = total_linked_txs['W'][addr][hsh][0][2]
+                w2d[(hsh, addr, delta_blocks)] = [
+                    (t[0],t[1]) for t in total_linked_txs['W'][addr][hsh]]
+
+        for addr in total_linked_txs['D'].keys():
+            for hsh in total_linked_txs['D'][addr]:
+                for tx_tuple in total_linked_txs['D'][addr][hsh]:
+                    if tx_tuple[0] not in w2d.keys():
+                        w2d[tuple(tx_tuple)] = [(hsh, addr)]
+                    else:
+                        if (hsh, addr) not in w2d[tx_tuple]:
+                            w2d[tuple(tx_tuple)].append((hsh, addr))
+        return w2d
+
+    def __build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
+        graph: nx.DiGraph = nx.DiGraph()
+        tx2addr: Dict[str, str] = {}
+
+        for withdraw_tuple, deposit_tuples in links.items():
+            withdraw_tx, withdraw_addr, _ = withdraw_tuple
+            graph.add_node(withdraw_tx)
+            tx2addr[withdraw_tx] = withdraw_addr
+
+            for deposit_tuple in deposit_tuples:
+                deposit_tx, deposit_addr = deposit_tuple
+                graph.add_node(deposit_tx)
+                graph.add_edge(withdraw_tx, deposit_tx)
+                tx2addr[deposit_tx] = deposit_addr
+
+        clusters: List[Set[str]] = [  # ignore singletons
+            c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+
+        return clusters, tx2addr
+
+    def __get_total_linked_txs(
+        self,
+        miner_txs: pd.Series,
+        unique_deposits: Set[str],
+        unique_withdraws: Set[str],
+        addr2deposits: Dict[str, Any], 
+        addr2withdraws: Dict[str, Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        total_linked_txs: Dict[str, Dict[str, Any]] = {'D': {}, 'W': {}}
+
+        for miner_tx in miner_txs.itertuples():
+            linked_txs: Dict[str, Dict[str, Any]] = \
+                self.__anonymity_mining_heuristic(
+                    miner_tx, unique_deposits, unique_withdraws, 
+                    addr2deposits, addr2withdraws)
+            if len(linked_txs) != 0:
+                if 'D' in linked_txs.keys():
+                    if len(linked_txs['D']) != 0:
+                        total_linked_txs['D'].update(linked_txs['D'])
+                if 'W' in linked_txs.keys():
+                    if len(linked_txs['W']) != 0:
+                        total_linked_txs['W'].update(linked_txs['W'])
+
+        return total_linked_txs
+
+    def __anonymity_mining_heuristic(
+        self,
+        miner_tx: pd.Series,
+        unique_deposits: Set[str],
+        unique_withdraws: Set[str],
+        addr2deposits: Dict[str, Any],
+        addr2withdraws: Dict[str, Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        linked_txs: Dict[str, Dict[str, Any]] = {}
+
+        if self.__is_D_type(
+            miner_tx.recipient_address, unique_deposits, unique_withdraws):
+            d_dict: Dict[str, Any] = self.__D_type_anonymity_heuristic(
+                miner_tx, addr2deposits, addr2withdraws)
+            if len(d_dict[miner_tx.recipient_address]) != 0:
+                linked_txs['D'] = d_dict
+            return linked_txs
+        elif self.__is_W_type(
+            miner_tx.recipient_address, unique_deposits, unique_withdraws):
+            w_dict: Dict[str, Any] = self.__W_type_anonymity_heuristic(
+                miner_tx, addr2deposits, addr2withdraws)
+            if len(w_dict[miner_tx.recipient_address]) != 0:
+                linked_txs['W'] = w_dict
+            return linked_txs
+        elif self.__is_DW_type(
+            miner_tx.recipient_address, unique_deposits, unique_withdraws):
+            d_dict: Dict[str, Any] = self.__D_type_anonymity_heuristic(
+                miner_tx, addr2deposits, addr2withdraws)
+            if len(d_dict[miner_tx.recipient_address]) != 0:
+                linked_txs['D'] = d_dict
+            w_dict: Dict[str, Any] = self.__W_type_anonymity_heuristic(
+                miner_tx, addr2deposits, addr2withdraws)
+            if len(w_dict[miner_tx.recipient_address]) != 0:
+                linked_txs['W'] = w_dict
+            return linked_txs
+
+        return linked_txs
+
+    def __is_D_type(self, address: str, deposits: Set[str], withdraws: Set[str]):
+        return (address in deposits) and (address not in withdraws)
+
+    def __is_W_type(self, address: str, deposits: Set[str], withdraws: Set[str]):
+        return (address not in deposits) and (address in withdraws)
+
+    def __is_DW_type(self, address: str, deposits: Set[str], withdraws: Set[str]):
+        return (address in deposits) and (address in withdraws)
+
+    def __ap2blocks(self, anonymity_points: int, pool: str) -> float:
+        rate = self.MINE_POOL_RATES[pool]
+        return anonymity_points / float(rate)
+
+    def __D_type_anonymity_heuristic(
+        self,
+        miner_tx: pd.Series, 
+        addr2deposits: Dict[str, Any],
+        addr2withdraws: Dict[str, Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        d_addr: str = miner_tx.recipient_address
+        d_addr2w: Dict[str, Dict[str, Any]] = {d_addr: {}}
+
+        for d_pool in addr2deposits[d_addr]:
+            for (d_hash, d_blocks) in addr2deposits[d_addr][d_pool]:
+                delta_blocks: float = self.__ap2blocks(miner_tx.anonimity_points, d_pool)
+
+                for w_addr in addr2withdraws.keys():
+                    if d_pool in addr2withdraws[w_addr].keys():
+                        for (w_hash, w_blocks) in addr2withdraws[w_addr][d_pool]:
+                            if d_blocks + delta_blocks == w_blocks:
+                                if d_hash not in d_addr2w[d_addr].keys():
+                                    d_addr2w[d_addr][d_hash] = [(w_hash, w_addr, delta_blocks)]
+                                else:
+                                    d_addr2w[d_addr][d_hash].append((w_hash, w_addr, delta_blocks))
+
+        return d_addr2w
+
+    def __W_type_anonymity_heuristic(
+        self,
+        miner_tx: pd.Series, 
+        addr2deposits: Dict[str, Any],
+        addr2withdraws: Dict[str, Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        w_addr: str = miner_tx.recipient_address
+        w_addr2d: Dict[str, Dict[str, Any]] = {w_addr: {}}
+        
+        for w_pool in addr2withdraws[w_addr]:
+            for (w_hash, w_blocks) in addr2withdraws[w_addr][w_pool]:
+                delta_blocks: float = self.__ap2blocks(miner_tx.anonimity_points, w_pool)
+
+                for d_addr in addr2deposits.keys():
+                    if w_pool in addr2deposits[d_addr].keys():
+                        for (d_hash, d_blocks) in addr2deposits[d_addr][w_pool]:
+                            if d_blocks + delta_blocks == w_blocks:
+                                if w_hash not in w_addr2d[w_addr].keys():
+                                    w_addr2d[w_addr][w_hash] = [(d_hash, d_addr, delta_blocks)]
+                                else:
+                                    w_addr2d[w_addr][w_hash].append((d_hash, d_addr, delta_blocks))
+
+        return w_addr2d
 
 # -- Helper functions --
 
