@@ -347,7 +347,7 @@ def main():
     logger.info('deleting transaction chunks')
     save_file(transaction_df, 'tornado_transactions.csv')
     logger.info('deleting miner chunks')
-    save_file(miner_df, 'tornado_miners.csv')
+    save_file(miner_df, 'miner_txs.csv')
 
     delete_files(trace_files)
     delete_files(transaction_files)
@@ -362,11 +362,9 @@ def main():
 
     deposit_df: pd.DataFrame = data['deposit']
     withdraw_df: pd.DataFrame = data['withdraw']
-    miner_df: pd.DataFrame = data['miner']
 
     save_file(deposit_df, 'deposit_txs.csv')
     save_file(withdraw_df, 'withdraw_txs.csv')
-    save_file(miner_df, 'miner_txs.csv')
 
 
 if __name__ == "__main__":
