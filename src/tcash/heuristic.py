@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from web3 import Web3
+from tqdm import tqdm
 from os.path import join
 from datetime import datetime
 from collections import defaultdict
@@ -121,6 +122,8 @@ class ExactMatchHeuristic(BaseHeuristic):
         graph: nx.DiGraph = nx.DiGraph()
         raw_links: Dict[str, str] = {}
 
+        print(f'[{self._name}] looping through rows')
+        pbar = tqdm(total=len(withdraw_df))
         for withdraw_row in withdraw_df.itertuples():
             results: Tuple[bool, List[pd.Series]] = self.__exact_match_heuristic(
                 deposit_df, withdraw_row, by_pool=self.by_pool)
@@ -137,6 +140,9 @@ class ExactMatchHeuristic(BaseHeuristic):
                     # save transaction -> address map
                     tx2addr[withdraw_row.hash] = withdraw_row.recipient_address
                     tx2addr[deposit_row.hash] = deposit_row.from_address
+
+            pbar.update()
+        pbar.close()
 
         clusters: List[Set[str]] = [  # ignore singletons
             c for c in nx.weakly_connected_components(graph) if len(c) > 1]
@@ -226,6 +232,8 @@ class GasPriceHeuristic(BaseHeuristic):
         all_deposits: List[str] = []
 
         # Iterate over the withdraw transactions.
+        print(f'[{self._name}] looping through rows')
+        pbar = tqdm(total=len(withdraw_df))
         for _, withdraw_row in withdraw_df.iterrows():
             # apply heuristic for the given withdraw transaction.
             results: Tuple[bool, pd.Series] = self.__same_gas_price_heuristic(
@@ -246,6 +254,9 @@ class GasPriceHeuristic(BaseHeuristic):
 
                 all_withdraws.append(withdraw_row.hash)
                 all_deposits.append(deposit_row.hash)
+
+            pbar.update()
+        pbar.close()
 
         clusters: List[Set[str]] = [  # ignore singletons
             c for c in nx.weakly_connected_components(graph) if len(c) > 1]
@@ -357,7 +368,7 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         address_sets: List[Set[str]] = []
         addr2conf: Dict[Tuple[str, str], float] = {}
 
-        print('Precomputing deposit windows')
+        print(f'[{self._name}] precomputing deposit windows')
         time_window: Timestamp = Timedelta(self._max_num_days, 'days')
         deposit_df['tornado_pool'] = deposit_df.tornado_cash_address.map(
             lambda x: tornado_addresses[x])
@@ -376,9 +387,12 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         raw_portfolios: pd.DataFrame = deposit_windows.apply(
             lambda x: x.iloc[0].groupby('tornado_pool').count()['hash'].to_dict(), axis=1)
 
+        print(f'[{self._name}] making portfolio')
         deposit_portfolios: pd.DataFrame = self.__make_portfolio_df(
             raw_portfolios, tornado_tags)
 
+        print(f'[{self._name}] looping through rows')
+        pbar = tqdm(total=len(withdraw_df))
         for withdraw_row in withdraw_df.itertuples():
             results = self.__same_num_of_transactions_heuristic(
                 withdraw_row, withdraw_df, deposit_windows, deposit_portfolios, 
@@ -407,6 +421,9 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
                 tx2addr.update(deposit_tx2addr)
                 tx_clusters.append(tx_cluster)
 
+            pbar.update()
+        pbar.close()
+
         return tx_clusters, address_sets, tx2addr, addr2conf
 
     def __make_portfolio_df(
@@ -415,12 +432,15 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         raw_portfolios: List[Dict[str, int]] = \
             [eval(x) for x in raw_portfolios['0'].values]
         deposit_portfolios: Dict[str, List[str]] = defaultdict(lambda: [])
+        pbar = tqdm(total=len(raw_portfolios))
         for portfolio in raw_portfolios:
             for k in pools:
                 if k in portfolio:
                     deposit_portfolios[k].append(portfolio[k])
                 else:
                     deposit_portfolios[k].append(0)
+            pbar.update()
+        pbar.close()
         deposit_portfolios: Dict[str, List[str]] = dict(deposit_portfolios)
         return pd.DataFrame.from_dict(deposit_portfolios)
 
@@ -630,6 +650,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         return deposit_df, withdraw_df, tornado_df
 
     def load_custom_data(self):
+        print(f'[{self._name}] loading external dataframe')
         external_df: pd.DataFrame = pd.read_csv(
             json(self._tx_root, 'external_txs.csv'))
         external_df: pd.DataFrame = external_df[['from_address', 'to_address']]
@@ -657,15 +678,19 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         unique_deposits: Set[str] = set(deposit_df['from_address'])
         unique_withdraws: Set[str] = set(withdraw_df['recipient_address'])
 
+        print(f'[{self._name}] mapping pool to deposit')
         addr_pool_to_deposit: Dict[Tuple[str, str], str] = \
             self.__addresses_and_pools_to_deposits(deposit_df)
 
+        print(f'[{self._name}] mapping withdraw to deposit')
         withdraw2deposit: Dict[str, List[str]] = self.__map_withdraw2deposit(
             external_df, unique_deposits, unique_withdraws)
 
+        print(f'[{self._name}] finding neighbors')
         links: Dict[str, List[str]] = self.__apply_first_neighbors_heuristic(
             withdraw_df, withdraw2deposit, addr_pool_to_deposit)
         
+        print(f'[{self._name}] looping through rows')
         clusters, tx2addr = self.__build_clusters(links, all_tx2addr)
 
         return clusters, tx2addr
@@ -677,10 +702,13 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         addr_pool_to_deposit: Dict[Tuple[str, str], str]) -> Dict[str, List[str]]:
 
         links: Dict[str, str] = {}
+        pbar = tqdm(len(withdraw_df))
         for row in withdraw_df.itertuples():
             dic = self.__first_neighbors_heuristic(
                 row, withdraw2deposit, addr_pool_to_deposit)
             links.update(dic)
+            pbar.update()
+        pbar.close()
 
         return dict(filter(lambda elem: len(elem[1]) != 0, links.items()))
 
@@ -719,6 +747,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         graph: nx.DiGraph = nx.DiGraph()
         tx2addr: Dict[str, str] = {}
 
+        pbar = tqdm(total=len(links))
         for withdraw, deposits in links.items():
             graph.add_node(withdraw)
             graph.add_nodes_from(deposits)
@@ -728,6 +757,9 @@ class LinkedTransactionHeuristic(BaseHeuristic):
 
                 tx2addr[withdraw] = all_tx2addr[withdraw]
                 tx2addr[deposit] = all_tx2addr[deposit]
+
+            pbar.update()
+        pbar.close()
 
         clusters: List[Set[str]] = [  # ignore singletons
             c for c in nx.weakly_connected_components(graph) if len(c) > 1]
@@ -744,6 +776,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         Map interactions between every withdraw address to every deposit address, outside TCash
         """
         deposit_and_withdraw: np.array = np.empty((0, 2), dtype=str)
+        pbar = tqdm(total=len(address_and_withdraw))
         for row in address_and_withdraw.itertuples():
 
             if (self.__is_D_W_tx(row.address_1, row.address_2, deposits, withdraws) or 
@@ -766,6 +799,9 @@ class LinkedTransactionHeuristic(BaseHeuristic):
             else:
                 raise ValueError('Unknown type: D_W, W_D, D_DW, DW_D, W_DW, DW_W, DW_DW')
 
+            pbar.update()
+        pbar.close()
+
         D_W_df: pd.DataFrame = pd.DataFrame(
             deposit_and_withdraw, columns=['deposit', 'withdraw'])
 
@@ -780,10 +816,13 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         addresses_and_pools: dict = dict(
             deposit_df.groupby('from_address')['tcash_pool'].apply(list))
         addresses_and_pools_to_deposits: dict = {}
+        pbar = tqdm(total=len(addresses_and_pools))
         for addr in addresses_and_pools.keys():
             for pool in addresses_and_pools[addr]:
                 addresses_and_pools_to_deposits.update(
                     self.__addr_pool_to_deposits(addr, pool, deposit_df))
+            pbar.update()
+        pbar.close()
 
         return addresses_and_pools_to_deposits
 
@@ -977,6 +1016,7 @@ class TornMiningHeuristic(BaseHeuristic):
         return deposit_df, withdraw_df, tornado_df
 
     def load_custom_data(self):
+        print(f'[{self._name}] loading miner dataframe')
         miner_df: pd.DataFrame = pd.read_csv(
             join(self._tx_root, 'miner_txs.csv'))
         true = True; false = False
@@ -1066,14 +1106,17 @@ class TornMiningHeuristic(BaseHeuristic):
         addr2withdraws: Dict[str, Any] = \
             self.__address_to_txs_and_blocks(withdraw_df, 'withdraw')
 
+        print(f'[{self._name}] computing links')
         total_linked_txs: Dict[str, Dict[str, Any]] = \
             self.__get_total_linked_txs(
                 miner_df, unique_deposits, unique_withdraws, 
                 addr2deposits, addr2withdraws)
 
+        print(f'[{self._name}] mapping withdraw to deposit')
         w2d: Dict[Tuple[str], List[Tuple[str]]] = \
             self.__apply_anonymity_mining_heuristic(total_linked_txs)
 
+        print(f'[{self._name}] looping through rows')
         clusters, tx2addr = self.__build_clusters(w2d)
 
         return clusters, tx2addr
@@ -1109,12 +1152,16 @@ class TornMiningHeuristic(BaseHeuristic):
         """
         w2d: Dict[Tuple[str], List[Tuple[str]]] = {}
 
+        pbar = tqdm(total=len(total_linked_txs['W']))
         for addr in total_linked_txs['W'].keys():
             for hsh in total_linked_txs['W'][addr]:
                 delta_blocks: float = total_linked_txs['W'][addr][hsh][0][2]
                 w2d[(hsh, addr, delta_blocks)] = [
                     (t[0],t[1]) for t in total_linked_txs['W'][addr][hsh]]
+            pbar.update()
+        pbar.close()
 
+        pbar = tqdm(total=len(total_linked_txs['D']))
         for addr in total_linked_txs['D'].keys():
             for hsh in total_linked_txs['D'][addr]:
                 for tx_tuple in total_linked_txs['D'][addr][hsh]:
@@ -1123,12 +1170,16 @@ class TornMiningHeuristic(BaseHeuristic):
                     else:
                         if (hsh, addr) not in w2d[tx_tuple]:
                             w2d[tuple(tx_tuple)].append((hsh, addr))
+            pbar.update()
+        pbar.close()
+
         return w2d
 
     def __build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
         graph: nx.DiGraph = nx.DiGraph()
         tx2addr: Dict[str, str] = {}
 
+        pbar = tqdm(total=len(links))
         for withdraw_tuple, deposit_tuples in links.items():
             withdraw_tx, withdraw_addr, _ = withdraw_tuple
             graph.add_node(withdraw_tx)
@@ -1139,6 +1190,9 @@ class TornMiningHeuristic(BaseHeuristic):
                 graph.add_node(deposit_tx)
                 graph.add_edge(withdraw_tx, deposit_tx)
                 tx2addr[deposit_tx] = deposit_addr
+
+            pbar.update()
+        pbar.close()
 
         clusters: List[Set[str]] = [  # ignore singletons
             c for c in nx.weakly_connected_components(graph) if len(c) > 1]
@@ -1155,6 +1209,7 @@ class TornMiningHeuristic(BaseHeuristic):
     ) -> Dict[str, Dict[str, Any]]:
         total_linked_txs: Dict[str, Dict[str, Any]] = {'D': {}, 'W': {}}
 
+        pbar = tqdm(total=len(miner_txs))
         for miner_tx in miner_txs.itertuples():
             linked_txs: Dict[str, Dict[str, Any]] = \
                 self.__anonymity_mining_heuristic(
@@ -1167,6 +1222,8 @@ class TornMiningHeuristic(BaseHeuristic):
                 if 'W' in linked_txs.keys():
                     if len(linked_txs['W']) != 0:
                         total_linked_txs['W'].update(linked_txs['W'])
+            pbar.update()
+        pbar.close()
 
         return total_linked_txs
 
