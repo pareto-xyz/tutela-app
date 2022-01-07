@@ -7,7 +7,7 @@ from os.path import join, dirname, realpath
 from src.utils.bigquery import EthereumBigQuery
 from src.utils.storage import EthereumStorage
 
-LIVE_DIR: str = realpath(join(dirname(__file__), '..'))
+LIVE_DIR: str = realpath(dirname(__file__))
 ROOT_DIR: str = realpath(join(LIVE_DIR, '..'))
 DATA_DIR: str = realpath(join(ROOT_DIR, 'data'))
 LOG_DIR: str = realpath(join(ROOT_DIR, 'logs'))
@@ -67,11 +67,13 @@ def get_logger(log_file: str) -> logging.basicConfig:
     handler.setLevel(logging.INFO)
 
     # create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(worker)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
     # add the file handler to the logger
     logger.addHandler(handler)
+
+    return logger
 
 
 def load_data_from_chunks(files: List[str]) -> pd.DataFrame:

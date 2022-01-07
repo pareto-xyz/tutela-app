@@ -40,8 +40,8 @@ def get_last_block():
     We will grab all data from the block and after.
     """
     data_path:  str = utils.CONSTANTS['data_path']
-    cache_path: str = join(data_path, 'live/tornado_cash/tornado_cache')
-    transactions: pd.DataFrame = pd.read_csv(join(cache_path, 'tornado_transactions.csv'))
+    tcash_path: str = join(data_path, 'live/tornado_cash')
+    transactions: pd.DataFrame = pd.read_csv(join(tcash_path, 'tornado_transactions.csv'))
     last_block: int = int(transactions.block_number.max())
 
     return last_block
@@ -65,42 +65,47 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
     project: str = utils.CONSTANTS['bigquery_project']
     bq_trace: str = 'bigquery-public-data.crypto_ethereum.traces'
     bq_transaction: str = 'bigquery-public-data.crypto_ethereum.transactions'
+
     contract_sql: str = f'select address from {project}.tornado_transactions.tornadocontracts'
     subtrace_sql: str = f'select transaction_hash from {project}.tornado_transactions.traces'
 
+    trace_table: str = f'{project}:tornado_transactions.traces'
+    transaction_table: str = f'{project}:tornado_transactions.transactions'
+    miner_table: str = f'{project}:tornado_transactions.miner_transactions'
+
     trace_query: str = make_bq_query(
-        f'select * from {bq_trace}',
+        f'insert {trace_table} select * from {bq_trace}',
         where_clauses = [
             f'to_address in ({contract_sql})',
             'substr(input, 1, 10) in ("0xb214faa5", "0x21a0adb6")',
             f'block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:tornado_transactions.traces',
+            f'--destination_table {trace_table}',
             '--use_legacy_sql=false',
         ],
     )
     transaction_query: str = make_bq_query(
-        f'select * from {bq_transaction} as b',
+        f'insert {transaction_table} select * from {bq_transaction} as b',
         where_clauses = [
             f'b.hash in ({subtrace_sql})',
             f'b.block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:tornado_transactions.transactions',
+            f'--destination_table {transaction_table}',
             '--use_legacy_sql=false',
         ],
     )
 
     # This is for the TORN mining heuristic -- we need to get miner's txs
     miner_query: str = make_bq_query(
-        f'select * from {bq_transaction}',
+        f'insert {miner_table} select * from {bq_transaction}',
         where_clauses = [
             'to_address = "0x746aebc06d2ae31b71ac51429a19d54e797878e9"',
             f'block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:tornado_transactions.miner_transactions',
+            f'--destination_table {miner_table}',
             '--use_legacy_sql=false',
         ],
     )
@@ -215,7 +220,9 @@ def external_pipeline(
     withdraw_addresses: str = ','.join(withdraw_addresses)
 
     project: str = utils.CONSTANTS['bigquery_project']
+    external_table: str = f'{project}:tornado_transactions.external_transactions'
 
+    insert: str = 'insert {external_table}'
     select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
     where_clauses: List[str] = [
         f'(from_address in ({deposit_addresses})) and (to_address in ({withdraw_addresses}))'
@@ -223,11 +230,11 @@ def external_pipeline(
     ]
     where_clauses: str = ' or '.join(where_clauses)
     flags: List[str] = [
-        f'--destination_table {project}:tornado_transactions.external_transactions',
+        f'--destination_table {external_table}',
         '--use_legacy_sql=false',
     ]
     flags: str = ' '.join(flags)
-    query: str = f"bq query {flags} '{select} where {where_clauses}'"
+    query: str = f"bq query {flags} '{insert} {select} where {where_clauses}'"
 
     success: bool = utils.execute_bash(query)
 
@@ -275,9 +282,11 @@ def main():
     os.makedirs(log_path, exist_ok=True)
 
     log_file: str = join(log_path, 'tornadocash-data.log')
-    os.remove(log_file)  # remove old file (yesterday's)
+    if os.path.isfile(log_file):
+        os.remove(log_file)  # remove old file (yesterday's)
 
     logger = utils.get_logger(log_file)
+    breakpoint()
 
     logger.info('entering get_last_block')
     last_block: int = get_last_block()
