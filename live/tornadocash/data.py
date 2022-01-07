@@ -25,6 +25,7 @@ and complete_deposit_tx.csv.
 """
 import os
 import sys
+import numpy as np
 import pandas as pd
 from os.path import join
 from typing import Tuple, Optional, List, Dict, Any
@@ -116,7 +117,7 @@ def make_bq_query(
     flags: str = ' '.join(flags)
     where_clauses: List[str] = [f'({clause})' for clause in where_clauses]
     where_clauses: str = ' and '.join(where_clauses)
-    query: str = f"bq_query {flags} '{select} where {where_clauses}'"
+    query: str = f"bq query {flags} '{select} where {where_clauses}'"
     return query
 
 
@@ -196,6 +197,65 @@ def get_deposit_and_withdraw(
         success: bool = False
         data: Dict[str, pd.DataFrame] = {}
     return success, data
+
+
+def external_pipeline(
+    deposit_df: pd.DataFrame, withdraw_df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
+    """
+    We need to update another bigquery table for external transactions
+    between TornadoCash users. We must do this separately because we 
+    need `deposit_df` and `withdraw_df`. 
+
+    This function will also move the table to a google bucket and 
+    download that bucket locally, combine, sort, and save.
+    """
+    deposit_addresses: List[str] = deposit_df.from_address.unique().tolist()
+    withdraw_addresses: List[str] = withdraw_df.recipient_address.unique().tolist()
+    deposit_addresses: str = ','.join(deposit_addresses)
+    withdraw_addresses: str = ','.join(withdraw_addresses)
+
+    project: str = utils.CONSTANTS['bigquery_project']
+
+    select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
+    where_clauses: List[str] = [
+        f'(from_address in ({deposit_addresses})) and (to_address in ({withdraw_addresses}))'
+        f'(from_address in ({withdraw_addresses})) and (to_address in ({deposit_addresses}))'
+    ]
+    where_clauses: str = ' or '.join(where_clauses)
+    flags: List[str] = [
+        f'--destination_table {project}:tornado_transactions.external_transactions',
+        '--use_legacy_sql=false',
+    ]
+    flags: str = ' '.join(flags)
+    query: str = f"bq query {flags} '{select} where {where_clauses}'"
+
+    success: bool = utils.execute_bash(query)
+
+    if not success:
+        return success, {}
+
+    # now move to google cloud bucket
+    project: str = utils.CONSTANTS['bigquery_project']
+    success: bool = utils.export_bigquery_table_to_cloud_bucket(
+        f'{project}.tornado_transactions',
+        'external_transactions',
+        'tornado-external-transaction',
+    )
+    if not success:
+        return success, {}
+
+    # download google cloud bucket
+    data_path:  str = utils.CONSTANTS['data_path']
+    out_dir = join(data_path, 'live/tornado_cash')
+    success, files = utils.export_cloud_bucket_to_csv('tornado-external-transaction', out_dir)
+
+    if not success:
+        return success, {}
+
+    external_df: pd.DataFrame = utils.load_data_from_chunks(files)
+    delete_files(files)
+
+    save_file(external_df, 'external_txs.csv')
 
 
 def save_file(df: pd.DataFrame, name: str):

@@ -98,7 +98,7 @@ def decode_transactions(
     # do the same for withdraws 
     proxy_withdraw_df = withdraw_transaction_df[withdraw_transaction_df['to_address']\
         .isin(['0x722122df12d4e14e13ac3b6895a86e84145b6967', 
-                '0x905b63fff465b9ffbf41dea908ceb12478ec7601'])]
+               '0x905b63fff465b9ffbf41dea908ceb12478ec7601'])]
     tcash_withdraw_df = withdraw_transaction_df[
         withdraw_transaction_df['to_address'].isin(contract_df['address'])]
     
