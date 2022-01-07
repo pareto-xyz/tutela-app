@@ -90,10 +90,24 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
             '--use_legacy_sql=false',
         ],
     )
+
+    # This is for the TORN mining heuristic -- we need to get miner's txs
+    miner_query: str = make_bq_query(
+        f'select * from {bq_transaction}',
+        where_clauses = [
+            'to_address = "0x746aebc06d2ae31b71ac51429a19d54e797878e9"',
+            f'block_number > {start_block}',
+        ],
+        flags = [
+            f'--destination_table {project}:tornado_transactions.miner_transactions',
+            '--use_legacy_sql=false',
+        ],
+    )
     trace_success: bool = utils.execute_bash(trace_query)
     transaction_success: bool = utils.execute_bash(transaction_query)
+    miner_success: bool = utils.execute_bash(miner_query)
 
-    success: bool = trace_success and transaction_success
+    success: bool = trace_success and transaction_success and miner_success
     return success, {}
 
 
@@ -112,8 +126,9 @@ def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
     """
     trace_success: bool = utils.delete_bucket_contents('tornado-trace')
     transaction_success: bool = utils.delete_bucket_contents('tornado-transaction')
+    miner_success: bool = utils.delete_bucket_contents('tornado-miner-transaction')
 
-    success: bool = trace_success and transaction_success
+    success: bool = trace_success and transaction_success and miner_success
     return success, {}
 
 
@@ -132,7 +147,12 @@ def update_bucket() -> Tuple[bool, Dict[str, Any]]:
         'transactions',
         'tornado-transaction',
     )
-    success: bool = trace_success and transaction_success
+    miner_success: bool = utils.export_bigquery_table_to_cloud_bucket(
+        f'{project}.tornado_transactions',
+        'miner_transactions',
+        'tornado-miner-transaction',
+    )
+    success: bool = trace_success and transaction_success and miner_success
 
     return success, {}
 
@@ -145,9 +165,10 @@ def download_bucket() -> Tuple[bool, Any]:
     out_dir = join(data_path, 'live/tornado_cash')
     trace_success, trace_files = utils.export_cloud_bucket_to_csv('tornado-trace', out_dir)
     transaction_success, transaction_files = utils.export_cloud_bucket_to_csv('tornado-transaction', out_dir)
+    miner_success, miner_files = utils.export_cloud_bucket_to_csv('tornado-miner-transaction', out_dir)
 
-    success: bool = trace_success and transaction_success
-    data = {'trace': trace_files, 'transaction': transaction_files}
+    success: bool = trace_success and transaction_success and miner_success
+    data = {'trace': trace_files, 'transaction': transaction_files, 'miner': miner_files}
 
     return success, data
 
@@ -232,6 +253,7 @@ def main():
 
     trace_files: List[str] = data['trace']
     transaction_files: List[str] = data['transaction']
+    miner_files: List[str] = data['miner']
 
     if len(trace_files) == 0:
         logger.error('found 0 files for tornado cash traces')
@@ -241,18 +263,27 @@ def main():
         logger.error('found 0 files for tornado cash transactions')
         sys.exit(0)
 
+    if len(miner_files) == 0:
+        logger.error('found 0 files for tornado cash miners')
+        sys.exit(0)
+
     logger.info('sorting and combining trace files')
     trace_df: pd.DataFrame = utils.load_data_from_chunks(trace_files)
     logger.info('sorting and combining transaction files')
     transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
+    logger.info('sorting and combining miner files')
+    miner_df: pd.DataFrame = utils.load_data_from_chunks(miner_files)
 
     logger.info('deleting trace chunks')
     save_file(trace_df, 'tornado_traces.csv')
     logger.info('deleting transaction chunks')
     save_file(transaction_df, 'tornado_transactions.csv')
+    logger.info('deleting miner chunks')
+    save_file(miner_df, 'tornado_miners.csv')
 
     delete_files(trace_files)
     delete_files(transaction_files)
+    delete_files(miner_files)
 
     logger.info('entering get_deposit_and_withdraw')
     success, data = get_deposit_and_withdraw(trace_df, transaction_df)
@@ -263,9 +294,11 @@ def main():
 
     deposit_df: pd.DataFrame = data['deposit']
     withdraw_df: pd.DataFrame = data['withdraw']
+    miner_df: pd.DataFrame = data['miner']
 
     save_file(deposit_df, 'deposit_txs.csv')
     save_file(withdraw_df, 'withdraw_txs.csv')
+    save_file(miner_df, 'miner_txs.csv')
 
 
 if __name__ == "__main__":

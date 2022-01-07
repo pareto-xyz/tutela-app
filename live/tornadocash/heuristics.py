@@ -71,6 +71,9 @@ def main():
         except:
             logger.error(f'failed in heuristic {i+1}')
 
+    # TODO write code upload files to address table (check for block num)
+    # and upload processed CSV to appropriate table.
+
 
 if __name__ == "__main__":
     main()
