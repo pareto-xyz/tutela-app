@@ -273,7 +273,7 @@ def save_file(df: pd.DataFrame, name: str):
 
 def delete_files(paths: List[str]):
     for path in paths:
-        if os.path.isdir(path):
+        if os.path.isfile(path):
             os.remove(path)
 
 
