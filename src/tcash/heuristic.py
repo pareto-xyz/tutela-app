@@ -8,6 +8,7 @@ from os.path import join
 from datetime import datetime
 from collections import defaultdict
 from pandas import Timestamp, Timedelta
+from collections import namedtuple
 from typing import Tuple, Dict, List, Set, Any, Optional
 from src.utils.utils import Entity, Heuristic
 
@@ -89,9 +90,17 @@ class BaseHeuristic:
 
 
 class ExactMatchHeuristic(BaseHeuristic):
+    """
+    If a deposit address matches a withdraw address, then it is trivial to 
+    link the two addresses. Therefore, the deposit address needs to be 
+    removed from all the other withdraw addresses’ anonymity set. If a 
+    number N of deposits with a same address A1, and a number M (M < N) of withdraws 
+    with that same address are detected, then a number M-N of deposit transactions
+    must be removed from the anonimity set of all the other withdraw transactions.
+    """
 
     def __init__(self, name: str, tx_root: str, tcash_root: str, by_pool: bool = True):
-        super().__init__(tx_root, tcash_root)
+        super().__init__(name, tx_root, tcash_root)
         self._by_pool: bool = by_pool
 
     def apply_heuristic(
@@ -160,9 +169,15 @@ class ExactMatchHeuristic(BaseHeuristic):
 
 
 class GasPriceHeuristic(BaseHeuristic):
+    """
+    If there is a deposit and a withdraw transaction with unique gas 
+    prices (e.g., 3.1415926 Gwei), then we consider the deposit and 
+    the withdraw transactions linked. The corresponding deposit transaction 
+    can be removed from any other withdraw transaction’s anonymity set.
+    """
 
     def __init__(self, name: str, tx_root: str, tcash_root: str, by_pool: bool = True):
-        super().__init__(tx_root, tcash_root)
+        super().__init__(name, tx_root, tcash_root)
         self._by_pool: bool = by_pool
 
     def load_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -295,9 +310,29 @@ class GasPriceHeuristic(BaseHeuristic):
 
 
 class SameNumTransactionsHeuristic(BaseHeuristic):
+    """
+    If there are multiple (say 12) deposit transactions coming from a deposit 
+    address and later there are 12 withdraw transactions to the same withdraw 
+    address, then we can link all these deposit transactions to the withdraw 
+    transactions.
+
+    In particular, given a withdrawal transaction, an anonimity score is assigned 
+    to it:
+
+    1) The number of previous withdrawal transactions with the same address as the 
+    given withdrawal transaction is registered.
+
+    2) The deposit transactions data are grouped by their address. Addresses that 
+    deposited the same number of times as the number of withdraws registered, 
+    are grouped in a set C.
+
+    3) An anonimity score (of this heuristic) is assigned to the withdrawal 
+    transaction following the formula P = 1 - 1/|C|, where P is the anonymity score and  
+    is |C| the cardinality of set C.
+    """
 
     def __init__(self, name: str, tx_root: str, tcash_root: str, max_num_days: int = 1):
-        super().__init__(tx_root, tcash_root)
+        super().__init__(name, tx_root, tcash_root)
         self._max_num_days: int = max_num_days
 
     def apply_heuristic(
@@ -550,63 +585,356 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
 
 
 class LinkedTransactionHeuristic(BaseHeuristic):
-    pass
+    """
+    The main goal of this heuristic is to link Ethereum accounts which interacted 
+    with TCash by inspecting Ethereum transactions outside it.
+
+    This is done constructing two sets, one corresponding to the unique TCash 
+    deposit addresses and one to the unique TCash withdraw addresses, to 
+    then make a query to reveal transactions between addresses of each set.
+
+    When a transaction between two of them is found, TCash deposit transactions 
+    done by the deposit address are linked to all the TCash withdraw transactions 
+    done by the withdraw address. These two sets of linked transactions are 
+    filtered, leaving only the ones that make sense. For example, if a deposit 
+    address A is linked to a withdraw address B, but A made a deposit to the 1 
+    Eth pool and B made a withdraw to the 10 Eth pool, then this link is not 
+    considered. Moreover, when considering a particular link between deposit 
+    and withdraw transactions, deposits done posterior to the latest withdraw are 
+    removed from the deposit set.
+    """
+    def __init__(self, name: str, tx_root: str, tcash_root: str, min_interactions: int = 3):
+        super().__init__(name, tx_root, tcash_root)
+        self._min_interactions: int = min_interactions
+
+    def load_data(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        # load tornado pool information
+        tornado_df: pd.DataFrame = pd.read_csv(
+            join(self._tcash_root, 'tornado.csv'))
+        tornado_pools: Dict[str, str] = dict(
+            tornado_df.address,
+            tornado_df.name.apply(lambda x: x.replace('Tornado Cash Pool', '').strip()),
+        )
+
+        withdraw_df: pd.DataFrame = pd.read_csv(
+            join(self._tx_root, 'withdraw_txs.csv'))
+        withdraw_df['tcash_pool'] = withdraw_df['tornado_cash_address'].apply(
+            lambda addr: tornado_pools[addr])
+        withdraw_df['block_timestamp'] = \
+            withdraw_df['block_timestamp'].apply(pd.Timestamp)
+        deposit_df: pd.DataFrame = pd.read_csv(
+            join(self._tx_root, 'deposit_txs.csv'))
+        deposit_df['tcash_pool'] = deposit_df['tornado_cash_address'].apply(
+            lambda addr: tornado_pools[addr])
+
+        return deposit_df, withdraw_df, tornado_df
+
+    def load_custom_data(self):
+        external_df: pd.DataFrame = pd.read_csv(
+            json(self._tx_root, 'external_txs.csv'))
+        external_df: pd.DataFrame = external_df[['from_address', 'to_address']]
+
+        counts: pd.DataFrame = external_df.groupby(['from_address', 'to_address'])\
+            .size().reset_index(name='size')
+        external_df: pd.DataFrame = counts[counts['size'] >= self._min_interactions]
+        external_df: pd.DataFrame = self.__dataframe_from_set_of_sets(
+            filter(lambda x: len(x) == 2, 
+                self.__filter_repeated_and_permuted(external_df)))
+
+        self.external_df = external_df
+
+    def apply_heuristic(
+        self, 
+        deposit_df: pd.DataFrame, 
+        withdraw_df: pd.DataFrame,
+        tornado_df: pd.DataFrame) -> Tuple[List[Set[str]], Dict[str, str]]:
+
+        external_df: pd.DataFrame = self.external_df
+        all_tx2addr: Dict[str, str] = {
+            **dict(zip(deposit_df.hash, deposit_df.from_address)),
+            **dict(zip(withdraw_df.hash, withdraw_df.recipient_address)),
+        }
+        unique_deposits: Set[str] = set(deposit_df['from_address'])
+        unique_withdraws: Set[str] = set(withdraw_df['recipient_address'])
+
+        addr_pool_to_deposit: Dict[Tuple[str, str], str] = \
+            self.__addresses_and_pools_to_deposits(deposit_df)
+
+        withdraw2deposit: Dict[str, List[str]] = self.__map_withdraw2deposit(
+            external_df, unique_deposits, unique_withdraws)
+
+        links: Dict[str, List[str]] = self.__apply_first_neighbors_heuristic(
+            withdraw_df, withdraw2deposit, addr_pool_to_deposit)
+        
+        clusters, tx2addr = self.__build_clusters(links, all_tx2addr)
+
+        return clusters, tx2addr
+
+    def __apply_first_neighbors_heuristic(
+        self,
+        withdraw_df: pd.Series,
+        withdraw2deposit: Dict[str, str],
+        addr_pool_to_deposit: Dict[Tuple[str, str], str]) -> Dict[str, List[str]]:
+
+        links: Dict[str, str] = {}
+        for row in withdraw_df.itertuples():
+            dic = self.__first_neighbors_heuristic(
+                row, withdraw2deposit, addr_pool_to_deposit)
+            links.update(dic)
+
+        return dict(filter(lambda elem: len(elem[1]) != 0, links.items()))
+
+    def __first_neighbors_heuristic(
+        withdraw_df: pd.Series,
+        withdraw2deposit: Dict[str, str],
+        addr_pool_to_deposit: Dict[Tuple[str, str], str]) -> Dict[str, List[str]]:
+        """
+        Check that there has been a transaction between this address and some deposit
+        address outside Tcash. If not, return an empty list for this particular withdraw.
+        """
+        address: str = withdraw_df.recipient_address
+        pool: str = withdraw_df.tcash_pool
+
+        AddressPool: namedtuple = namedtuple('AddressPool', ['address', 'pool'])
+
+        if address in withdraw2deposit.keys():
+            interacted_addresses: List[str] = withdraw2deposit[address]
+            linked_deposits: List[str] = []
+
+            for addr in interacted_addresses:
+                if AddressPool(address=addr, pool=pool) in addr_pool_to_deposit.keys():
+                    for d in addr_pool_to_deposit[AddressPool(address=addr, pool=pool)]:
+                        if d.timestamp < withdraw_df.block_timestamp:
+                            linked_deposits.append(d.deposit_hash)
+                            
+            return {withdraw_df.hash: linked_deposits}
+        else:
+            return {withdraw_df.hash: []}
+
+    def __build_clusters(
+        self, 
+        links: Dict[str, List[str]],
+        all_tx2addr: Dict[str, str]) -> Tuple[List[Set[str]], Dict[str, str]]:
+
+        graph: nx.DiGraph = nx.DiGraph()
+        tx2addr: Dict[str, str] = {}
+
+        for withdraw, deposits in links.items():
+            graph.add_node(withdraw)
+            graph.add_nodes_from(deposits)
+
+            for deposit in deposits:
+                graph.add_edge(withdraw, deposit)
+
+                tx2addr[withdraw] = all_tx2addr[withdraw]
+                tx2addr[deposit] = all_tx2addr[deposit]
+
+        clusters: List[Set[str]] = [  # ignore singletons
+            c for c in nx.weakly_connected_components(graph) if len(c) > 1]
+
+        return clusters, tx2addr
+
+    def __map_withdraw2deposit(
+        self,
+        address_and_withdraw: pd.DataFrame,
+        deposits: Set[str],
+        withdraws: Set[str]
+    ) -> Dict[str, List[str]]:
+        """
+        Map interactions between every withdraw address to every deposit address, outside TCash
+        """
+        deposit_and_withdraw: np.array = np.empty((0, 2), dtype=str)
+        for row in address_and_withdraw.itertuples():
+
+            if (self.__is_D_W_tx(row.address_1, row.address_2, deposits, withdraws) or 
+                self.__is_D_DW_tx(row.address_1, row.address_2, deposits, withdraws) or 
+                self.__is_DW_W_tx(row.address_1, row.address_2, deposits, withdraws)):
+                deposit_and_withdraw: np.array = np.append(
+                    deposit_and_withdraw, [[row.address_1, row.address_2]], axis=0)
+
+            elif (self.__is_W_D_tx(row.address_1, row.address_2, deposits, withdraws) or 
+                    self.__is_W_DW_tx(row.address_1, row.address_2, deposits, withdraws) or 
+                    self.__is_DW_D_tx(row.address_1, row.address_2, deposits, withdraws)):
+                deposit_and_withdraw: np.array = np.append(
+                    deposit_and_withdraw, [[row.address_2, row.address_1]], axis=0)
+                
+            elif self.__is_DW_DW_tx(row.address_1, row.address_2, deposits, withdraws):
+                deposit_and_withdraw: np.array = np.append(
+                    deposit_and_withdraw, [[row.address_1, row.address_2]], axis=0)
+                deposit_and_withdraw: np.array = np.append(
+                    deposit_and_withdraw, [[row.address_2, row.address_1]], axis=0)
+            else:
+                raise ValueError('Unknown type: D_W, W_D, D_DW, DW_D, W_DW, DW_W, DW_DW')
+
+        D_W_df: pd.DataFrame = pd.DataFrame(
+            deposit_and_withdraw, columns=['deposit', 'withdraw'])
+
+        return dict(D_W_df.groupby('withdraw')['deposit'].apply(list))
+
+    def __addresses_and_pools_to_deposits(
+        self, deposit_df: pd.DataFrame) -> Dict[str, List[str]]:
+        """
+        Gives a dictionary with deposit addresses as keys and the 
+        deposit transactions each address made as values.
+        """
+        addresses_and_pools: dict = dict(
+            deposit_df.groupby('from_address')['tcash_pool'].apply(list))
+        addresses_and_pools_to_deposits: dict = {}
+        for addr in addresses_and_pools.keys():
+            for pool in addresses_and_pools[addr]:
+                addresses_and_pools_to_deposits.update(
+                    self.__addr_pool_to_deposits(addr, pool, deposit_df))
+
+        return addresses_and_pools_to_deposits
+
+    def __addr_pool_to_deposits(
+        self, address: str, tcash_pool: str, deposit_df) -> dict:
+        """
+        Given an address and the TCash pool, give all the deposits that 
+        address has done in that pool.
+        """
+        mask = (deposit_df['from_address'] == address) & \
+            (deposit_df['tcash_pool'] == tcash_pool)
+
+        addr_pool_deposits: pd.DataFrame = deposit_df[mask]
+        HashTimestamp = namedtuple('HashTimestamp', ['deposit_hash', 'timestamp'])
+        AddressPool = namedtuple('AddressPool', ['address', 'pool'])
+
+        hashes_and_timestamps: List[Optional[HashTimestamp]] = \
+            [None] * len(addr_pool_deposits)
+        for i, row in enumerate(addr_pool_deposits.itertuples()):
+            hashes_and_timestamps[i] = HashTimestamp(
+                deposit_hash=row.hash, timestamp=row.block_timestamp)
+
+        return {AddressPool(address=address, pool=tcash_pool): hashes_and_timestamps}
+
+    def __filter_repeated_and_permuted(
+        self, external_df: pd.DataFrame) -> Set[Set[str]]:
+        filtered_set = set()
+        for row in external_df.itertuples():
+            filtered_set.add(frozenset([row.from_address, row.to_address]))
+        return filtered_set
+
+    def __dataframe_from_set_of_sets(
+        self, set_of_sets: Set[Set[str]]) -> pd.DataFrame:
+        df: pd.DataFrame = pd.DataFrame({'address_1':[], 'address_2':[]})
+
+        for s in set_of_sets:
+            s_tuple: Tuple[str] = tuple(s)
+            if len(s) == 2:
+                df: pd.DataFrame = df.append(
+                    {'address_1': s_tuple[0], 'address_2': s_tuple[1]}, 
+                    ignore_index=True)
+            else:
+                df: pd.DataFrame = df.append(
+                    {'address_1': s_tuple[0], 'address_2': s_tuple[0]}, 
+                    ignore_index=True)
+
+        return df
+
+    def __is_D_type(
+        self, address: str, deposits: Set[str], withdraws: Set[str]) -> bool:
+        return (address in deposits) and (address not in withdraws)
+
+    def __is_W_type(
+        self, address: str, deposits: Set[str], withdraws: Set[str]) -> bool:
+        return (address not in deposits) and (address in withdraws)
+
+    def __is_DW_type(
+        self, address: str, deposits: Set[str], withdraws: Set[str]) -> bool:
+        return (address in deposits) and (address in withdraws)
+
+    def __is_D_W_tx(
+        self, address1: str, address2: str, 
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_D_type(address1, deposits, withdraws) and \
+            self.__is_W_type(address2, deposits, withdraws)
+
+    def __is_W_D_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_W_type(address1, deposits, withdraws) and \
+            self.__is_D_type(address2, deposits, withdraws)
+
+    def is_D_DW_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_D_type(address1, deposits, withdraws) and \
+            self.__is_DW_type(address2, deposits, withdraws)
+
+    def __is_DW_D_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_DW_type(address1, deposits, withdraws) and \
+            self.__is_D_type(address2, deposits, withdraws)
+
+    def __is_W_DW_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_W_type(address1, deposits, withdraws) and \
+            self.__is_DW_type(address2, deposits, withdraws)
+
+    def __is_DW_W_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_DW_type(address1, deposits, withdraws) and \
+            self.__is_W_type(address2, deposits, withdraws)
+
+    def __is_DW_DW_tx(
+        self, address1: str, address2: str,
+        deposits: Set[str], withdraws: Set[str]) -> bool:
+        return self.__is_DW_type(address1, deposits, withdraws) and \
+            self.__is_DW_type(address2, deposits, withdraws)
 
 
 class TornMiningHeuristic(BaseHeuristic):
     """
-    Through Anonimity Mining, TCash users are able to receive TORN 
-    token as a reward for using the application. This is done in a 
-    sequence of two steps:
+    Through Anonimity Mining, TCash users are able to receive TORN token as a 
+    reward for using the application. This is done in a sequence of two steps:
 
-    Anonimity Points (AP) are claimed for already spent notes. The 
-    quantity of AP obtained depends on how many blocks the note was 
-    in a TCash pool, and the pool where it was.
+    Anonimity Points (AP) are claimed for already spent notes. The quantity of 
+    AP obtained depends on how many blocks the note was in a TCash pool, and 
+    the pool where it was.
     
-    Using the TCash Automated Market Maker (AMM), users can exchange 
-    anonimity points for TORN. From a pure data point of view, this 
-    actions are seen as transactions with the TCash Miner. An example 
-    of transaction (1) can be seen here and an example of transaction 
-    (2) can be seen here.
+    Using the TCash Automated Market Maker (AMM), users can exchange anonymity 
+    points for TORN. From a pure data point of view, this actions are seen as 
+    transactions with the TCash Miner. An example of transaction (1) can be seen 
+    here and an example of transaction (2) can be seen here.
 
-    What can be seen clearly by decoding the input data field of these 
-    transactions is that transactions of type (1) call the TCash miner 
-    method reward and the ones of type (2) the method withdraw. 
-    Transactions of type (2) are the ones we are interested in, since 
-    they give us the following information:
+    What can be seen clearly by decoding the input data field of these transactions 
+    is that transactions of type (1) call the TCash miner method reward and the 
+    ones of type (2) the method withdraw. Transactions of type (2) are the ones we 
+    are interested in, since they give us the following information:
 
     - Amount of AP being swapped to TORN.
     - Address of TORN recipient.
 
-    Making the assumption that users are swapping the totality of 
-    their AP, and that those AP have been claimed for a single note, 
-    then we can link deposit and withdrawal transactions with the 
-    following procedure:
+    Making the assumption that users are swapping the totality of their AP, and 
+    that those AP have been claimed for a single note, then we can link deposit 
+    and withdrawal transactions with the following procedure:
 
-    1. Check if the recipient address of a transaction of type (2) has 
-    done a deposit or a withdraw in TCash.
-    
-    2. If the address is included in the set of deposit (withdraw) 
-    addreses, then check all deposits (withdraws) of that address, 
-    convert AP into number of blocks according to the pool the deposit
-    was done, and then search for a withdraw transaction with block 
-    number equal to
+    1. Check if the recipient address of a transaction of type (2) has done a 
+    deposit or a withdraw in TCash.
+
+    2. If the address is included in the set of deposit (withdraw) addreses, then 
+    check all deposits (withdraws) of that address, convert AP into number of 
+    blocks according to the pool the deposit was done, and then search for a 
+    withdraw transaction with block number equal to
 
         deposit_blocks + AP_converted_blocks = withdraw_blocks
 
-    3. When such a withdraw (deposit) is found, then the two transactions 
-    are considered linked.
+    3. When such a withdraw (deposit) is found, then the two transactions are 
+    considered linked.
 
-    Results are given in a dictionary, each element has the 
-    following structure:
+    Results are given in a dictionary, each element has the following structure:
 
         (withdraw_hash, withdraw_address, AP_converted_blocks): 
         [(deposit_hash, deposit_address), ...]
 
-    In this compact manner we have the information about the withdraw 
-    transactions with their addresses and their linking to deposit 
-    transactions with their addresses. We also have the amount of blocks 
-    that the notes were deposited in the TCash pool.
+    In this compact manner we have the information about the withdraw transactions 
+    with their addresses and their linking to deposit transactions with their 
+    addresses. We also have the amount of blocks that the notes were deposited in 
+    the TCash pool.
     """
     MINE_POOL_RATES: Dict[str, int] = {
         '0.1 ETH': 4, 
