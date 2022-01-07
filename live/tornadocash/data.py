@@ -81,7 +81,7 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
             f'block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:{trace_table}',
+            # f'--destination_table {project}:{trace_table}',
             '--use_legacy_sql=false',
         ],
     )
@@ -92,7 +92,7 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
             f'b.block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:{transaction_table}',
+            # f'--destination_table {project}:{transaction_table}',
             '--use_legacy_sql=false',
         ],
     )
@@ -105,11 +105,10 @@ def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, 
             f'block_number > {start_block}',
         ],
         flags = [
-            f'--destination_table {project}:{miner_table}',
+            # f'--destination_table {project}:{miner_table}',
             '--use_legacy_sql=false',
         ],
     )
-    breakpoint()
     trace_success: bool = utils.execute_bash(trace_query)
     transaction_success: bool = utils.execute_bash(transaction_query)
     miner_success: bool = utils.execute_bash(miner_query)
@@ -231,7 +230,7 @@ def external_pipeline(
     ]
     where_clauses: str = ' or '.join(where_clauses)
     flags: List[str] = [
-        f'--destination_table {project}:{external_table}',
+        # f'--destination_table {project}:{external_table}',
         '--use_legacy_sql=false',
     ]
     flags: str = ' '.join(flags)
