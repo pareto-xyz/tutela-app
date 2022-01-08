@@ -342,6 +342,11 @@ def main():
     logger.info('sorting and combining miner files')
     miner_df: pd.DataFrame = utils.load_data_from_chunks(miner_files)
 
+    # drop duplicates
+    trace_df.drop_duplicates('hash', inplace=True)
+    transaction_df.drop_duplicates('hash', inplace=True)
+    miner_df.drop_duplicates('hash', inplace=True)
+
     logger.info('deleting trace chunks')
     save_file(trace_df, 'tornado_traces.csv')
     logger.info('deleting transaction chunks')
