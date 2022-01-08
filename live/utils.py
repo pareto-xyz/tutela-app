@@ -56,7 +56,7 @@ def export_cloud_bucket_to_csv(
 
 
 def execute_bash(cmd: str) -> bool:
-    code: int = subprocess.call(cmd, shell=True, executable='/bin/bash')
+    code: int = subprocess.call(cmd, shell=True)
     return code == 0
 
 

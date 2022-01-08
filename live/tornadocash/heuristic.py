@@ -59,21 +59,20 @@ def main(args: Any):
 
     heuristics: List[BaseHeuristic] = [
         # NOTE: these names are the same as the database names.
-        # ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
-        # GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
-        # SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
+        ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
+        GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
+        SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
         LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
-        # TornMiningHeuristic('torn_mine', tx_root, tcash_root),
+        TornMiningHeuristic('torn_mine', tx_root, tcash_root),
     ]
 
     for i, heuristic in enumerate(heuristics):
         logger.info(f'entering heuristic {i+1}')
 
-        heuristic.run()
-        # try:
-        #     heuristic.run()
-        # except:
-        #     logger.error(f'failed in heuristic {i+1}')
+        try:
+            heuristic.run()
+        except:
+            logger.error(f'failed in heuristic {i+1}')
 
         name: str = heuristic._name
 
@@ -85,18 +84,26 @@ def main(args: Any):
                 user = utils.CONSTANTS['postgres_user'],
             )
             cursor = conn.cursor()
+
+            cursor.execute(f"DELETE FORM {name}") # delete all rows from table
+
             columns: List[str] = ['address', 'transaction', 'block_number',
                                   'block_ts', 'meta_data', 'cluster']
             columns: str = ','.join(columns)
             command: str = f"COPY {name}({columns}) FROM '{save_file}' DELIMITER ',' CSV HEADER;"
             cursor.execute(command)  # write CSV to db
+
             conn.commit()
+
+            cursor.close()
+            conn.close()
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-db', action='store_true', default=False)
+    parser.add_argument('--block', type=int, default=0, help='block number to start from')
     args = parser.parse_args()
 
     main(args)
