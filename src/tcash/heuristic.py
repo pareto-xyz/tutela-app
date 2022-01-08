@@ -1026,7 +1026,6 @@ class TornMiningHeuristic(BaseHeuristic):
             join(self._tcash_root, 'tornado_miner_abi.csv'), 
             names=['address', 'abi'],
             sep='|')
-        breakpoint()
         miner_address: str = miner_abi_df.address.iloc[0]
         miner_abi: str = miner_abi_df.abi.iloc[0]
 
