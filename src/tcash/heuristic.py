@@ -427,6 +427,7 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         return tx_clusters, address_sets, tx2addr, addr2conf
 
     def __make_portfolio_df(
+        self,
         raw_portfolios: pd.DataFrame, 
         pools: List[str]) -> pd.DataFrame:
         raw_portfolios: List[Dict[str, int]] = \
@@ -997,10 +998,10 @@ class TornMiningHeuristic(BaseHeuristic):
         # load tornado pool information
         tornado_df: pd.DataFrame = pd.read_csv(
             join(self._tcash_root, 'tornado.csv'))
-        tornado_pools: Dict[str, str] = dict(
+        tornado_pools: Dict[str, str] = dict(zip(
             tornado_df.address,
             tornado_df.name.apply(lambda x: x.replace('Tornado Cash Pool', '').strip()),
-        )
+        ))
 
         withdraw_df: pd.DataFrame = pd.read_csv(
             join(self._tx_root, 'withdraw_txs.csv'))
@@ -1022,9 +1023,10 @@ class TornMiningHeuristic(BaseHeuristic):
         true = True; false = False
 
         miner_abi_df: pd.DataFrame = pd.read_csv(
-            join(self._tcash_root, 'miner_abi.csv'), 
+            join(self._tcash_root, 'tornado_miner_abi.csv'), 
             names=['address', 'abi'],
             sep='|')
+        breakpoint()
         miner_address: str = miner_abi_df.address.iloc[0]
         miner_abi: str = miner_abi_df.abi.iloc[0]
 
@@ -1088,7 +1090,6 @@ class TornMiningHeuristic(BaseHeuristic):
 
         miner_df = self.miner_df
         miner_df = miner_df[miner_df['function_call'] == 'w']
-        miner_df.head()
 
         mining_pools: List[str] = list(self.MINE_POOL_RATES.keys())
 
@@ -1175,7 +1176,7 @@ class TornMiningHeuristic(BaseHeuristic):
 
         return w2d
 
-    def __build_clusters(links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
+    def __build_clusters(self, links: Any) -> Tuple[List[Set[str]], Dict[str, str]]:
         graph: nx.DiGraph = nx.DiGraph()
         tx2addr: Dict[str, str] = {}
 

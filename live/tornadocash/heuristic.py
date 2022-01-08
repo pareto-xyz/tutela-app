@@ -59,21 +59,21 @@ def main(args: Any):
 
     heuristics: List[BaseHeuristic] = [
         # NOTE: these names are the same as the database names.
-        ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
-        GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
-        SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
-        LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
+        # ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
+        # GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
+        # SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
+        # LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
         TornMiningHeuristic('torn_mine', tx_root, tcash_root),
     ]
 
     for i, heuristic in enumerate(heuristics):
         logger.info(f'entering heuristic {i+1}')
-        heuristic.run()
 
-        try:
-            heuristic.run()
-        except:
-            logger.error(f'failed in heuristic {i+1}')
+        heuristic.run()
+        # try:
+        #     heuristic.run()
+        # except:
+        #     logger.error(f'failed in heuristic {i+1}')
 
         name: str = heuristic._name
 
