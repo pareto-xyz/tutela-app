@@ -55,14 +55,14 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                     </div>
                     <div className="col-6 select-window">
                         <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
-                            <option value='1yr'>
-                                past year
-                            </option>
                             <option value='3mth'>
                                 past 3 months
                             </option>
                             <option value='6mth'>
                                 past 6 months
+                            </option>
+                            <option value='1yr'>
+                                past year
                             </option>
                             <option value='3yr'>
                                 past 3 years
