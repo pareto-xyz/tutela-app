@@ -126,7 +126,7 @@ class ExactMatchHeuristic(BaseHeuristic):
         pbar = tqdm(total=len(withdraw_df))
         for withdraw_row in withdraw_df.itertuples():
             results: Tuple[bool, List[pd.Series]] = self.__exact_match_heuristic(
-                deposit_df, withdraw_row, by_pool=self.by_pool)
+                deposit_df, withdraw_row, by_pool=self._by_pool)
 
             if results[0]:
                 deposit_rows: List[pd.Series] = results[1]
@@ -220,7 +220,7 @@ class GasPriceHeuristic(BaseHeuristic):
         Get deposit transactions with unique gas prices.
         """
         filter_fn = self.__filter_by_unique_gas_price_by_pool \
-            if self.by_pool else self.__filter_by_unique_gas_price
+            if self._by_pool else self.__filter_by_unique_gas_price
         unique_gas_deposit_df: pd.DataFrame = filter_fn(deposit_df)
 
         # initialize an empty dictionary to store the linked transactions.
@@ -271,7 +271,7 @@ class GasPriceHeuristic(BaseHeuristic):
 
         return transactions_df[transactions_df['gas_price'].isin(unique_gas_prices)]
 
-    def __filter_by_unique_gas_price_by_pool(transactions_df: pd.DataFrame) -> pd.DataFrame:
+    def __filter_by_unique_gas_price_by_pool(self, transactions_df: pd.DataFrame) -> pd.DataFrame:
         """
         Unlike the non-pool version, we check for unique gas price BY POOL (this
         is a weaker constraint).

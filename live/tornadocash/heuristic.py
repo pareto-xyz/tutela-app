@@ -18,9 +18,10 @@ each heuristic. We will not write any other files to disk.
 If possible look into ovewriting here rather than deleting rows.
 """
 import os
+import psycopg2
 import pandas as pd
 from os.path import join
-from typing import List
+from typing import List, Any
 
 from live import utils
 from src.tcash.heuristic import (
@@ -42,7 +43,7 @@ def load_input_data():
     return trace, transaction
 
 
-def main():
+def main(args: Any):
     log_path: str = utils.CONSTANTS['log_path']
     os.makedirs(log_path, exist_ok=True)
 
@@ -54,26 +55,48 @@ def main():
     data_path: str = utils.CONSTANTS['data_path']
     tx_root: str = join(data_path, 'live/tornado_cash')
     tcash_root: str = join(data_path, 'static/tcash')
+    proc_root: str = join(tx_root, 'processed')
 
     heuristics: List[BaseHeuristic] = [
         # NOTE: these names are the same as the database names.
         ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
         GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
-        SameNumTransactionsHeuristic('multi_denom', tx_root, max_num_days=1),
+        SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
         LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
-        TornMiningHeuristic('torn_mine',tx_root, tcash_root),
+        TornMiningHeuristic('torn_mine', tx_root, tcash_root),
     ]
 
     for i, heuristic in enumerate(heuristics):
         logger.info(f'entering heuristic {i+1}')
+        heuristic.run()
+
         try:
             heuristic.run()
         except:
             logger.error(f'failed in heuristic {i+1}')
 
-    # TODO write code upload files to address table (check for block num)
-    # and upload processed CSV to appropriate table.
+        name: str = heuristic._name
+
+        if not args.no_db:
+            save_file: str = join(proc_root, f'{name}.csv')
+
+            conn = psycopg2.connect(
+                database = utils.CONSTANTS['postgres_db'], 
+                user = utils.CONSTANTS['postgres_user'],
+            )
+            cursor = conn.cursor()
+            columns: List[str] = ['address', 'transaction', 'block_number',
+                                  'block_ts', 'meta_data', 'cluster']
+            columns: str = ','.join(columns)
+            command: str = f"COPY {name}({columns}) FROM '{save_file}' DELIMITER ',' CSV HEADER;"
+            cursor.execute(command)  # write CSV to db
+            conn.commit()
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-db', action='store_true', default=False)
+    args = parser.parse_args()
+
+    main(args)

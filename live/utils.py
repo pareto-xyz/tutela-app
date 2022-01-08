@@ -18,6 +18,8 @@ CONSTANTS = {
     'data_path': DATA_DIR,
     'log_path': LOG_DIR,
     'bigquery_project': 'lexical-theory-329617',
+    'postgres_db': 'tornado',
+    'postgres_user': 'postgres',
 }
 
 
