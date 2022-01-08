@@ -343,7 +343,7 @@ def main():
     miner_df: pd.DataFrame = utils.load_data_from_chunks(miner_files)
 
     # drop duplicates
-    trace_df.drop_duplicates('hash', inplace=True)
+    trace_df.drop_duplicates('transaction_hash', inplace=True)
     transaction_df.drop_duplicates('hash', inplace=True)
     miner_df.drop_duplicates('hash', inplace=True)
 
