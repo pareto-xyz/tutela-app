@@ -62,8 +62,8 @@ def main(args: Any):
         # ExactMatchHeuristic('exact_match', tx_root, tcash_root, by_pool=True),
         # GasPriceHeuristic('gas_price', tx_root, tcash_root, by_pool=True),
         # SameNumTransactionsHeuristic('multi_denom', tx_root, tcash_root, max_num_days=1),
-        # LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
-        TornMiningHeuristic('torn_mine', tx_root, tcash_root),
+        LinkedTransactionHeuristic('linked_transaction',tx_root, tcash_root),
+        # TornMiningHeuristic('torn_mine', tx_root, tcash_root),
     ]
 
     for i, heuristic in enumerate(heuristics):

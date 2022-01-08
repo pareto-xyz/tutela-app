@@ -47,7 +47,7 @@ def get_last_block():
     return last_block
 
 
-def update_bigquery(start_block: Optional[int] = None) -> Tuple[bool, Dict[str, Any]]:
+def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
     """
     Run SQL queries against BigQuery to insert the most recent data into
     the following tables.
@@ -205,7 +205,9 @@ def get_deposit_and_withdraw(
 
 
 def external_pipeline(
-    deposit_df: pd.DataFrame, withdraw_df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
+    start_block: int, 
+    deposit_df: pd.DataFrame, 
+    withdraw_df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
     """
     We need to update another bigquery table for external transactions
     between TornadoCash users. We must do this separately because we 
@@ -225,8 +227,9 @@ def external_pipeline(
     insert: str = 'insert {project}.{external_table}'
     select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
     where_clauses: List[str] = [
-        f'(from_address in ({deposit_addresses})) and (to_address in ({withdraw_addresses}))'
-        f'(from_address in ({withdraw_addresses})) and (to_address in ({deposit_addresses}))'
+        f'(from_address in ({deposit_addresses})) and (to_address in ({withdraw_addresses}))',
+        f'(from_address in ({withdraw_addresses})) and (to_address in ({deposit_addresses}))',
+        f'block_number > {start_block}',
     ]
     where_clauses: str = ' or '.join(where_clauses)
     flags: List[str] = [
@@ -367,6 +370,13 @@ def main():
 
     deposit_df: pd.DataFrame = data['deposit']
     withdraw_df: pd.DataFrame = data['withdraw']
+
+    logger.info('entering external_pipeline')
+    success, _ = external_pipeline(last_block, deposit_df, withdraw_df)
+
+    if not success:
+        logger.error('failed on processing external transactions')
+        sys.exit(0)
 
     save_file(deposit_df, 'deposit_txs.csv')
     save_file(withdraw_df, 'withdraw_txs.csv')

@@ -632,10 +632,10 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         # load tornado pool information
         tornado_df: pd.DataFrame = pd.read_csv(
             join(self._tcash_root, 'tornado.csv'))
-        tornado_pools: Dict[str, str] = dict(
+        tornado_pools: Dict[str, str] = dict(zip(
             tornado_df.address,
             tornado_df.name.apply(lambda x: x.replace('Tornado Cash Pool', '').strip()),
-        )
+        ))
 
         withdraw_df: pd.DataFrame = pd.read_csv(
             join(self._tx_root, 'withdraw_txs.csv'))
@@ -653,7 +653,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
     def load_custom_data(self):
         print(f'[{self._name}] loading external dataframe')
         external_df: pd.DataFrame = pd.read_csv(
-            json(self._tx_root, 'external_txs.csv'))
+            join(self._tx_root, 'external_txs.csv'))
         external_df: pd.DataFrame = external_df[['from_address', 'to_address']]
 
         counts: pd.DataFrame = external_df.groupby(['from_address', 'to_address'])\
