@@ -31,7 +31,9 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                             <td>{k} 
                             {hovers && hovers[ogK] && <MyTooltip tooltipText={hovers[ogK]} />}
                             </td>
-                            <td>{typeof(value) === 'object' ? <AgnosticTable keyValues={value} aliases={aliases} /> : value}</td>
+                            <td>{typeof(value) === 'object' 
+                            ? <AgnosticTable keyValues={value} aliases={aliases} /> 
+                            : value}</td>
                         </tr>)
                 }
                 )}

@@ -2,7 +2,7 @@ import React from 'react';
 import AgnosticTable from '../components/AgnosticTable';
 import MyTooltip from '../components/MyTooltip';
 
-const TO_IGNORE = new Set(['metadata', 'id', 'anonymity_score']);
+const TO_IGNORE = new Set(['metadata', 'id', 'anonymity_score', 'start_date', 'end_date']);
 
 export default function QueryInfo({ data, loading=false, aliases }) {
     let { metadata, anonymity_score } = data;

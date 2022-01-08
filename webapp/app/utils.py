@@ -132,6 +132,7 @@ def get_display_aliases() -> Dict[str, str]:
         'multi_denomination': 'multi-denomination',
         'address_match': 'address match',
         'all_reveals': 'all reveals',
+        'ranks': 'rank percentile compared to other ethereum addresses',
     }
 
 
