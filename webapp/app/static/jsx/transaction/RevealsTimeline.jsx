@@ -32,7 +32,6 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     }
 
     function onClickWeek(e) {
-        console.log(e)
         const { activeLabel, activeTooltipIndex } = e;
         const [startDate, endDate] = activeLabel.split('-');
         loadNewData({
