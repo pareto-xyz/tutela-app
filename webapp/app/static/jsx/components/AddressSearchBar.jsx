@@ -1,10 +1,12 @@
 import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { isValid } from './utils';
+import { isValid } from '../../js/utils';
 //import isTornado from '../../data/istornado';
 
-export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress }) {
+export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress, 
+    myClassName="fixed-width mb-1 col-sm-12 col-md-6 col-lg-8", 
+    showTornadoHovers=true }) {
 
     const inputEl = useRef(null);
     const [invalid, setInvalid] = useState(false);
@@ -64,12 +66,12 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
     return (
         <>
             <OverlayTrigger
-                show={tornadoTooltip.length > 0}
+                show={showTornadoHovers && tornadoTooltip.length > 0}
                 placement="right-start"
                 overlay={renderTcashTooltip}
             >
 
-                    <InputGroup onSubmit={submitInputAddress} className="fixed-width mb-1 col-sm-12 col-md-6 col-lg-8" hasValidation>
+                    <InputGroup onSubmit={submitInputAddress} className="fixed-width col-md-12 col-lg-8" hasValidation>
                         <FormControl onKeyPress={(e) => {
                             if (e.key !== 'Enter') return;
                             e.preventDefault();
@@ -80,6 +82,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                             className="search-bar"
                             isInvalid={invalid}
                             ref={inputEl}
+                            area-describedby='addressSearchHelp'
                         >
                         </FormControl>
 

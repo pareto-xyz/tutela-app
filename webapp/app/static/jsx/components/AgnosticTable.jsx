@@ -19,7 +19,7 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                 {Object.entries(keyValues).map((entry, idx) => {
                     let [k, value] = entry;
                     const ogK = k; //original key
-                    if (k === 'hovers' || toIgnore.has(k) || typeof(k) === 'object' || value === null) return <></>;
+                    if (k === 'hovers' || toIgnore.has(k) || typeof(k) === 'object' || value === null) return null;
                     if (aliases[k]) {
                         k = aliases[k];
                     }
@@ -31,7 +31,9 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                             <td>{k} 
                             {hovers && hovers[ogK] && <MyTooltip tooltipText={hovers[ogK]} />}
                             </td>
-                            <td>{typeof(value) === 'object' ? <AgnosticTable keyValues={value} aliases={aliases} /> : value}</td>
+                            <td>{typeof(value) === 'object' 
+                            ? <AgnosticTable keyValues={value} aliases={aliases} /> 
+                            : value}</td>
                         </tr>)
                 }
                 )}

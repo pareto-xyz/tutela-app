@@ -41,6 +41,7 @@
     "react-copy-to-clipboard": "^5.0.4",
     "react-dom": "^16.9.0",
     "react-router-dom": "^6.0.2",
+    "recharts": "^2.1.8",
     "watch": "^1.0.2"
   }
 }

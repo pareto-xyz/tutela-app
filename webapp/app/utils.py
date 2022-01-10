@@ -125,12 +125,14 @@ def get_display_aliases() -> Dict[str, str]:
         'multi_denom': 'multi-denom reveals',
         'gas_price': 'unique gas price reveals',
         'linked_tx': 'linked address reveals',
+        'linked_transaction': 'linked transaction',
         'torn_mine': 'TORN mining reveals',
         'unique_gas_price': 'unique gas price',
         'deposit_address_reuse': 'deposit address reuse',
         'multi_denomination': 'multi-denomination',
         'address_match': 'address match',
         'all_reveals': 'all reveals',
+        'ranks': 'rank percentile compared to other ethereum addresses',
     }
 
 
@@ -403,6 +405,19 @@ def default_transaction_response() -> Dict[str, Any]:
                             DEPO_REUSE_HEUR: 0, 
                         },
                         'num_tcash': {
+                            SAME_ADDR_HEUR: 0, 
+                            GAS_PRICE_HEUR: 0, 
+                            SAME_NUM_TX_HEUR: 0,
+                            LINKED_TX_HEUR: 0,
+                            TORN_MINE_HEUR: 0,
+                        },
+                    },
+                    'ranks': {
+                        'overall': 0,
+                        'ethereum': {
+                            DEPO_REUSE_HEUR: 0, 
+                        },
+                        'tcash': {
                             SAME_ADDR_HEUR: 0, 
                             GAS_PRICE_HEUR: 0, 
                             SAME_NUM_TX_HEUR: 0,
