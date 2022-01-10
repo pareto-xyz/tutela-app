@@ -1,10 +1,9 @@
-.top-margin {
-    margin-top: 90px;
+.instructions-transactions{
+    text-align: center;
 }
 
-
 /** CHART **/
-
+/*
 .recharts-rectangle.recharts-tooltip-cursor {
     fill: var(--fadedgrey);
 }
@@ -18,4 +17,4 @@
 
 .select-window {
     text-align: right;
-}
+}*/

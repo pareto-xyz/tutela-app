@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { Form } from 'react-bootstrap';
 import { getApi } from '../../js/utils';
-import exampleResponse from '../../data/plot';
+//import exampleResponse from '../../data/plot';
 
 const TIME_PERIODS = {
     '3mth': 'past 3 months',
@@ -82,10 +82,10 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                             <Bar name={aliases.multi_denomination || 'multi_denomination'} dataKey="multi_denomination" stackId="a" fill="violet" />
                             <Bar name={aliases.linked_transaction || 'linked_transaction'} dataKey="linked_transaction" stackId="a" fill="#82ca9d" />
                             <Bar name={aliases.address_match || 'address_match'} dataKey="address_match" stackId="a" fill="lightblue" />
-                            <Bar name={aliases.torn_mine || 'torn_mine'} dataKey="torn_mine" 
-                            // background={({ name }) => (
-                            //     <div style={{ height: '100%', width: '50px', fill: name === selectedWeek ? '#ee11bb' : '#ff0033' }}></div>
-                            // )}
+                            <Bar name={aliases.torn_mine || 'torn_mine'} dataKey="torn_mine"
+                                // background={({ name }) => (
+                                //     <div style={{ height: '100%', width: '50px', fill: name === selectedWeek ? '#ee11bb' : '#ff0033' }}></div>
+                                // )}
                                 stackId="a" fill="white" />
 
                             <Legend verticalAlign="bottom" height={5} />
