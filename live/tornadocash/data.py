@@ -153,7 +153,7 @@ def make_bq_load(table: str, csv_path: str, schema: str) -> str:
         "--source_format=CSV",
     ]
     flags: str = ' '.join(flags)
-    command: str = f"bq load {flags} {project}:{table} {csv_path} {schema}"
+    command: str = f"bq load {flags} {table} {csv_path} {schema}"
     return command
 
 
@@ -286,10 +286,10 @@ def external_pipeline(
     project: str = utils.CONSTANTS['bigquery_project']
     external_table: str = 'tornado_transactions.external_transactions'
 
-    insert: str = f'insert {project}.{external_table}'
+    insert: str = f'insert into {project}.{external_table}'
     select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
-    deposit_select: str = f'select address from {project}.tornado_transactions.deposit_addresses'
-    withdraw_select: str = f'select address from {project}.tornado_transactions.withdraw_addresses'
+    deposit_select: str = f'select address from {deposit_address_table}'
+    withdraw_select: str = f'select address from {withdraw_address_table}'
     where_clauses: List[str] = [
         f'(from_address in ({deposit_select})) and (to_address in ({withdraw_select}))',
         f'(from_address in ({withdraw_select})) and (to_address in ({deposit_select}))',
@@ -486,15 +486,15 @@ def main(args: Any):
 
 
 if __name__ == "__main__":
-    # import argparse 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--scratch', action='store_true', default=False)
-    # parser.add_argument('--no-db', action='store_true', default=False)
-    # args = parser.parse_args()
+    import argparse 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--scratch', action='store_true', default=False)
+    parser.add_argument('--no-db', action='store_true', default=False)
+    args = parser.parse_args()
     # main(args)
 
     data_path:  str = utils.CONSTANTS['data_path']
     tcash_path: str = join(data_path, 'live/tornado_cash')
     withdraw_df = pd.read_csv(join(tcash_path, 'withdraw_txs.csv'))
     deposit_df = pd.read_csv(join(tcash_path, 'deposit_txs.csv'))
-    success, _ = external_pipeline(0, deposit_df, withdraw_df)
+    success, _ = external_pipeline(0, deposit_df, withdraw_df, delete_before = args.scratch)
