@@ -342,6 +342,8 @@ def external_pipeline(
 
     save_file(external_df, 'external_txs.csv')
 
+    return True, {}
+
 
 def save_file(df: pd.DataFrame, name: str):
     data_path:  str = utils.CONSTANTS['data_path']
