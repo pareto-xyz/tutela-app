@@ -15,18 +15,8 @@ from collections import Counter
 from typing import Any, List, Dict
 
 from live import utils
-from webapp.app.models import (
-    ExactMatch, GasPrice, MultiDenom, LinkedTransaction,
-    TornMining, TornadoDeposit, DepositTransaction)
-from webapp.app.utils import (
-    GAS_PRICE_HEUR, DEPO_REUSE_HEUR, SAME_NUM_TX_HEUR, 
-    SAME_ADDR_HEUR, LINKED_TX_HEUR, TORN_MINE_HEUR)
 from src.utils.utils import to_pickle
-
-HEURISTICS: List[Any] = [ExactMatch, GasPrice, MultiDenom, 
-                         LinkedTransaction, TornMining]
-NAMES: List[Any] = [SAME_ADDR_HEUR, GAS_PRICE_HEUR, SAME_NUM_TX_HEUR,
-                    LINKED_TX_HEUR, TORN_MINE_HEUR]
+from webapp.db_utils.get_dist import get_tornado_cash_users, get_score_dist
 
 
 def main(args: Any):
@@ -38,60 +28,6 @@ def main(args: Any):
     out_file: str = join(data_path, 'transaction_reveal_dist.pickle')
     to_pickle(score_dists, out_file)  # update raw file!
 
-# --
-# Start code to get reveal distribution for s
-# --
-
-def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
-    rows: List[TornadoDeposit] = TornadoDeposit.query.all()
-    addresses: List[str] = [row.from_address for row in rows]
-    addresses: np.array = np.array(addresses)
-    addresses: np.array = np.unique(addresses)
-
-    if size <= 0: return []
-    if size > len(addresses): return addresses.tolist()
-    addresses: np.array = rs.choice(addresses, size, replace=False)
-    return addresses.tolist()
-
-
-def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
-    scores: Dict[str, List[str]] = {}
-    
-    scores[DEPO_REUSE_HEUR] = []
-    for name in NAMES: 
-        scores[name] = []
-
-    pbar = tqdm(total=len(addresses))
-    for address in addresses:
-        num: int = find_num_dar_matches(address)
-        scores[DEPO_REUSE_HEUR].append(num)
-        for name, heuristic in zip(NAMES, HEURISTICS):
-            num: int = find_num_tcash_matches(address, heuristic)
-            scores[name].append(num)
-        pbar.update()
-    pbar.close()
-
-    dist: Dict[str, Dict[int, int]] = {}
-    dist[DEPO_REUSE_HEUR] = dict(Counter(scores[DEPO_REUSE_HEUR]))
-    for name in NAMES:
-        dist[name] =  dict(Counter(scores[name]))
-    return dist
-
-
-def find_num_tcash_matches(address: str, Heuristic: Any) -> int:
-    rows: List[Heuristic] = \
-        Heuristic.query.filter(Heuristic.address == address).all()
-    return len(rows)
-
-
-def find_num_dar_matches(address: str) -> int:
-    rows: List[DepositTransaction] = \
-        DepositTransaction.query.filter(DepositTransaction.address == address).all()
-    return len(rows)
-
-# -- 
-# Utilities
-# --
 
 if __name__ == "__main__":
     import argparse 
