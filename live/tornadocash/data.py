@@ -33,6 +33,7 @@ from typing import Tuple, Optional, List, Dict, Any
 
 from live import utils
 from src.tcash.data import decode_transactions
+from src.utils.utils import from_json
 
 
 def get_last_block():
@@ -127,6 +128,12 @@ def make_bq_query(
     return query
 
 
+def make_bq_load(table: str, csv_path: str, schema_path: str) -> str:
+    project: str = utils.CONSTANTS['bigquery_project']
+    command: str = f"bq load {project}:{table} {csv_path} {schema_path}"
+    return command
+
+
 def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
     """
     Make sure nothing is in bucket (we want to overwrite).
@@ -219,24 +226,35 @@ def external_pipeline(
     """
     deposit_addresses: List[str] = deposit_df.from_address.unique().tolist()
     withdraw_addresses: List[str] = withdraw_df.recipient_address.unique().tolist()
-    deposit_addresses: str = ','.join(deposit_addresses)
-    withdraw_addresses: str = ','.join(withdraw_addresses)
+
+    deposit_address_df: pd.DataFrame = pd.DataFrame.from_dict(
+        {'address': deposit_addresses})
+    withdraw_address_df: pd.DataFrame = pd.DataFrame.from_dict(
+        {'address': withdraw_addresses})
+
+    deposit_file: str = save_file(deposit_address_df, 'deposit_addrs.csv')
+    withdraw_file: str = save_file(withdraw_address_df, 'withdraw_addrs.csv')
+    address_schema: str = from_json(
+        join(utils.CONSTANTS['data_path'], 'live/tornado_cash/address_schema.json'))
+
+    # upload files to bigquery
+    make_bq_load('tornado_transactions.deposit_addresses', deposit_file, address_schema)
+    make_bq_load('tornado_transactions.withdraw_addresses', withdraw_file, address_schema)
 
     project: str = utils.CONSTANTS['bigquery_project']
     external_table: str = 'tornado_transactions.external_transactions'
 
-    insert: str = 'insert {project}.{external_table}'
+    insert: str = f'insert {project}.{external_table}'
     select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
+    deposit_select: str = 'select address from tornado_transactions.deposit_addresses'
+    withdraw_select: str = 'select address from tornado_transactions.withdraw_addresses'
     where_clauses: List[str] = [
-        f'(from_address in ({deposit_addresses})) and (to_address in ({withdraw_addresses}))',
-        f'(from_address in ({withdraw_addresses})) and (to_address in ({deposit_addresses}))',
+        f'(from_address in ({deposit_select})) and (to_address in ({withdraw_select}))',
+        f'(from_address in ({withdraw_select})) and (to_address in ({deposit_select}))',
         f'block_number > {start_block}',
     ]
     where_clauses: str = ' or '.join(where_clauses)
-    flags: List[str] = [
-        # f'--destination_table {project}:{external_table}',
-        '--use_legacy_sql=false',
-    ]
+    flags: List[str] = ['--use_legacy_sql=false']
     flags: str = ' '.join(flags)
     query: str = f"bq query {flags} '{insert} {select} where {where_clauses}'"
 
