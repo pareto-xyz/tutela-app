@@ -456,7 +456,7 @@ def main(args: Any):
 
     logger.info('entering external_pipeline')
     success, _ = external_pipeline(
-        last_block, deposit_df, withdraw_df, delete_from = args.scratch)
+        last_block, deposit_df, withdraw_df, delete_before = args.scratch)
 
     if not success:
         logger.error('failed on processing external transactions')
