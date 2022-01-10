@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
-import { getApi } from './utils';
+import { getApi } from '../../js/utils';
 
 export default function ChooseTornadoPool() {
     const [poolOptions, setPoolOptions] = useState([]);

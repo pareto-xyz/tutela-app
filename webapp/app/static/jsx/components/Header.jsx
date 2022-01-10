@@ -38,6 +38,9 @@ export default function Header(props) {
                         <a className="nav-link" href="/cluster">{getDisplayText('address', current)}</a>
                     </li>
                     <li className="nav-item">
+                        <a className="nav-link" href="/transactions">{getDisplayText('transactions', current)}</a>
+                    </li>
+                    <li className="nav-item">
                         <a className="nav-link" href="/#about">{getDisplayText('about', current)}</a>
                     </li>
                     <li className="nav-item">

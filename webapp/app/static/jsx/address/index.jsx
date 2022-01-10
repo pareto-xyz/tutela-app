@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { buildQueryString, getApi } from '../components/utils';
+import { buildQueryString} from '../../js/utils';
 import axios from 'axios';
 //import example from '../../data/example';
 import QueryInfo from './QueryInfo';
@@ -41,7 +41,7 @@ const AddressClusterHeader = (
 )
 
 function ClusterPage(props) {
-    const { params } = props;
+    const { params, aliases } = props;
 
     let [queryObj, setQuery] = useState({}); //sorts and filters 
     const [inputAddress, setInputAddress] = useState('');
@@ -52,20 +52,12 @@ function ClusterPage(props) {
     const [loadingQuery, setLoadingQuery] = useState(false);
     const [queryInfo, setQueryInfo] = useState({}); //info about the input 
     const [tornado, setTornado] = useState({});
-    const [aliases, setAliases] = useState({});
     const [schema, setSchema] = useState({});
     const [paginationData, setPaginationData] = useState({});
     const [searchType, setSearchType] = useState(null);
 
-    const getAliases = () => {
-        getApi('/utils/aliases', response => {
-            setAliases(response.data);
-        });
-    }
-
     // initializing
     useEffect(() => {
-        getAliases();
 
         const addr = params.get('address');
         if (addr !== null) {
@@ -158,7 +150,6 @@ function ClusterPage(props) {
         if (params.get('address') !== addr) {
             window.location.href = '/cluster?address=' + addr;
         }
-        // window.history.pushState(null, null, "?address=" + addr);
     }
 
 
