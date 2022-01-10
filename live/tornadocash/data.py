@@ -293,9 +293,13 @@ def external_pipeline(
     where_clauses: List[str] = [
         f'(from_address in ({deposit_select})) and (to_address in ({withdraw_select}))',
         f'(from_address in ({withdraw_select})) and (to_address in ({deposit_select}))',
-        f'block_number > {start_block}',
     ]
     where_clauses: str = ' or '.join(where_clauses)
+    where_clauses: List[str] = [
+        where_clauses,
+        f'block_number > {start_block}',
+    ]
+    where_clauses: str = ' and '.join(where_clauses)
     query: str = f"bq query {' '.join(flags)} '{insert} {select} where {where_clauses}'"
 
     if delete_before:
@@ -307,6 +311,11 @@ def external_pipeline(
     success_query: bool = utils.execute_bash(query)
     success: bool = success_init and success_query
 
+    if not success:
+        return success, {}
+
+    # clear google bucket
+    success: bool = utils.delete_bucket_contents('tornado-external-transaction')
     if not success:
         return success, {}
 
