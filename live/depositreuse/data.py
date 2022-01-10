@@ -75,27 +75,27 @@ def update_bigquery(
     block_query: str = make_bq_query(
         f'insert into {project}.{block_table} {block_select_sql}',
         where_clauses = [
-            f'b.number <= {start_block}',
+            f'b.number > {start_block}',
         ],
         flags = flags,
     )
     block_query_success: bool = utils.execute_bash(block_query)
 
     transaction_columns: List[str] = [
+        'hash as transaction', 
         'from_address', 
         'to_address', 
-        'hash as transaction', 
         'value', 
         'block_timestamp', 
         'block_number',
     ]
     transaction_columns: List[str] = [f'b.{col}' for col in transaction_columns]
     transaction_columns: str = ','.join(transaction_columns)
-    transaction_select_sql: str = f"{transaction_columns} from {bq_transaction} as b"
+    transaction_select_sql: str = f"select {transaction_columns} from {bq_transaction} as b"
     transaction_query: str = make_bq_query(
         f'insert into {project}.{transaction_table} {transaction_select_sql}',
         where_clauses = [
-            f'b.block_number <= {start_block}',
+            f'b.block_number > {start_block}',
         ],
         flags = flags,
     )
@@ -185,13 +185,12 @@ def main(args: Any):
     logger.info('entering update_bigquery')
     # NOTE: we always wipe this table. This bigquery table ONLY stores 
     # the most recent data.
-    success, _ = update_bigquery(last_block, delete_before = False)
+    success, _ = update_bigquery(last_block, delete_before = True)
 
     if not success:
         logger.error('failed on updating bigquery tables')
         sys.exit(0)
 
-    breakpoint()
     logger.info('entering empty_bucket')
     success, _ = empty_bucket()
 
