@@ -67,6 +67,10 @@ def main(args: Any):
     ]
 
     for i, heuristic in enumerate(heuristics):
+        if args.heuristic >= 0:
+            if i != args.heuristic:
+                continue
+
         logger.info(f'entering heuristic {i+1}')
 
         try:
@@ -104,6 +108,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-db', action='store_true', default=False)
     parser.add_argument('--block', type=int, default=0, help='block number to start from')
+    parser.add_argument('--heuristic', type=int, default=-1, help='index of heuristic to run (index: -1)')
     args = parser.parse_args()
 
     main(args)
