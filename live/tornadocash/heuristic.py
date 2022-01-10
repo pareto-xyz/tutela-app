@@ -85,7 +85,7 @@ def main(args: Any):
             )
             cursor = conn.cursor()
 
-            cursor.execute(f"DELETE FORM {name}") # delete all rows from table
+            cursor.execute(f"DELETE FROM {name}") # delete all rows from table
 
             columns: List[str] = ['address', 'transaction', 'block_number',
                                   'block_ts', 'meta_data', 'cluster']
