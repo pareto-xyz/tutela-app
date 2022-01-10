@@ -75,6 +75,14 @@ def update_bigquery(
     return success, {}
 
 
+def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
+    """
+    Make sure nothing is in bucket (we want to overwrite).
+    """
+    success: bool = utils.delete_bucket_contents('ethereum-transaction-data-live')
+    return success, {}
+
+
 def update_bucket() -> Tuple[bool, Dict[str, Any]]:
     project: str = utils.CONSTANTS['bigquery_project']
     success: bool = utils.export_bigquery_table_to_cloud_bucket(
@@ -131,10 +139,19 @@ def main(args: Any):
         logger.info(f'last_block={last_block}')
 
     logger.info('entering update_bigquery')
-    success, _ = update_bigquery(last_block)
+    # NOTE: we always wipe this table. This bigquery table ONLY stores 
+    # the most recent data.
+    success, _ = update_bigquery(last_block, delete_before = True)
 
     if not success:
         logger.error('failed on updating bigquery tables')
+        sys.exit(0)
+
+    logger.info('entering empty_bucket')
+    success, _ = empty_bucket()
+
+    if not success:
+        logger.error('failed on emptying cloud buckets')
         sys.exit(0)
 
     logger.info('entering update_bucket')
@@ -163,7 +180,7 @@ def main(args: Any):
     logger.info('saving transaction chunks')
     save_file(df, 'ethereum_transactions_live.csv')
 
-    logger.info('deleting trace files')
+    logger.info('deleting transaction files')
     delete_files(files)
 
 
