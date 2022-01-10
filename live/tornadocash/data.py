@@ -280,7 +280,7 @@ def delete_files(paths: List[str]):
             os.remove(path)
 
 
-def main():
+def main(args: Any):
     log_path: str = utils.CONSTANTS['log_path']
     os.makedirs(log_path, exist_ok=True)
 
@@ -290,9 +290,13 @@ def main():
 
     logger = utils.get_logger(log_file)
 
-    logger.info('entering get_last_block')
-    last_block: int = get_last_block()
-    logger.info(f'last_block={last_block}')
+    if args.scratch:
+        logger.info('starting from scratch')
+        last_block: int = 0
+    else:
+        logger.info('entering get_last_block')
+        last_block: int = get_last_block()
+        logger.info(f'last_block={last_block}')
 
     logger.info('entering update_bigquery')
     success, _ = update_bigquery(last_block)
@@ -383,4 +387,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--scratch', action='store_true', default=False)
+    args = parser.parse_args()
+    main(args)
