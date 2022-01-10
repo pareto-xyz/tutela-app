@@ -33,7 +33,6 @@ from typing import Tuple, Optional, List, Dict, Any
 
 from live import utils
 from src.tcash.data import decode_transactions
-from src.utils.utils import from_json
 
 
 def get_last_block():
