@@ -8,15 +8,16 @@ transactions page.
 
 Additional features should be added to this page.
 """
+import sys
 import numpy as np
-from tqdm import tqdm
 from os.path import join
-from collections import Counter
 from typing import Any, List, Dict
 
 from live import utils
 from src.utils.utils import to_pickle
-from webapp.db_utils.get_dist import get_tornado_cash_users, get_score_dist
+
+sys.path.append(utils.CONSTANTS['webapp_path'])
+from db_utils.get_dist import get_tornado_cash_users, get_score_dist
 
 
 def main(args: Any):
