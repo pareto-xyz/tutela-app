@@ -32,6 +32,7 @@ from os.path import join
 from typing import Tuple, Optional, List, Dict, Any
 
 from live import utils
+from live.bq_utils import make_bq_delete, make_bq_load, make_bq_query
 from src.tcash.data import decode_transactions
 
 
@@ -55,8 +56,8 @@ def update_bigquery(
     Run SQL queries against BigQuery to insert the most recent data into
     the following tables.
 
-      tornado_transactions.traces
-      tornado_transactions.transactions
+        tornado_transactions.traces
+        tornado_transactions.transactions
 
     We assume your bigquery project has a `tornado_transactions` dataset
     with the two tables already existing. If not, please make them prior
@@ -125,35 +126,6 @@ def update_bigquery(
                     (transaction_init_success and transaction_query_success) and \
                     (miner_init_success and miner_query_success)
     return success, {}
-
-
-def make_bq_delete(table: str, flags: List[str]) -> str:
-    project: str = utils.CONSTANTS['bigquery_project']
-    flags: str = ' '.join(flags)
-    statement: str = f'delete from {project}.{table} where true'
-    query: str = f"bq query {flags} '{statement}'"
-    return query
-
-
-def make_bq_query(
-    select: str, where_clauses: List[str] = [], flags: List[str] = []) -> str:
-    flags: str = ' '.join(flags)
-    where_clauses: List[str] = [f'({clause})' for clause in where_clauses]
-    where_clauses: str = ' and '.join(where_clauses)
-    query: str = f"bq query {flags} '{select} where {where_clauses}'"
-    return query
-
-
-def make_bq_load(table: str, csv_path: str, schema: str) -> str:
-    project: str = utils.CONSTANTS['bigquery_project']
-    flags: List[str] = [
-        "--skip_leading_rows=1",
-        "--field_delimiter='\t'",
-        "--source_format=CSV",
-    ]
-    flags: str = ' '.join(flags)
-    command: str = f"bq load {flags} {table} {csv_path} {schema}"
-    return command
 
 
 def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
@@ -432,15 +404,18 @@ def main(args: Any):
     transaction_df.drop_duplicates('hash', inplace=True)
     miner_df.drop_duplicates('hash', inplace=True)
 
-    logger.info('deleting trace chunks')
+    logger.info('saving trace chunks')
     save_file(trace_df, 'tornado_traces.csv')
-    logger.info('deleting transaction chunks')
+    logger.info('saving transaction chunks')
     save_file(transaction_df, 'tornado_transactions.csv')
-    logger.info('deleting miner chunks')
+    logger.info('saving miner chunks')
     save_file(miner_df, 'miner_txs.csv')
 
+    logger.info('deleting trace files')
     delete_files(trace_files)
+    logger.info('deleting transaction files')
     delete_files(transaction_files)
+    logger.info('deleting miner files')
     delete_files(miner_files)
 
     logger.info('entering get_deposit_and_withdraw')

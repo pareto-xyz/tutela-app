@@ -391,6 +391,7 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         deposit_portfolios: pd.DataFrame = self.__make_portfolio_df(
             raw_portfolios, tornado_tags)
 
+        breakpoint()
         print(f'[{self._name}] looping through rows')
         pbar = tqdm(total=len(withdraw_df))
         for withdraw_row in withdraw_df.itertuples():
