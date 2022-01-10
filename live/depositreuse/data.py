@@ -63,10 +63,19 @@ def update_bigquery(
     if not init_success:
         return init_success, {}
 
+    block_columns: List[str] = [
+        'hash as block_hash', 
+        'miner', 
+        'timestamp', 
+        'number',
+    ]
+    block_columns: List[str] = [f'b.{col}' for col in block_columns]
+    block_columns: str = ','.join(block_columns)
+    block_select_sql: str = f"{block_columns} from {bq_block} as b"
     block_query: str = make_bq_query(
-        f'insert into {project}.{block_table} select * from {bq_block}',
+        f'insert into {project}.{block_table} {block_select_sql}',
         where_clauses = [
-            f'block_number <= {start_block}',
+            f'b.number <= {start_block}',
         ],
         flags = flags,
     )

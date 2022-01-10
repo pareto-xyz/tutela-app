@@ -10,3 +10,5 @@ bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum
 # get all txs before date
 bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum.transactions3 --use_legacy_sql=false "select b.from_address, b.to_address, b.hash as transaction, b.value, b.block_timestamp, b.block_number from bigquery-public-data.crypto_ethereum.transactions as b where b.block_number <= 13330090"
 
+# get blocks before date
+bq --location=US query --destination_table lexical-theory-329617:crypto_ethereum.blocks --use_legacy_sql=false "select * from bigquery-public-data.crypto_ethereum.blocks where block_number <= 13330090"
