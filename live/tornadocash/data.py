@@ -75,6 +75,9 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
     transaction_table: str = 'tornado_transactions.transactions'
     miner_table: str = 'tornado_transactions.miner_transactions'
 
+    flags: List[str] = ['--use_legacy_sql=false']
+
+    trace_prepare: str = make_bq_delete(trace_table, flags = flags)
     trace_query: str = make_bq_query(
         f'insert into {project}.{trace_table} select * from {bq_trace}',
         where_clauses = [
@@ -82,41 +85,47 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
             'substr(input, 1, 10) in ("0xb214faa5", "0x21a0adb6")',
             f'block_number > {start_block}',
         ],
-        flags = [
-            # f'--destination_table {project}:{trace_table}',
-            '--use_legacy_sql=false',
-        ],
+        flags = flags,
     )
+    transaction_prepare: str = make_bq_delete(transaction_table, flags = flags)
     transaction_query: str = make_bq_query(
         f'insert into {project}.{transaction_table} select * from {bq_transaction} as b',
         where_clauses = [
             f'b.hash in ({subtrace_sql})',
             f'b.block_number > {start_block}',
         ],
-        flags = [
-            # f'--destination_table {project}:{transaction_table}',
-            '--use_legacy_sql=false',
-        ],
+        flags = flags,
     )
 
     # This is for the TORN mining heuristic -- we need to get miner's txs
+    miner_prepare: str = make_bq_delete(miner_table, flags = flags)
     miner_query: str = make_bq_query(
         f'insert into {project}.{miner_table} select * from {bq_transaction}',
         where_clauses = [
             'to_address = "0x746aebc06d2ae31b71ac51429a19d54e797878e9"',
             f'block_number > {start_block}',
         ],
-        flags = [
-            # f'--destination_table {project}:{miner_table}',
-            '--use_legacy_sql=false',
-        ],
+        flags = flags,
     )
-    trace_success: bool = utils.execute_bash(trace_query)
-    transaction_success: bool = utils.execute_bash(transaction_query)
-    miner_success: bool = utils.execute_bash(miner_query)
+    trace0_success: bool = utils.execute_bash(trace_prepare)
+    trace1_success: bool = utils.execute_bash(trace_query)
+    transaction0_success: bool = utils.execute_bash(transaction_prepare)
+    transaction1_success: bool = utils.execute_bash(transaction_query)
+    miner0_success: bool = utils.execute_bash(miner_prepare)
+    miner1_success: bool = utils.execute_bash(miner_query)
 
-    success: bool = trace_success and transaction_success and miner_success
+    success: bool = (trace0_success and trace1_success) and \
+                    (transaction0_success and transaction1_success) and \
+                    (miner0_success and miner1_success)
     return success, {}
+
+
+def make_bq_delete(table: str, flags: List[str]) -> str:
+    project: str = utils.CONSTANTS['bigquery_project']
+    flags: str = ' '.join(flags)
+    statement: str = f'delete from {project}.{table} where true'
+    query: str = f"bq query {flags} '{statement}'"
+    return query
 
 
 def make_bq_query(
@@ -128,9 +137,15 @@ def make_bq_query(
     return query
 
 
-def make_bq_load(table: str, csv_path: str, schema_path: str) -> str:
+def make_bq_load(table: str, csv_path: str, schema: str) -> str:
     project: str = utils.CONSTANTS['bigquery_project']
-    command: str = f"bq load {project}:{table} {csv_path} {schema_path}"
+    flags: List[str] = [
+        "--skip_leading_rows=1",
+        "--field_delimiter='\t'",
+        "--source_format=CSV",
+    ]
+    flags: str = ' '.join(flags)
+    command: str = f"bq load {flags} {project}:{table} {csv_path} {schema}"
     return command
 
 
@@ -234,34 +249,46 @@ def external_pipeline(
 
     deposit_file: str = save_file(deposit_address_df, 'deposit_addrs.csv')
     withdraw_file: str = save_file(withdraw_address_df, 'withdraw_addrs.csv')
-    address_schema: str = from_json(
-        join(utils.CONSTANTS['data_path'], 'live/tornado_cash/address_schema.json'))
 
     # upload files to bigquery
-    make_bq_load('tornado_transactions.deposit_addresses', deposit_file, address_schema)
-    make_bq_load('tornado_transactions.withdraw_addresses', withdraw_file, address_schema)
+    flags: List[str] = ['--use_legacy_sql=false']
+    deposit_address_table: str = 'tornado_transactions.deposit_addresses'
+    withdraw_address_table: str = 'tornado_transactions.withdraw_addresses'
+    deposit_prepare: str = make_bq_delete(deposit_address_table, flags = flags)
+    deposit_query: str = make_bq_load(deposit_address_table, deposit_file, 'address:string')
+    withdraw_prepare: str = make_bq_delete(withdraw_address_table, flags = flags)
+    withdraw_query: str = make_bq_load(withdraw_address_table, withdraw_file, 'address:string')
+    deposit0_success: bool = utils.execute_bash(deposit_prepare)
+    deposit1_success: bool = utils.execute_bash(deposit_query)
+    withdraw0_success: bool = utils.execute_bash(withdraw_prepare)
+    withdraw1_success: bool = utils.execute_bash(withdraw_query)
+    success: bool = (deposit0_success and deposit1_success) and \
+                    (withdraw0_success and withdraw1_success)
+
+    if not success:
+        return success, {}
 
     project: str = utils.CONSTANTS['bigquery_project']
     external_table: str = 'tornado_transactions.external_transactions'
 
     insert: str = f'insert {project}.{external_table}'
     select: str = 'select * from bigquery-public-data.crypto_ethereum.transactions'
-    deposit_select: str = 'select address from tornado_transactions.deposit_addresses'
-    withdraw_select: str = 'select address from tornado_transactions.withdraw_addresses'
+    deposit_select: str = f'select address from {project}.tornado_transactions.deposit_addresses'
+    withdraw_select: str = f'select address from {project}.tornado_transactions.withdraw_addresses'
     where_clauses: List[str] = [
         f'(from_address in ({deposit_select})) and (to_address in ({withdraw_select}))',
         f'(from_address in ({withdraw_select})) and (to_address in ({deposit_select}))',
         f'block_number > {start_block}',
     ]
     where_clauses: str = ' or '.join(where_clauses)
-    flags: List[str] = ['--use_legacy_sql=false']
-    flags: str = ' '.join(flags)
-    query: str = f"bq query {flags} '{insert} {select} where {where_clauses}'"
+    query: str = f"bq query {' '.join(flags)} '{insert} {select} where {where_clauses}'"
 
-    success: bool = utils.execute_bash(query)
+    prepare: str = make_bq_delete(external_table, flags = flags)
+    success0: bool = utils.execute_bash(prepare)
+    success1: bool = utils.execute_bash(query)
 
-    if not success:
-        return success, {}
+    if not (success0 and success1):
+        return False, {}
 
     # now move to google cloud bucket
     project: str = utils.CONSTANTS['bigquery_project']
@@ -438,9 +465,15 @@ def main(args: Any):
 
 
 if __name__ == "__main__":
-    import argparse 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--scratch', action='store_true', default=False)
-    parser.add_argument('--no-db', action='store_true', default=False)
-    args = parser.parse_args()
-    main(args)
+    # import argparse 
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--scratch', action='store_true', default=False)
+    # parser.add_argument('--no-db', action='store_true', default=False)
+    # args = parser.parse_args()
+    # main(args)
+
+    data_path:  str = utils.CONSTANTS['data_path']
+    tcash_path: str = join(data_path, 'live/tornado_cash')
+    withdraw_df = pd.read_csv(join(tcash_path, 'withdraw_txs.csv'))
+    deposit_df = pd.read_csv(join(tcash_path, 'deposit_txs.csv'))
+    success, _ = external_pipeline(0, deposit_df, withdraw_df)
