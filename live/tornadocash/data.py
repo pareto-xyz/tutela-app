@@ -502,10 +502,5 @@ if __name__ == "__main__":
     parser.add_argument('--scratch', action='store_true', default=False)
     parser.add_argument('--no-db', action='store_true', default=False)
     args = parser.parse_args()
-    # main(args)
+    main(args)
 
-    data_path:  str = utils.CONSTANTS['data_path']
-    tcash_path: str = join(data_path, 'live/tornado_cash')
-    withdraw_df = pd.read_csv(join(tcash_path, 'withdraw_txs.csv'))
-    deposit_df = pd.read_csv(join(tcash_path, 'deposit_txs.csv'))
-    success, _ = external_pipeline(0, deposit_df, withdraw_df, delete_before = args.scratch)
