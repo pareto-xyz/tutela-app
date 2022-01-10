@@ -11,12 +11,16 @@ LIVE_DIR: str = realpath(dirname(__file__))
 ROOT_DIR: str = realpath(join(LIVE_DIR, '..'))
 DATA_DIR: str = realpath(join(ROOT_DIR, 'data'))
 LOG_DIR: str = realpath(join(ROOT_DIR, 'logs'))
+WEBAPP_DIR: str = realpath(join(ROOT_DIR, 'webapp'))
+WEBAPP_DATA_DIR: str = realpath(join(WEBAPP_DIR, 'static/data'))
 
 CONSTANTS = {
     'live_path': LIVE_DIR,
     'root_path': ROOT_DIR,
     'data_path': DATA_DIR,
     'log_path': LOG_DIR,
+    'webapp_path': WEBAPP_DIR,
+    'webapp_data_path': WEBAPP_DATA_DIR,
     'bigquery_project': 'lexical-theory-329617',
     'postgres_db': 'tornado',
     'postgres_user': 'postgres',

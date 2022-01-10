@@ -107,7 +107,6 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-db', action='store_true', default=False)
-    parser.add_argument('--block', type=int, default=0, help='block number to start from')
     parser.add_argument('--heuristic', type=int, default=-1, help='index of heuristic to run (index: -1)')
     args = parser.parse_args()
 
