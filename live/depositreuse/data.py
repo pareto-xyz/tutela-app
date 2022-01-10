@@ -79,7 +79,6 @@ def update_bigquery(
         ],
         flags = flags,
     )
-    breakpoint()
     block_query_success: bool = utils.execute_bash(block_query)
 
     transaction_columns: List[str] = [
