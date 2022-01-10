@@ -71,7 +71,7 @@ def update_bigquery(
     ]
     block_columns: List[str] = [f'b.{col}' for col in block_columns]
     block_columns: str = ','.join(block_columns)
-    block_select_sql: str = f"{block_columns} from {bq_block} as b"
+    block_select_sql: str = f"select {block_columns} from {bq_block} as b"
     block_query: str = make_bq_query(
         f'insert into {project}.{block_table} {block_select_sql}',
         where_clauses = [
@@ -79,6 +79,7 @@ def update_bigquery(
         ],
         flags = flags,
     )
+    breakpoint()
     block_query_success: bool = utils.execute_bash(block_query)
 
     transaction_columns: List[str] = [
@@ -185,7 +186,7 @@ def main(args: Any):
     logger.info('entering update_bigquery')
     # NOTE: we always wipe this table. This bigquery table ONLY stores 
     # the most recent data.
-    success, _ = update_bigquery(last_block, delete_before = True)
+    success, _ = update_bigquery(last_block, delete_before = False)
 
     if not success:
         logger.error('failed on updating bigquery tables')
