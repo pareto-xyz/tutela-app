@@ -9,6 +9,19 @@ from live import utils
 from live.bq_utils import make_bq_query, make_bq_delete
 
 
+def get_last_block():
+    """
+    Read the current transactions dataframe to see what the latest block is.
+    We will grab all data from the block and after.
+    """
+    data_path:  str = utils.CONSTANTS['data_path']
+    depo_path: str = join(data_path, 'live/depositreuse')
+    transactions: pd.DataFrame = pd.read_csv(join(depo_path, 'ethereum_transactions_live.csv'))
+    last_block: int = int(transactions.block_number.max())
+
+    return last_block
+
+
 def update_bigquery(
     start_block: int,
     delete_before: bool = False) -> Tuple[bool, Dict[str, Any]]:
