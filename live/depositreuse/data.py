@@ -16,7 +16,8 @@ def get_last_block():
     """
     data_path:  str = utils.CONSTANTS['data_path']
     depo_path: str = join(data_path, 'live/depositreuse')
-    transactions: pd.DataFrame = pd.read_csv(join(depo_path, 'ethereum_transactions_live.csv'))
+    transactions: pd.DataFrame = pd.read_csv(
+        join(depo_path, 'ethereum_transactions_live.csv'))
     last_block: int = int(transactions.block_number.max())
 
     return last_block
@@ -87,7 +88,8 @@ def update_bucket() -> Tuple[bool, Dict[str, Any]]:
 def download_bucket() -> Tuple[bool, Any]:
     data_path:  str = utils.CONSTANTS['data_path']
     out_dir = join(data_path, 'live/depositreuse')
-    success, files = utils.export_cloud_bucket_to_csv('ethereum-transaction-data-live', out_dir)
+    success, files = utils.export_cloud_bucket_to_csv(
+        'ethereum-transaction-data-live', out_dir)
     data = {'transaction': files}
     return success, data
 
@@ -118,6 +120,10 @@ def main(args: Any):
 
     if args.scratch:
         logger.info('starting from scratch')
+        # NOTE: scratch here does not mean starting from 0, that would be
+        # ridiculous, this instead will be starting from our known endpt.
+        # This data is already loaded into our db. We are even writing to 
+        # a separate table/bucket to preserve this checkpoint.
         last_block: int = 13330090
     else:
         logger.info('entering get_last_block')
