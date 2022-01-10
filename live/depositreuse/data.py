@@ -40,18 +40,39 @@ def update_bigquery(
     `bq` is orders of magnitudes faster.
     """
     project: str = utils.CONSTANTS['bigquery_project']
+
+    bq_block: str = 'bigquery-public-data.crypto_ethereum.blocks'
     bq_transaction: str = 'bigquery-public-data.crypto_ethereum.transactions'
+    block_table: str = 'crypto_ethereum.blocks_live'
     transaction_table: str = 'crypto_ethereum.transactions_live'
 
     flags: List[str] = ['--use_legacy_sql=false']
 
     if delete_before:
-        init: str = make_bq_delete(transaction_table, flags = flags)
-        init_success: bool = utils.execute_bash(init)
+        block_init: str = make_bq_delete(block_table, flags = flags)
+        block_init_success: bool = utils.execute_bash(block_init)
+
+        transaction_init: str = make_bq_delete(transaction_table, flags = flags)
+        transaction_init_success: bool = utils.execute_bash(transaction_init)
     else:  # nothing to do
-        init_success: bool = True
-    
-    columns: List[str] = [
+        block_init_success: bool = True
+        transaction_init_success: bool = True
+
+    init_success = block_init_success and transaction_init_success
+
+    if not init_success:
+        return init_success, {}
+
+    block_query: str = make_bq_query(
+        f'insert into {project}.{block_table} select * from {bq_block}',
+        where_clauses = [
+            f'block_number <= {start_block}',
+        ],
+        flags = flags,
+    )
+    block_query_success: bool = utils.execute_bash(block_query)
+
+    transaction_columns: List[str] = [
         'from_address', 
         'to_address', 
         'hash as transaction', 
@@ -59,19 +80,19 @@ def update_bigquery(
         'block_timestamp', 
         'block_number',
     ]
-    columns: List[str] = [f'b.{col}' for col in columns]
-    columns: str = ','.join(columns)
-    select_sql: str = f"{columns} from {bq_transaction} as b"
-    query: str = make_bq_query(
-        f'insert into {project}.{transaction_table} {select_sql}',
+    transaction_columns: List[str] = [f'b.{col}' for col in transaction_columns]
+    transaction_columns: str = ','.join(transaction_columns)
+    transaction_select_sql: str = f"{transaction_columns} from {bq_transaction} as b"
+    transaction_query: str = make_bq_query(
+        f'insert into {project}.{transaction_table} {transaction_select_sql}',
         where_clauses = [
             f'b.block_number <= {start_block}',
         ],
         flags = flags,
     )
-    query_success: bool = utils.execute_bash(query)
+    transaction_query_success: bool = utils.execute_bash(transaction_query)
 
-    success: bool = init_success and query_success
+    success: bool = block_query_success and transaction_query_success
     return success, {}
 
 
@@ -79,26 +100,40 @@ def empty_bucket() -> Tuple[bool, Dict[str, Any]]:
     """
     Make sure nothing is in bucket (we want to overwrite).
     """
-    success: bool = utils.delete_bucket_contents('ethereum-transaction-data-live')
+    block_success: bool = utils.delete_bucket_contents('ethereum-block-data-live')
+    transaction_success: bool = utils.delete_bucket_contents('ethereum-transaction-data-live')
+    success: bool = block_success and transaction_success
     return success, {}
 
 
 def update_bucket() -> Tuple[bool, Dict[str, Any]]:
     project: str = utils.CONSTANTS['bigquery_project']
-    success: bool = utils.export_bigquery_table_to_cloud_bucket(
+    block_success: bool = utils.export_bigquery_table_to_cloud_bucket(
+        f'{project}.crypto_ethereum',
+        'blocks_live',
+        'ethereum-block-data-live',
+    )
+    transaction_success: bool = utils.export_bigquery_table_to_cloud_bucket(
         f'{project}.crypto_ethereum',
         'transactions_live',
         'ethereum-transaction-data-live',
     )
+    success: bool = block_success and transaction_success
     return success, {}
 
 
 def download_bucket() -> Tuple[bool, Any]:
     data_path:  str = utils.CONSTANTS['data_path']
     out_dir = join(data_path, 'live/depositreuse')
-    success, files = utils.export_cloud_bucket_to_csv(
+    block_success, block_files = utils.export_cloud_bucket_to_csv(
+        'ethereum-block-data-live', out_dir)
+    transaction_success, transaction_files = utils.export_cloud_bucket_to_csv(
         'ethereum-transaction-data-live', out_dir)
-    data = {'transaction': files}
+    data = {
+        'block': block_files,
+        'transaction': transaction_files,
+    }
+    success: bool = block_success and transaction_success
     return success, data
 
 
@@ -147,6 +182,7 @@ def main(args: Any):
         logger.error('failed on updating bigquery tables')
         sys.exit(0)
 
+    breakpoint()
     logger.info('entering empty_bucket')
     success, _ = empty_bucket()
 
@@ -168,20 +204,36 @@ def main(args: Any):
         logger.error('failed on downloading cloud buckets')
         sys.exit(0)
 
-    files: List[str] = data['transaction']
-    if len(files) == 0:
+    block_files: List[str] = data['block']
+    transaction_files: List[str] = data['transaction']
+    
+    if len(block_files) == 0:
+        logger.error('found 0 files for deposit reuse blocks')
+        sys.exit(0)
+    
+    if len(transaction_files) == 0:
         logger.error('found 0 files for deposit reuse transactions')
         sys.exit(0)
 
-    logger.info('sorting and combining trace files')
-    df: pd.DataFrame = utils.load_data_from_chunks(files)
-    df.drop_duplicates('transaction', inplace=True)
+    logger.info('sorting and combining block files')
+    block_df: pd.DataFrame = utils.load_data_from_chunks(block_files)
+    block_df.drop_duplicates('hash', inplace=True)
+    
+    logger.info('sorting and combining transaction files')
+    transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
+    transaction_df.drop_duplicates('transaction', inplace=True)
 
+    logger.info('saving block chunks')
+    save_file(block_df, 'ethereum_blocks_live.csv')
+
+    logger.info('deleting block files')
+    delete_files(block_files)
+    
     logger.info('saving transaction chunks')
-    save_file(df, 'ethereum_transactions_live.csv')
+    save_file(transaction_df, 'ethereum_transactions_live.csv')
 
     logger.info('deleting transaction files')
-    delete_files(files)
+    delete_files(transaction_files)
 
 
 if __name__ == "__main__":
