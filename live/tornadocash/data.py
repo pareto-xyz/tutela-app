@@ -25,6 +25,7 @@ and complete_deposit_tx.csv.
 """
 import os
 import sys
+import psycopg2
 import numpy as np
 import pandas as pd
 from os.path import join
@@ -270,8 +271,10 @@ def external_pipeline(
 
 def save_file(df: pd.DataFrame, name: str):
     data_path:  str = utils.CONSTANTS['data_path']
-    out_dir = join(data_path, 'live/tornado_cash')
-    df.to_csv(join(out_dir, name), index=False)
+    out_dir: str = join(data_path, 'live/tornado_cash')
+    out_file: str = join(out_dir, name)
+    df.to_csv(out_file, index=False)
+    return out_file
 
 
 def delete_files(paths: List[str]):
@@ -382,13 +385,44 @@ def main(args: Any):
         logger.error('failed on processing external transactions')
         sys.exit(0)
 
-    save_file(deposit_df, 'deposit_txs.csv')
-    save_file(withdraw_df, 'withdraw_txs.csv')
+    deposit_file: str = save_file(deposit_df, 'deposit_txs.csv')
+    withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
+
+    if not args.no_db:
+        # write csvs into databases
+        conn = psycopg2.connect(
+            database = utils.CONSTANTS['postgres_db'], 
+            user = utils.CONSTANTS['postgres_user'],
+        )
+        cursor = conn.cursor()
+
+        deposit_columns: List[str] = [
+            'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
+            'gas_price', 'block_number', 'block_hash', 'tornado_cash_address'
+        ]
+        deposit_columns: str = ','.join(deposit_columns)
+        command = f"COPY tornado_deposit({deposit_columns}) FROM '{deposit_file}' DELIMITER ',' CSV HEADER;"
+        cursor.execute(command)
+
+        withdraw_columns: List[str] = [
+            'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
+            'gas_price', 'block_number', 'block_hash', 'tornado_cash_address',
+            'recipient_address',
+        ]
+        withdraw_columns: str = ','.join(withdraw_columns)
+        command: str = f"COPY tornado_withdraw({withdraw_columns}) FROM '{withdraw_file}' DELIMITER ',' CSV HEADER;"
+        cursor.execute(command)
+
+        conn.commit()
+
+        cursor.close()
+        conn.close()
 
 
 if __name__ == "__main__":
     import argparse 
     parser = argparse.ArgumentParser()
     parser.add_argument('--scratch', action='store_true', default=False)
+    parser.add_argument('--no-db', action='store_true', default=False)
     args = parser.parse_args()
     main(args)
