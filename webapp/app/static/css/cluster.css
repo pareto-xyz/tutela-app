@@ -439,8 +439,7 @@ ul.dropdown-menu {
   background-color: #1d2124;
   color: var(--almostwhite);
   overflow-x: hidden;
-  padding-right: 15px !important;
-  padding-left: 15px !important;
+  padding: 0.5rem 1rem 1rem;
 }
 
 .dropdown-menu > .dropdown-item:hover,

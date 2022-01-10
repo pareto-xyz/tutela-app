@@ -14,7 +14,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
 
     const checkIfCompromised = address => {
         axios.get('/search/compromised?address=' + address + '&pool=' + tcashAddr).then(response => {
-            //  response = compromisedTcashAddrResponse;
+            response = compromisedTcashAddrResponse;
             const { success, data } = response.data;
             if (!success) {
                 setNumCompromised(null);
@@ -53,7 +53,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
                     ref={inputEl}
                     isInvalid={invalid}
                 />
-            <Form.Control.Feedback type='invalid'>Please input a valid deposit address.</Form.Control.Feedback>
+                <Form.Control.Feedback type='invalid'>Please input a valid deposit address.</Form.Control.Feedback>
 
             </InputGroup>
 

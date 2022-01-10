@@ -29,7 +29,7 @@ export default function IndexPage() {
                             based on public data on previous transactions. </div>
                     </div>
                     <div className="row instruct instructions">
-                        -- or -- 
+                        -- or --
                     </div>
                     <div className="row instruct instructions">
                         Use the Tornado Cash Pool Anonymity Auditor

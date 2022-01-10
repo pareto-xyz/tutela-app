@@ -136,6 +136,10 @@ a:hover {
   color: white;
 }
 
+.pool-drop:hover{
+  color: #000 !important;
+}
+
 /**
 MAIN PAGE SEARCH SECTION
 */

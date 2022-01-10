@@ -4,9 +4,9 @@ import { InputGroup, FormControl, Form, OverlayTrigger, Tooltip } from 'react-bo
 import { isValid } from '../../js/utils';
 //import isTornado from '../../data/istornado';
 
-export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress, 
-    myClassName="fixed-width mb-1 col-sm-12 col-md-6 col-lg-8", 
-    showTornadoHovers=true }) {
+export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddress,
+    myClassName = "fixed-width mb-1 col-sm-12 col-md-6 col-lg-8",
+    showTornadoHovers = true }) {
 
     const inputEl = useRef(null);
     const [invalid, setInvalid] = useState(false);
@@ -71,26 +71,26 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                 overlay={renderTcashTooltip}
             >
 
-                    <InputGroup onSubmit={submitInputAddress} className="fixed-width col-md-12 col-lg-8" hasValidation>
-                        <FormControl onKeyPress={(e) => {
-                            if (e.key !== 'Enter') return;
-                            e.preventDefault();
-                            submitInputAddress(inputEl.current.value);
-                        }}
-                            onChange={onChangeInputAddress}
-                            placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
-                            className="search-bar"
-                            isInvalid={invalid}
-                            ref={inputEl}
-                            area-describedby='addressSearchHelp'
-                        >
-                        </FormControl>
+                <InputGroup onSubmit={submitInputAddress} className="fixed-width col-md-12 col-lg-8" hasValidation>
+                    <FormControl onKeyPress={(e) => {
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        submitInputAddress(inputEl.current.value);
+                    }}
+                        onChange={onChangeInputAddress}
+                        placeholder='eg. 0x000000000000000.........., {ens_name}.eth, etc. '
+                        className="search-bar"
+                        isInvalid={invalid}
+                        ref={inputEl}
+                        area-describedby='addressSearchHelp'
+                    >
+                    </FormControl>
 
-                        <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
-                        <Form.Control.Feedback type="invalid">
-                            Please enter a valid ethereum address or .eth ens name.
-                        </Form.Control.Feedback>
-                    </InputGroup>
+                    <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
+                    <Form.Control.Feedback type="invalid">
+                        Please enter a valid ethereum address or .eth ens name.
+                    </Form.Control.Feedback>
+                </InputGroup>
             </OverlayTrigger>
 
         </>
