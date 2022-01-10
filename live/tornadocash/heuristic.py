@@ -73,10 +73,11 @@ def main(args: Any):
 
         logger.info(f'entering heuristic {i+1}')
 
-        try:
-            heuristic.run()
-        except:
-            logger.error(f'failed in heuristic {i+1}')
+        heuristic.run()
+        # try:
+        # heuristic.run()
+        # except:
+        #     logger.error(f'failed in heuristic {i+1}')
 
         name: str = heuristic._name
 

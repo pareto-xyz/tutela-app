@@ -13,6 +13,8 @@ from collections import namedtuple
 from typing import Tuple, Dict, List, Set, Any, Optional
 from src.utils.utils import Entity, Heuristic
 
+pd.options.mode.chained_assignment = None
+
 
 class BaseHeuristic:
 
@@ -391,7 +393,6 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         deposit_portfolios: pd.DataFrame = self.__make_portfolio_df(
             raw_portfolios, tornado_tags)
 
-        breakpoint()
         print(f'[{self._name}] looping through rows')
         pbar = tqdm(total=len(withdraw_df))
         for withdraw_row in withdraw_df.itertuples():
@@ -431,8 +432,6 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         self,
         raw_portfolios: pd.DataFrame, 
         pools: List[str]) -> pd.DataFrame:
-        raw_portfolios: List[Dict[str, int]] = \
-            [eval(x) for x in raw_portfolios['0'].values]
         deposit_portfolios: Dict[str, List[str]] = defaultdict(lambda: [])
         pbar = tqdm(total=len(raw_portfolios))
         for portfolio in raw_portfolios:
