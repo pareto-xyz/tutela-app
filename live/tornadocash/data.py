@@ -49,7 +49,9 @@ def get_last_block():
     return last_block
 
 
-def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
+def update_bigquery(
+    start_block: int, 
+    delete_before: bool = False) -> Tuple[bool, Dict[str, Any]]:
     """
     Run SQL queries against BigQuery to insert the most recent data into
     the following tables.
@@ -76,8 +78,18 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
     miner_table: str = 'tornado_transactions.miner_transactions'
 
     flags: List[str] = ['--use_legacy_sql=false']
+    
+    if delete_before:
+        trace_init: str = make_bq_delete(trace_table, flags = flags)
+        transaction_init: str = make_bq_delete(transaction_table, flags = flags)
+        miner_init: str = make_bq_delete(miner_table, flags = flags)
 
-    trace_prepare: str = make_bq_delete(trace_table, flags = flags)
+        trace_init_success: bool = utils.execute_bash(trace_init)
+        transaction_init_success: bool = utils.execute_bash(transaction_init)
+        miner_init_success: bool = utils.execute_bash(miner_init)
+    else:  # nothing to do
+        trace_init_success, transaction_init_success, miner_init_success = True, True, True
+
     trace_query: str = make_bq_query(
         f'insert into {project}.{trace_table} select * from {bq_trace}',
         where_clauses = [
@@ -87,7 +99,6 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
         ],
         flags = flags,
     )
-    transaction_prepare: str = make_bq_delete(transaction_table, flags = flags)
     transaction_query: str = make_bq_query(
         f'insert into {project}.{transaction_table} select * from {bq_transaction} as b',
         where_clauses = [
@@ -98,7 +109,6 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
     )
 
     # This is for the TORN mining heuristic -- we need to get miner's txs
-    miner_prepare: str = make_bq_delete(miner_table, flags = flags)
     miner_query: str = make_bq_query(
         f'insert into {project}.{miner_table} select * from {bq_transaction}',
         where_clauses = [
@@ -107,16 +117,14 @@ def update_bigquery(start_block: int) -> Tuple[bool, Dict[str, Any]]:
         ],
         flags = flags,
     )
-    trace0_success: bool = utils.execute_bash(trace_prepare)
-    trace1_success: bool = utils.execute_bash(trace_query)
-    transaction0_success: bool = utils.execute_bash(transaction_prepare)
-    transaction1_success: bool = utils.execute_bash(transaction_query)
-    miner0_success: bool = utils.execute_bash(miner_prepare)
-    miner1_success: bool = utils.execute_bash(miner_query)
 
-    success: bool = (trace0_success and trace1_success) and \
-                    (transaction0_success and transaction1_success) and \
-                    (miner0_success and miner1_success)
+    trace_query_success: bool = utils.execute_bash(trace_query)
+    transaction_query_success: bool = utils.execute_bash(transaction_query)
+    miner_query_success: bool = utils.execute_bash(miner_query)
+
+    success: bool = (trace_init_success and trace_query_success) and \
+                    (transaction_init_success and transaction_query_success) and \
+                    (miner_init_success and miner_query_success)
     return success, {}
 
 
@@ -230,7 +238,8 @@ def get_deposit_and_withdraw(
 def external_pipeline(
     start_block: int, 
     deposit_df: pd.DataFrame, 
-    withdraw_df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
+    withdraw_df: pd.DataFrame,
+    delete_before: bool = False) -> Tuple[bool, Dict[str, Any]]:
     """
     We need to update another bigquery table for external transactions
     between TornadoCash users. We must do this separately because we 
@@ -254,16 +263,22 @@ def external_pipeline(
     flags: List[str] = ['--use_legacy_sql=false']
     deposit_address_table: str = 'tornado_transactions.deposit_addresses'
     withdraw_address_table: str = 'tornado_transactions.withdraw_addresses'
-    deposit_prepare: str = make_bq_delete(deposit_address_table, flags = flags)
+
+    if delete_before:
+        withdraw_init: str = make_bq_delete(withdraw_address_table, flags = flags)
+        deposit_init: str = make_bq_delete(deposit_address_table, flags = flags)
+        deposit_init_success: bool = utils.execute_bash(deposit_init)
+        withdraw_init_success: bool = utils.execute_bash(withdraw_init)
+    else:
+        deposit_init_success, withdraw_init_success = True, True
+
     deposit_query: str = make_bq_load(deposit_address_table, deposit_file, 'address:string')
-    withdraw_prepare: str = make_bq_delete(withdraw_address_table, flags = flags)
     withdraw_query: str = make_bq_load(withdraw_address_table, withdraw_file, 'address:string')
-    deposit0_success: bool = utils.execute_bash(deposit_prepare)
-    deposit1_success: bool = utils.execute_bash(deposit_query)
-    withdraw0_success: bool = utils.execute_bash(withdraw_prepare)
-    withdraw1_success: bool = utils.execute_bash(withdraw_query)
-    success: bool = (deposit0_success and deposit1_success) and \
-                    (withdraw0_success and withdraw1_success)
+    deposit_query_success: bool = utils.execute_bash(deposit_query)
+    withdraw_query_success: bool = utils.execute_bash(withdraw_query)
+    
+    success: bool = (deposit_init_success and deposit_query_success) and \
+                    (withdraw_init_success and withdraw_query_success)
 
     if not success:
         return success, {}
@@ -283,12 +298,17 @@ def external_pipeline(
     where_clauses: str = ' or '.join(where_clauses)
     query: str = f"bq query {' '.join(flags)} '{insert} {select} where {where_clauses}'"
 
-    prepare: str = make_bq_delete(external_table, flags = flags)
-    success0: bool = utils.execute_bash(prepare)
-    success1: bool = utils.execute_bash(query)
+    if delete_before:
+        init: str = make_bq_delete(external_table, flags = flags)
+        success_init: bool = utils.execute_bash(init)
+    else:
+        success_init: bool = True
 
-    if not (success0 and success1):
-        return False, {}
+    success_query: bool = utils.execute_bash(query)
+    success: bool = success_init and success_query
+
+    if not success:
+        return success, {}
 
     # now move to google cloud bucket
     project: str = utils.CONSTANTS['bigquery_project']
@@ -347,7 +367,7 @@ def main(args: Any):
         logger.info(f'last_block={last_block}')
 
     logger.info('entering update_bigquery')
-    success, _ = update_bigquery(last_block)
+    success, _ = update_bigquery(last_block, delete_before = args.scratch)
 
     if not success:
         logger.error('failed on updating bigquery tables')
@@ -424,7 +444,8 @@ def main(args: Any):
     withdraw_df: pd.DataFrame = data['withdraw']
 
     logger.info('entering external_pipeline')
-    success, _ = external_pipeline(last_block, deposit_df, withdraw_df)
+    success, _ = external_pipeline(
+        last_block, deposit_df, withdraw_df, delete_from = args.scratch)
 
     if not success:
         logger.error('failed on processing external transactions')
