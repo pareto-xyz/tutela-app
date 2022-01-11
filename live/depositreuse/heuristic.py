@@ -1,15 +1,16 @@
 """
-Pipeline for running a subset of the DAR algorithm
-
-7. Run `heuristic_metadata.py` to generate `metadata-joined.csv`.
-8. Run `run_nx.py` to generate `metadata-final.csv`. This is the file that will 
-    be used to populate the PostgreSQL database.
-9. Run `combine_metadata.py` to add clusters to `metadata-pruned.csv`.
+Pipeline for running a subset of the DAR algorithm.
 
 We need to store around a dataframe of the "last chunk" that will be 
-contatenated with the current chunk in deposit.py. This last chunk helps
+concatenated with the current chunk in deposit.py. This last chunk helps
 to ensure some degree of scope. We will update this last chunk as we 
 process day to day.
+
+This script will assume access to outputs the tornadocash pipeline. In
+particular, we do this to supplement the DAR clusters with tornadocash
+address clusters. We optimize for programming ease and not efficiency:
+this script will wipe all non-rows from the db and re-populate each run,
+even though most of the rows will remain identical.
 """
 
 import os
@@ -18,8 +19,9 @@ import psycopg2
 import numpy as np
 import pandas as pd
 import networkx as nx
+from tqdm import tqdm
 from os.path import join
-from typing import List, Any, Tuple, Set
+from typing import List, Any, Tuple, Set, Dict
 
 from live import utils
 from src.utils.loader import DataframeLoader
@@ -64,7 +66,7 @@ def merge_metadata(
 
     metadata: pd.DataFrame = pd.concat([dar_metadata, *tcash_metadata_list])
     metadata: pd.DataFrame = metadata.loc[
-        metadata.groupby('address')['conf'].idxmax()]    
+        metadata.groupby('address')['conf'].idxmax()]
 
     return metadata
 
@@ -77,6 +79,7 @@ def cluster_graph(
     tcash_address_list: List[List[Set[str]]],
 ) -> Tuple[List[Set[str]], List[Set[str]]]:
     user_graph: nx.DiGraph = make_graph(data.user, data.deposit)
+    
     for address_set in tcash_address_list:
         user_graph: nx.DiGraph = add_to_user_graph(user_graph, address_set)
 
@@ -143,6 +146,41 @@ def make_graph(node_a: pd.Series, node_b: pd.Series) -> nx.DiGraph:
 
     return graph
 
+
+def add_clusters_to_metadata(
+    metadata: pd.DataFrame,
+    user_clusters: List[Set[str]],
+    exchange_clusters: List[Set[str]],
+) -> pd.DataFrame:
+    print('adding user clusters...')
+    user_map: Dict[str, int] = {}
+    pbar = tqdm(total=len(user_clusters))
+    for i, cluster in enumerate(user_clusters):
+        for address in cluster:
+            user_map[address] = i
+        pbar.update()
+    pbar.close()
+
+    print('adding exchange clusters...')
+    exchange_map: Dict[str, int] = {}
+    pbar = tqdm(total=len(exchange_clusters))
+    for i, cluster in enumerate(exchange_clusters):
+        for address in cluster:
+            exchange_map[address] = i
+        pbar.update()
+    pbar.close()
+
+    metadata['user_cluster'] = metadata.address.apply(
+        lambda address: user_map.get(address, np.nan))
+    metadata['exchange_cluster'] = metadata.address.apply(
+        lambda address: exchange_map.get(address, np.nan))
+    
+    # cast to the right type
+    metadata['user_cluster'] = metadata['user_cluster'].astype(pd.Int64Dtype())
+    metadata['exchange_cluster'] = metadata['exchange_cluster'].astype(pd.Int64Dtype())
+
+    return metadata
+
 # ---
 # begin main function
 # --
@@ -193,18 +231,24 @@ def main(args: Any):
     metadata: pd.DataFrame = pd.read_csv(metadata_file)
 
     logger.info('pruning data')
-    try:
+    if args.debug:
         data = prune_data(data)
-    except:
-        logger.error('failed in prune_data()')
-        sys.exit(0)
+    else:
+        try:
+            data = prune_data(data)
+        except:
+            logger.error('failed in prune_data()')
+            sys.exit(0)
 
     logger.info('pruning metadata')
-    try:
+    if args.debug:
         metadata = prune_data(metadata)
-    except:
-        logger.error('failed in prune_metadata()')
-        sys.exit(0)
+    else:
+        try:
+            metadata = prune_data(metadata)
+        except:
+            logger.error('failed in prune_metadata()')
+            sys.exit(0)
 
     logger.info('loading metadata from tcash heuristics')
     tcash_names: List[str] = [
@@ -221,11 +265,14 @@ def main(args: Any):
         tcash_metadata_list.append(df)
 
     logger.info('merging metadata')
-    try:
+    if args.debug:
         metadata: pd.DataFrame = merge_metadata(metadata, tcash_metadata_list)
-    except:
-        logger.error('failed in merge_metadata()')
-        sys.exit(0)
+    else:
+        try:
+            metadata: pd.DataFrame = merge_metadata(metadata, tcash_metadata_list)
+        except:
+            logger.error('failed in merge_metadata()')
+            sys.exit(0)
 
     logger.info('loading addresses from tcash heuristics')
     tcash_names: List[str] = [
@@ -242,18 +289,81 @@ def main(args: Any):
         tcash_address_list.append(address_set)
 
     logger.info('clustering with networkx')
-    try:
+    if args.debug:
         user_clusters, exchange_clusters = cluster_graph(
             metadata, tcash_address_list)
-    except:
-        logger.error('failed in cluster_graph()')
-        sys.exit(0)
+    else:
+        try:
+            user_clusters, exchange_clusters = cluster_graph(
+                metadata, tcash_address_list)
+        except:
+            logger.error('failed in cluster_graph()')
+            sys.exit(0)
 
+    # --
     # TODO: need to remap these clusters to old ones. this can be tricky.
+    # skipping this for now.
+    # -- 
 
-    # -- algorithm completed at this point: we need to now populate db
+    logger.info('adding clusters into metadata')
+    if args.debug:
+        metadata: pd.DataFrame = add_clusters_to_metadata(
+            metadata, user_clusters, exchange_clusters)
+    else:
+        try:
+            metadata: pd.DataFrame = add_clusters_to_metadata(
+                metadata, user_clusters, exchange_clusters)
+        except:
+            logger.error('failed in add_clusters_to_metadata()')
+            sys.exit(0)
+
+    # save new metadata to file
+    final_file: str = join(proc_path, 'final.csv')
+    metadata.to_csv(final_file, index=False)
+
+    # -- 
+    # algorithm completed at this point: we need to now populate db
     if not args.no_db:
-        pass
+        conn: Any = psycopg2.connect(
+            database = utils.CONSTANTS['postgres_db'], 
+            user = utils.CONSTANTS['postgres_user'])
+        cursor: Any = conn.cursor()
+
+        # step 1: delete rows from address table where TCash
+        cursor.execute("delete from address where heuristic > 0");
+
+        # step 2: insert metadata rows into address table: this includes 
+        # all TCash and includes most recent DAR
+        columns: List[str] = [
+            'address'
+            'entity',
+            'conf',
+            'meta_data',
+            'heuristic',
+            'user_cluster',
+            'exchange_cluster',
+        ]
+        columns: str = ','.join(columns)
+        command: str = f"COPY address({columns}) FROM '{final_file}' DELIMITER ',' CSV HEADER;"
+        cursor.execute(command)
+
+        # step 3: insert transactions into deposit_transactions table
+        columns: List[str] = [
+            'address',
+            'deposit',
+            'transaction',
+            'block_number',
+            'block_ts',
+            'conf',
+        ]
+        columns: str = ','.join(columns)
+        cursor.execute(f"COPY deposit_transaction({columns}) FROM '{tx_file}' DELIMITER ',' CSV HEADER;")
+        cursor.execute(command)
+
+        conn.commit()
+
+        cursor.close()
+        conn.close()
 
 
 if __name__ == "__main__":

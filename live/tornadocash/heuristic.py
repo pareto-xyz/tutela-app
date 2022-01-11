@@ -88,11 +88,11 @@ def main(args: Any):
         if not args.no_db:
             save_file: str = join(proc_root, f'{name}.csv')
 
-            conn = psycopg2.connect(
+            conn: Any = psycopg2.connect(
                 database = utils.CONSTANTS['postgres_db'], 
                 user = utils.CONSTANTS['postgres_user'],
             )
-            cursor = conn.cursor()
+            cursor: Any = conn.cursor()
 
             cursor.execute(f"DELETE FROM {name}") # delete all rows from table
 
