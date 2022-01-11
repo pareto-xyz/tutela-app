@@ -52,15 +52,15 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     }
 
     return (
-        <div className="col-md-12 col-lg-6">
+        <div className="col-md-12 col-lg-6 info-section">
             <div className="tornado-info">
                 <div className="panel-sub col-12">about your input</div>
                 <div className="panel-title col-12">
                     <div className="row">
-                        <div className="col-6 title-text">
+                        <div className="col-sm-12 col-md-6 title-text">
                             TIMELINE OF REVEALS
                         </div>
-                        <div className="col-6 select-window">
+                        <div className="col-sm-12 col-md-6 select-window">
                             <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
                                 {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
                             </Form.Select>
@@ -69,7 +69,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                 </div>
                 <div className="panel-sub col-12">
                     This shows reveals in the {TIME_PERIODS[plotWindow]}. Click on a bar in the chart to show the reveal transactions below.
-                    <ResponsiveContainer width="100%" height={600} >
+                    <ResponsiveContainer aspect={0.5} maxHeight={500}>
                         <BarChart onClick={onClickWeek}
                             data={plotData}
                             margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
@@ -89,7 +89,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                                 // )}
                                 stackId="a" fill="white" />
 
-                            <Legend verticalAlign="bottom" height={5} />
+                            <Legend layout="vertical" verticalAlign="bottom" aspect={1} />
 
                         </BarChart>
 

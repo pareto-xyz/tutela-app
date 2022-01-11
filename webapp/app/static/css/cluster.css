@@ -66,7 +66,7 @@ body {
 
 .query-info,
 .tcash-overall,
-.info-section,
+.tornado-info, 
 .default-accordion-class,
 .linked-adress {
     border-radius: 5px;
@@ -203,6 +203,9 @@ tbody tr:last-of-type>td:last-of-type {
     word-break: break-word;
 }
 
+.tornado-row{
+    height: 100%;
+}
 
 /**
 RESULTS
@@ -538,4 +541,8 @@ tr{
     justify-content:center;
     margin-top: 0.3rem;
     background-color: var(--fadedgrey);
+}
+
+.tornado-row table > tbody > tr{
+    justify-content: space-between;
 }

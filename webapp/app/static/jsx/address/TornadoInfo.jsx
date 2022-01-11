@@ -4,7 +4,7 @@ import AgnosticTable from '../components/AgnosticTable';
 export default function TornadoInfo({ data, aliases }) {
     return (
         <div className="col-md-12 col-lg-6">
-            <div className="row">
+            <div className="row tornado-row">
                 <div className="col-12">
                     <div className="tornado-info">
                         <div className="panel-sub col-12">about your input</div>
