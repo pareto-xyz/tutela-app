@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { Form } from 'react-bootstrap';
 import { getApi } from '../../js/utils';
-//import exampleResponse from '../../data/plot';
+import exampleResponse from '../../data/plot';
 
 const TIME_PERIODS = {
     '3mth': 'past 3 months',
@@ -31,7 +31,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     function onSelectWindow(windowOption) {
         setPlotWindow(windowOption);
         getApi(`/plot/transaction?address=${addr}&window=${windowOption}`, response => {
-            // response = exampleResponse;
+            response = exampleResponse;
             const { query, data, success } = response.data;
             if (success === 1) {
                 setPlotData(data);
@@ -53,17 +53,18 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
 
     return (
         <div className="col-md-12 col-lg-6">
-            <div className="tornado-info col-12">
+            <div className="tornado-info">
                 <div className="panel-sub col-12">about your input</div>
-                <div className="panel-title   row ">
-                    <div className="col-6 title-text">
-                        TIMELINE OF REVEALS
-
-                    </div>
-                    <div className="col-6 select-window">
-                        <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
-                            {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
-                        </Form.Select>
+                <div className="panel-title col-12">
+                    <div className="row">
+                        <div className="col-6 title-text">
+                            TIMELINE OF REVEALS
+                        </div>
+                        <div className="col-6 select-window">
+                            <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
+                                {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
+                            </Form.Select>
+                        </div>
                     </div>
                 </div>
                 <div className="panel-sub col-12">
@@ -73,7 +74,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                             data={plotData}
                             margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
                             <CartesianGrid />
-                            <XAxis dataKey="name" interval='preserveStartEnd'/>
+                            <XAxis dataKey="name" interval='preserveStartEnd' />
                             <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
                             <Tooltip
                                 contentStyle={{ 'backgroundColor': '#404040', 'border': 'transparent', 'borderRadius': '5px' }} />

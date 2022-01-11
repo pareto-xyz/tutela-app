@@ -28,8 +28,7 @@ body {
 .dropdown-toggle,
 .detail-page,
 .selected-result>.my-accordion-header>button,
-.my-accordion-body,
-.detail-row {
+.my-accordion-body{
     background-color: var(--fadedgrey);
 }
 
@@ -67,7 +66,7 @@ body {
 
 .query-info,
 .tcash-overall,
-.tornado-info,
+.info-section,
 .default-accordion-class,
 .linked-adress {
     border-radius: 5px;
@@ -96,8 +95,8 @@ body {
 .detail-table {
     border-collapse: separate;
     border-spacing: 5px 5px;
-    font-size: 0.9rem;
     border-color: transparent;
+    margin: 0;
 }
 
 
@@ -111,7 +110,7 @@ body {
 }
 
 .panel-title,
-.panel-title>.title-text {
+.panel-title .title-text {
     color: var(--tcashgreen);
     font-weight: 700 !important;
     border-radius: 5px;
@@ -171,11 +170,8 @@ TOP
 .anon-score-group {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   font-size: 1rem;
-}
-
-.fa-question-circle {
-    margin-left: 5px;
 }
 
 #instructions {
@@ -294,7 +290,7 @@ input.form-control.rounded {
 
 .results-section {
     display: flex;
-    margin-top: 20px;
+    margin-top: 30px;
     margin-bottom: 32px;
     gap: 30px 0;
 }
@@ -518,9 +514,28 @@ ul.dropdown-menu {
 .detail-row>td {
     color: white;
     border-top: transparent;
-    white-space: pre-wrap;
 }
 
-.detail-row>td:last-child {
-  white-space: nowrap;
+.col-12 > table > tbody > tr:first-of-type{
+    flex-wrap: nowrap;
+    justify-content:space-between;
+}
+
+.col-12 > table > tbody > tr:first-of-type > td:last-of-type{
+    word-break: break-all;
+}
+
+.col-12 > table > tbody > tr:not(:first-of-type) > td:first-of-type{
+    width: 100%;
+    display: block;
+}
+
+tr{
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content:center;
+    margin-top: 0.3rem;
+    background-color: var(--fadedgrey);
 }
