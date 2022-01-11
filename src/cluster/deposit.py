@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 from src.utils.utils import Entity, Heuristic
 from src.utils.loader import DataframeLoader
@@ -28,10 +28,18 @@ class DepositCluster(BaseCluster):
         self.a_max: float = a_max
         self.t_max: float = t_max
         self.save_dir: str = save_dir
+        self._last_chunk: pd.DataFrame = pd.DataFrame()
+
+    def get_last_chunk(self) -> pd.DataFrame:
+        return self._last_chunk
+
+    def set_last_chunk(self, df: pd.DataFrame):
+        self._last_chunk: pd.DataFrame = df
 
     def make_clusters(self):
-        last_chunk: pd.DataFrame = pd.DataFrame() 
-        
+        # seed last chunk 
+        last_chunk: pd.DataFrame = self._last_chunk
+
         # assumes a maximum of 10k txs per block. 
         max_txs_per_block: int = 10000
         chunk_size: int = max_txs_per_block * self.t_max

@@ -18,6 +18,7 @@ each heuristic. We will not write any other files to disk.
 If possible look into ovewriting here rather than deleting rows.
 """
 import os
+import sys
 import psycopg2
 import pandas as pd
 from os.path import join
@@ -47,7 +48,7 @@ def main(args: Any):
     log_path: str = utils.CONSTANTS['log_path']
     os.makedirs(log_path, exist_ok=True)
 
-    log_file: str = join(log_path, 'tornadocash-data.log')
+    log_file: str = join(log_path, 'tornadocash-heuristic.log')
     os.remove(log_file)  # remove old file (yesterday's)
 
     logger = utils.get_logger(log_file)
@@ -73,11 +74,14 @@ def main(args: Any):
 
         logger.info(f'entering heuristic {i+1}')
 
-        heuristic.run()
-        # try:
-        # heuristic.run()
-        # except:
-        #     logger.error(f'failed in heuristic {i+1}')
+        if args.debug:
+            heuristic.run()
+        else:
+            try:
+                heuristic.run()
+            except:
+                logger.error(f'failed in heuristic {i+1}')
+                sys.exit(0)
 
         name: str = heuristic._name
 
@@ -109,6 +113,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-db', action='store_true', default=False)
     parser.add_argument('--heuristic', type=int, default=-1, help='index of heuristic to run (index: -1)')
+    parser.add_argument('--debug', action='store_true', default=False)
     args = parser.parse_args()
 
     main(args)
