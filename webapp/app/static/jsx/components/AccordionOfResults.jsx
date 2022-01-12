@@ -40,7 +40,7 @@ export default function AccordionOfResults(props) {
                                         <div className="text col-9">{title}</div>
                                         <div className="copy col-2">
                                             <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
-                                            <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} >
+                                            <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
                                                 Copied!
                                             </Toast>
                                         </div>
