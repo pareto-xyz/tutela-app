@@ -101,7 +101,7 @@ function TransactionPage({ params, aliases }) {
                             aliases={aliases} />
                     </div>}
                     {!firstView && <AccordionOfResults
-                        myClassName="linked-adress"
+                        myClassName="linked-address"
                         sectionHeader={TransactionsListHeader(queryInfo)}
                         rowTitle='transaction'
                         rowBadge='heuristic'

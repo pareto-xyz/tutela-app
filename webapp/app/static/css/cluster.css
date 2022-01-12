@@ -22,7 +22,7 @@ body {
 .tcash-overall,
 .tornado-info,
 .specific-result,
-.linked-adress,
+.linked-address,
 .specific-result:focus,
 .result-entry.selected,
 .dropdown-toggle,
@@ -69,7 +69,7 @@ body {
 .tcash-overall,
 .tornado-info, 
 .default-accordion-class,
-.linked-adress {
+.linked-address {
     border-radius: 5px;
     padding: 15px;
     height: 100%;
@@ -157,6 +157,8 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1;
+    position: relative;
+    left:-1rem;
 }
 
 
@@ -195,10 +197,6 @@ TOP
 
 #anonymous-none-found {
     flex-direction: column;
-}
-
-.search-adress {
-    margin: 0 0 32px 0 !important;
 }
 
 tbody tr:last-of-type>td:last-of-type {
@@ -272,9 +270,15 @@ input.form-control.rounded {
 
 /* results list ------------------ */
 
-.adress-row {
-  justify-content: space-between;
+.address-row {
   position: relative;
+}
+.row-address{
+    align-items:baseline;
+}
+.address-copy{
+    justify-content:space-evenly;
+    align-items: center;
 }
 
 .list-group {
@@ -297,15 +301,12 @@ input.form-control.rounded {
 }
 
 .text {
-    width: 100%;
-    max-width: 405px;
-    text-align: left;
+    word-break: break-all;
 }
 
 .list-text{
     text-align: center;
     word-break: break-all;
-    padding: 0.25rem
 }
 
 .list-copy {
@@ -330,14 +331,10 @@ input.form-control.rounded {
     right: 0;
 }
 
-.adress-copy {
-  justify-content: space-between;
-  align-items: center;
-}
 .expand-symbol {
   position: absolute;
   top: 0;
-  right: 10px;
+  right: 1rem;
 }
 
 .results-section {
@@ -376,8 +373,8 @@ input.form-control.rounded {
   word-wrap: initial;
   position: absolute;
   top: -20px;
-  left: -11px;
-  right: -11px;
+  left: -1rem;
+  right: 0;
 }
 
 .copy {
@@ -592,7 +589,7 @@ tr{
     flex-wrap: wrap;
     align-items: baseline;
     justify-content:center;
-    margin-top: 0.3rem;
+    margin-top: 0.2rem;
     background-color: var(--fadedgrey);
 }
 

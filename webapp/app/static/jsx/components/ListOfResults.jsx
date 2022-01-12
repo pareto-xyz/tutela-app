@@ -27,7 +27,7 @@ export default function ListOfResults(props) {
             <div className={`row ${selected && 'selected-result'}`} key={idx}>
                 <div className="col-12">
                     <ListGroup.Item className="my-accordion-header" onClick={() => setSelected(!selected)}>
-                        <div className="row adress-row">
+                        <div className="row address-row">
                             <div className="col-8 col-sm-5 col-md-4 col-lg-3 list-badge">{badge}</div>
                             <div className="col-md-12 col-lg-9 list-text">{title}</div>
 

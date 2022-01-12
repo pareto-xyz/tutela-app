@@ -11,10 +11,10 @@ const Spinner = (<div id="spinner" className="justify-content-center">
 
 export default function AccordionOfResults(props) {
     const { results, loading, aliases, rowTitle, rowBadge, sectionHeader,
-        noDataComponent, SortAndFilters, Pagination, startIndex=0, 
-        myClassName="default-accordion-class", } = props;
+        noDataComponent, SortAndFilters, Pagination, startIndex = 0,
+        myClassName = "default-accordion-class", } = props;
     const noResults = results.length == 0;
-    
+
     function Row({ result, idx }) {
         const title = result[rowTitle];
         let badge = result[rowBadge];
@@ -29,16 +29,18 @@ export default function AccordionOfResults(props) {
         return (
             <Accordion.Item eventKey={idx} className={`row ${selected && 'selected-result'}`} key={idx}>
                 <Accordion.Header className="col-12 my-accordion-header" onClick={() => setSelected(!selected)}>
-                    <div className="row adress-row">
-                        <div className="col-10">
-                            <div className="row">
-                                <div className="col-md-5 col-lg-3 mt-1r accordion-badge">{badge}</div>
-                                <div className="col-md-12 col-lg-9 mt-1r first-part-accordion-header">
-                                    <div className="adress-copy row">
-                                        <div className="text col-10">{title}</div>
+                    <div className="row address-row">
+                        <div className="col-12">
+                            <div className="row row-address">
+                                <div className="col-7 col-sm-6 col-md-5 col-lg-3">
+                                    <div className="mt-1r accordion-badge">{badge}</div>
+                                </div>
+                                <div className="col-12 col-lg-8">
+                                    <div className="row address-copy">
+                                        <div className="text col-9">{title}</div>
                                         <div className="copy col-2">
                                             <CopyToClipboard text={title} onCopy={() => setShowToast(true)}><i className="far fa-copy"></i></CopyToClipboard>
-                                            <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
+                                            <Toast className="copied-badge" onClose={() => setShowToast(false)} show={showToast} delay={3000} >
                                                 Copied!
                                             </Toast>
                                         </div>
@@ -46,7 +48,7 @@ export default function AccordionOfResults(props) {
                                 </div>
                             </div>
                         </div>
-                        {expandable && <div className="col-2 mt-1r expand-symbol"><i className="fas fa-angle-down"></i></div>}
+                        {expandable && <div className="col-1 mt-1r expand-symbol"><i className="fas fa-angle-down"></i></div>}
                     </div>
                 </Accordion.Header>
                 <div className="col-12 drop-info">
@@ -81,7 +83,7 @@ export default function AccordionOfResults(props) {
                             {results.map((result, idx) => <Row key={idx} result={result} idx={idx}></Row>)}
                         </Accordion>
                         <div className="results loading col-12">
-                            {loading && Spinner }
+                            {loading && Spinner}
                         </div>
                         {!noResults && Pagination && Pagination}
                     </div>

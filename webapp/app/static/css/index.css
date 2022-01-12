@@ -152,15 +152,10 @@ MAIN PAGE SEARCH SECTION
   justify-content: center;
 }
 
-.input-group.fixed-width,
-.input-adress {
+.input-group.fixed-width {
   /* height: 1rem ; */
   font-size: 1.2rem;
   border: transparent;
-}
-
-.input-adress {
-  width: 80%;
 }
 
 .address-form {
