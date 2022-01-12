@@ -13,7 +13,7 @@ export default function MyTooltip({ tooltipText }) {
 
     return (
         <OverlayTrigger
-            placement="right"
+            placement="bottom"
             delay={{ show: 250, hide: 400 }}
             overlay={renderHelpTooltip}
         >
