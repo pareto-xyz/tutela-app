@@ -272,6 +272,7 @@ input.form-control.rounded {
 
 .address-row {
   position: relative;
+  align-items: center;
 }
 .row-address{
     align-items:baseline;
@@ -307,6 +308,7 @@ input.form-control.rounded {
 .list-text{
     text-align: center;
     word-break: break-all;
+    margin:1rem 0;
 }
 
 .list-copy {
