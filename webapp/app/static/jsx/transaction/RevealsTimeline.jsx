@@ -89,7 +89,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                                 // )}
                                 stackId="a" fill="white" />
 
-                            <Legend layout="vertical" verticalAlign="bottom" aspect={1} />
+                            <Legend layout="vertical" verticalAlign="bottom" />
 
                         </BarChart>
 
