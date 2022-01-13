@@ -53,9 +53,10 @@ export default function AccordionOfResults(props) {
                     {expandable &&
                         <Accordion.Body className="my-accordion-body">
                             <div className="panel-sub">result #{startIndex + idx + 1}</div>
-                            <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id'])} aliases={aliases} />
+                            <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id', 'metadata'])} aliases={aliases} />
                             <div className="etherscan-link">
                                 {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
+                                {rowTitle === 'transaction' && <a href={`https://etherscan.io/tx/${title}`}>view on etherscan</a>}
                             </div>
                         </Accordion.Body>}
                 </div>

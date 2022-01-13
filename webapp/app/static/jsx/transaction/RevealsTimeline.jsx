@@ -10,6 +10,14 @@ import { Form } from 'react-bootstrap';
 import { getApi } from '../../js/utils';
 import exampleResponse from '../../data/plot';
 
+const TIME_PERIODS = {
+    '3mth': 'past 3 months',
+    '6mth': 'past 6 months',
+    '1yr': 'past year',
+    '3yr': 'past 3 years',
+    '5yr': 'past 5 years'
+}
+
 export default function RevealTimeline({ addr, loadNewData, aliases }) {
     // const {start_date, end_date, counts } = plotData;
     const [plotData, setPlotData] = useState([]);
@@ -54,33 +62,19 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                     </div>
                     <div className="col-6 select-window">
                         <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
-                            <option value='3mth'>
-                                past 3 months
-                            </option>
-                            <option value='6mth'>
-                                past 6 months
-                            </option>
-                            <option value='1yr'>
-                                past year
-                            </option>
-                            <option value='3yr'>
-                                past 3 years
-                            </option>
-                            <option value='5yr'>
-                                past 5 years
-                            </option>
+                            {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
                         </Form.Select>
                     </div>
                 </div>
                 <div className="panel-sub col-12">
-                    This shows when you committed Ethereum or Tornado Cash reveals over the selected time period.
+                    This shows reveals in the {TIME_PERIODS[plotWindow]}. Click on a bar in the chart to show the reveal transactions below.
                     <ResponsiveContainer width="100%" height={600} >
                         <BarChart onClick={onClickWeek}
                             data={plotData}
-                            margin={{ top: 5, right: 0, left: -30, bottom: 30 }}>
+                            margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
                             <CartesianGrid />
-                            <XAxis dataKey="name" />
-                            <YAxis />
+                            <XAxis dataKey="name" interval='preserveStartEnd'/>
+                            <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
                             <Tooltip
                                 contentStyle={{ 'backgroundColor': '#404040', 'border': 'transparent', 'borderRadius': '5px' }} />
                             <Bar name={aliases.deposit_address_reuse || 'deposit_address_reuse'} dataKey="deposit_address_reuse" stackId="a" fill="#8884d8" />

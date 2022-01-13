@@ -84,6 +84,7 @@ body {
 .dropdown-accordion>a.dropdown-item,
 .dropdown-accordion.accordion-header>button>* {
     color: var(--almostwhite);
+    font-family: "PT Sans", sans-serif;
 }
 
 .dropdown-accordion > a.dropdown-item:hover,
@@ -442,10 +443,6 @@ ul.dropdown-menu {
   padding-left: 15px !important;
 }
 
-.dropdown .dropdown-menu > div {
-  max-height: 250px;
-}
-
 .dropdown-menu > .dropdown-item:hover,
 .dropdown-menu > .dropdown-item:focus {
   color: #16181b;
@@ -522,4 +519,9 @@ ul.dropdown-menu {
 .detail-row>td {
     color: white;
     border-top: transparent;
+    white-space: pre-wrap;
+}
+
+.detail-row>td:last-child {
+  white-space: nowrap;
 }

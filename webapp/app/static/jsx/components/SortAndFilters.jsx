@@ -171,7 +171,7 @@ const FilterOption = ({ entry, idx, getNewResults }) => {
     return (
         <Accordion.Item eventKey={idx} className='dropdown-accordion' key={idx}>
             <Accordion.Header className="dropdown-accordion" onClick={() => setSelected(!selected)}>
-                <div>{key}</div> <div className="expand-symbol">&#x25BC;</div>
+                <div>{key === 'conf' ? 'confidence' : key}</div> <div className="expand-symbol">&#x25BC;</div>
             </Accordion.Header>
             {type === 'float' && <FloatBody k={key} values={values} getNewResults={getNewResults} />}
             {type === 'category' && <CategoryBody k={key} values={values} getNewResults={getNewResults} />}
