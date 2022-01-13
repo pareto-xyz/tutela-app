@@ -524,3 +524,7 @@ ul.dropdown-menu {
     border-top: transparent;
     white-space: pre-wrap;
 }
+
+.detail-row>td:last-child {
+  white-space: nowrap;
+}
