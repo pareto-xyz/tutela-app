@@ -71,10 +71,10 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                     <ResponsiveContainer width="100%" height={600} >
                         <BarChart onClick={onClickWeek}
                             data={plotData}
-                            margin={{ top: 5, right: 0, left: -30, bottom: 30 }}>
+                            margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
                             <CartesianGrid />
                             <XAxis dataKey="name" interval='preserveStartEnd'/>
-                            <YAxis label="number of reveals"/>
+                            <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
                             <Tooltip
                                 contentStyle={{ 'backgroundColor': '#404040', 'border': 'transparent', 'borderRadius': '5px' }} />
                             <Bar name={aliases.deposit_address_reuse || 'deposit_address_reuse'} dataKey="deposit_address_reuse" stackId="a" fill="#8884d8" />
