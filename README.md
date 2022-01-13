@@ -67,6 +67,8 @@ We aim to provide consistent updates over time as we improve Tutela.
 - **(11/17)** We posted a pre-beta version of Tutela to the Tornado Cash community for feedback.
 - **(11/23)** We open-sourced the Tutela implementation and will make all future improvements public through pull requests. Since 11/17, we increased the number of Centralized Exchange Addresses used in clustering from 171 to 332, and added a list of well-known addresses that we omit from consideration when classifying deposits. Improvements were made to the Tcash gas price heuristic and we have added the Tcash synchronous Tx reveal: searching by address will now return TCash specific information for all addresses. Several bugfixes were implemented, such as address casing, incorrect deposit names, deposit reuse hyperparameters.
 - **(12/22)** We added five Tornado Cash heuristics. If you search an address who has used Tornado Cash, Tutela will now show compromised transactions. If you search an address corresponding to a Tornado Cash pool, you will get statistics on the pool's true anonymity size. We are currently in progress on deploying Diff2Vec at scale. 
+- **(12/28)** Deployed first instance if Diff2Vec. Some improvements to be made.
+- **(1/10)** Working on a live updating pipeline.
 
 ## Contributors
 

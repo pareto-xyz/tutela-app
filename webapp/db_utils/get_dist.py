@@ -22,7 +22,6 @@ NAMES: List[Any] = [SAME_ADDR_HEUR, GAS_PRICE_HEUR, SAME_NUM_TX_HEUR,
 
 
 def get_tornado_cash_users(size: int, rs: np.random.RandomState) -> List[str]:
-    print('sampling tcash users...')
     rows: List[TornadoDeposit] = TornadoDeposit.query.all()
     addresses: List[str] = [row.from_address for row in rows]
     addresses: np.array = np.array(addresses)
@@ -41,7 +40,6 @@ def get_score_dist(addresses: List[str]) -> Dict[str, Dict[int, int]]:
     for name in NAMES: 
         scores[name] = []
 
-    print('processing users...')
     pbar = tqdm(total=len(addresses))
     for address in addresses:
         num: int = find_num_dar_matches(address)

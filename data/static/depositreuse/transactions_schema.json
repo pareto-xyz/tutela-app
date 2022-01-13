@@ -1,0 +1,38 @@
+[
+  {
+    "description": "Hash of the transaction",
+    "mode": "REQUIRED",
+    "name": "hash",
+    "type": "STRING"
+  },
+  {
+    "description": "Address of the sender",
+    "mode": "REQUIRED",
+    "name": "from_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Address of the receiver. null when its a contract creation transaction",
+    "mode": "NULLABLE",
+    "name": "to_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Value transferred in Wei",
+    "mode": "NULLABLE",
+    "name": "value",
+    "type": "NUMERIC"
+  },
+  {
+    "description": "Timestamp of the block where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "block_timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "Block number where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "block_number",
+    "type": "INTEGER"
+  }
+]

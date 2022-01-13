@@ -6,6 +6,7 @@ def main(args: Any):
     query: EthereumBigQuery = EthereumBigQuery(args.project)
     # pprint(query.get_table_names())
     query.export_to_bucket(args.bucket, args.table)
+    print(f'Exported {args.project}.{args.bucket} to {args.table}')
 
 
 if __name__ == "__main__":

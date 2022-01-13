@@ -75,7 +75,6 @@ class EthereumBigQuery:
             )
 
         extract_job.result()
-        print(f'Exported {project}.{dataset}.{table} to {destination_uri}')
 
 
 if __name__ == "__main__":

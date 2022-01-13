@@ -1,0 +1,124 @@
+[
+  {
+    "description": "Hash of the transaction",
+    "mode": "REQUIRED",
+    "name": "hash",
+    "type": "STRING"
+  },
+  {
+    "description": "The number of transactions made by the sender prior to this one",
+    "mode": "REQUIRED",
+    "name": "nonce",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Integer of the transactions index position in the block",
+    "mode": "REQUIRED",
+    "name": "transaction_index",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Address of the sender",
+    "mode": "REQUIRED",
+    "name": "from_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Address of the receiver. null when its a contract creation transaction",
+    "mode": "NULLABLE",
+    "name": "to_address",
+    "type": "STRING"
+  },
+  {
+    "description": "Value transferred in Wei",
+    "mode": "NULLABLE",
+    "name": "value",
+    "type": "NUMERIC"
+  },
+  {
+    "description": "Gas provided by the sender",
+    "mode": "NULLABLE",
+    "name": "gas",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Gas price provided by the sender in Wei",
+    "mode": "NULLABLE",
+    "name": "gas_price",
+    "type": "INTEGER"
+  },
+  {
+    "description": "The data sent along with the transaction",
+    "mode": "NULLABLE",
+    "name": "input",
+    "type": "STRING"
+  },
+  {
+    "description": "The total amount of gas used when this transaction was executed in the block",
+    "mode": "NULLABLE",
+    "name": "receipt_cumulative_gas_used",
+    "type": "INTEGER"
+  },
+  {
+    "description": "The amount of gas used by this specific transaction alone",
+    "mode": "NULLABLE",
+    "name": "receipt_gas_used",
+    "type": "INTEGER"
+  },
+  {
+    "description": "The contract address created, if the transaction was a contract creation, otherwise null",
+    "mode": "NULLABLE",
+    "name": "receipt_contract_address",
+    "type": "STRING"
+  },
+  {
+    "description": "32 bytes of post-transaction stateroot (pre Byzantium)",
+    "mode": "NULLABLE",
+    "name": "receipt_root",
+    "type": "STRING"
+  },
+  {
+    "description": "Either 1 (success) or 0 (failure) (post Byzantium)",
+    "mode": "NULLABLE",
+    "name": "receipt_status",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Timestamp of the block where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "block_timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "Block number where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "block_number",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Hash of the block where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "block_hash",
+    "type": "STRING"
+  },
+  {
+    "description": "Total fee that covers both base and priority fees",
+    "name": "max_fee_per_gas",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Fee given to miners to incentivize them to include the transaction",
+    "name": "max_priority_fee_per_gas",
+    "type": "INTEGER"
+  },
+  {
+    "description": "Transaction type",
+    "name": "transaction_type",
+    "type": "INTEGER"
+  },
+  {
+    "description": "The actual value per gas deducted from the senders account. Replacement of gas_price after EIP-1559",
+    "name": "receipt_effective_gas_price",
+    "type": "INTEGER"
+  }
+]
