@@ -522,4 +522,5 @@ ul.dropdown-menu {
 .detail-row>td {
     color: white;
     border-top: transparent;
+    white-space: pre-wrap;
 }

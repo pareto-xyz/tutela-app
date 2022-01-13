@@ -132,7 +132,7 @@ def get_display_aliases() -> Dict[str, str]:
         'multi_denomination': 'multi-denomination',
         'address_match': 'address match',
         'all_reveals': 'all reveals',
-        'ranks': 'How has this address performed vs. other addresses?\nPercentile Ranking (100% = many reveals, 0% = no reveals)',
+        'ranks': 'How has this address performed vs. other addresses?\n\nPercentile Ranking (100% = many reveals, 0% = no reveals)',
         'num_transactions': 'Number of reveals',
         'num_tcash': 'Tornado Cash Reveals',
         'num_ethereum': 'Ethereum Reveals',
