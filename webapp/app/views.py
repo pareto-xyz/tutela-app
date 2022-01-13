@@ -910,6 +910,21 @@ def search_transaction():
     }
 
     ranks: Dict[str, Dict[str, int]] = get_relative_rank(stats)
+    stats['hovers'] = {
+        'num_transactions': 'Number of transaction reveals involving this Ethereum address',
+        'num_ethereum': 'Number of Ethereum transaction reveals based on the Deposit Address Reuse Reveal',
+        'num_tcash': 'Number of reveals by this address using Tornado Cash'
+    }
+    stats['num_tcash']['hovers'] = dict(
+        SAME_ADDR_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
+        GAS_PRICE_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
+        SAME_NUM_TX_HEUR = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
+        LINKED_TX_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
+        TORN_MINE_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
+    )
+    stats['num_ethereum']['hovers'] = dict(
+        DEPO_REUSE_HEUR = 'when two user addresses send to the same centralized exchange deposit address, they are linked by the deposit address reuse heuristic'
+    )
 
     # --
     output['data']['query']['address'] = address
@@ -1028,19 +1043,28 @@ def get_relative_rank(my_stats: Dict[str, int]) -> Dict[str, Dict[str, int]]:
         'overall': 0,
         'ethereum': {},
         'tcash': {},
+        'hovers': {
+            'ethereum': 'percentile ranking of reveals by this address vs. other ethereum addresses',
+            'tcash': 'percentile ranking of reveals by this address vs. other ethereum addresses that have used Tornado Cash',
+        }
     }
     overall: List[float] = []
     for heuristic in my_stats['num_ethereum']:
         rank: float = compute_rank(my_stats['num_ethereum'][heuristic], reveal_dists[heuristic])
         ranks['ethereum'][heuristic] = int(100 * rank)
         overall.append(rank)
+    for heuristic in my_stats['num_ethereum']:
+        ranks['ethereum'][heuristic] = str(ranks['ethereum'][heuristic]) + '%'
+
     for heuristic in my_stats['num_tcash']:
         rank: float = compute_rank(my_stats['num_tcash'][heuristic], reveal_dists[heuristic])
         ranks['tcash'][heuristic] = int(100 * rank)
         overall.append(rank)
+    for heuristic in my_stats['num_tcash']:
+        ranks['tcash'][heuristic] = str(ranks['tcash'][heuristic]) + '%'
 
     overall: int = int(100 * float(np.mean(overall)))
-    ranks['overall'] = overall
+    ranks['overall'] = str(overall) + '%'
 
     return ranks
 

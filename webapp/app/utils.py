@@ -126,13 +126,17 @@ def get_display_aliases() -> Dict[str, str]:
         'gas_price': 'unique gas price reveals',
         'linked_tx': 'linked address reveals',
         'linked_transaction': 'linked transaction',
-        'torn_mine': 'TORN mining reveals',
+        'torn_mine': 'TORN mining',
         'unique_gas_price': 'unique gas price',
         'deposit_address_reuse': 'deposit address reuse',
         'multi_denomination': 'multi-denomination',
         'address_match': 'address match',
         'all_reveals': 'all reveals',
-        'ranks': 'rank percentile compared to other ethereum addresses',
+        'ranks': 'How has this address performed vs. other addresses?\nPercentile Ranking (100% = many reveals, 0% = no reveals)',
+        'num_transactions': 'Number of reveals',
+        'num_tcash': 'Tornado Cash Reveals',
+        'num_ethereum': 'Ethereum Reveals',
+        'tcash': 'tornado cash'
     }
 
 

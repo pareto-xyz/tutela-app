@@ -11,7 +11,7 @@ export default function QueryInfo({ data, loading=false, aliases }) {
     }
     const combined = { ...data, ...metadata };
 
-    const displayedScore = (anonymity_score * 100).toFixed(3);
+    const displayedScore = (anonymity_score * 100).toFixed(0);
 
     return (
         <div className="col-md-12 col-lg-6">
