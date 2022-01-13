@@ -413,6 +413,7 @@ def search_address(request: Request) -> Response:
                 num_deposit = '# of deposit transactions into tornado cash pools.',
                 num_withdraw = '# of withdrawal transactions from tornado cash pools.',
                 num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
+                num_uncompromised = '# of deposits to/withdrawals from tornado cash pools that are not potentially linked by the five reveals',
             )
         )
         return stats
@@ -659,7 +660,8 @@ def search_address(request: Request) -> Response:
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
             output['data']['query']['hovers'] = {
-                'heuristic': 'this is the primary reveal linking the input address to addresses shown below. It will default to diff2vec, the ML algorithm.'
+                'heuristic': 'this is the primary reveal linking the input address to addresses shown below. It will default to diff2vec, the ML algorithm.',
+                'conf': 'indicates confidence (between 0 and 1) that the below addresses are linked to the input address. This is based on how many reveals and the types of reveals that the input address has committed.'
             }
             output['data']['cluster'] = cluster
             output['data']['metadata']['cluster_size'] = cluster_size
@@ -750,7 +752,10 @@ def search_tornado(request: Request) -> Response:
             'linked_tx': num_linked_tx_reveals,
             'torn_mine': num_torn_mine_reveals,
         },
-        'tcash_num_uncompromised': num_deposits - num_compromised
+        'tcash_num_uncompromised': num_deposits - num_compromised,
+        'hovers': {
+            'tcash_num_uncompromised': '# of deposits to tornado cash pools that are not potentially compromised by the five reveals'
+        }
     }
 
     if return_tx:
