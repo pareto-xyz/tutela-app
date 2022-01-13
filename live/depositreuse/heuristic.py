@@ -181,6 +181,28 @@ def add_clusters_to_metadata(
 
     return metadata
 
+
+def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
+    """
+    The current user clusters and exchange clusters are enumerated 
+    from 0 onward. A simple solution would be to just start from the 
+    current maximum M number of clusters (M onward). However, this is 
+    not perfect as now an address may be in multiple clusters. We need
+    to also do cluster aggregation. Consider the following:
+
+    A cluster with addresses  {`a`, `b`, `c`}
+    
+    but `a` is already in cluster 0 and `b` is already in cluster 1. 
+    Suppose `c` is not in any cluster, and that there are 100 clusters 
+    currently. 
+
+    What we do: 
+
+    Create a new cluster 101, that contains all members in cluster 0, 
+    cluster 1, and also `c`.
+    """
+    pass
+
 # ---
 # begin main function
 # --
@@ -284,9 +306,11 @@ def main(args: Any):
     ]
     tcash_address_list: List[pd.DataFrame] = []
     for name in tcash_names:
-        address_set: List[Set[str]] = from_json(
-            join(tcash_root, f'{name}_address_live.json'))
-        tcash_address_list.append(address_set)
+        # only load if it exists
+        address_file: str  = join(tcash_root, f'{name}_address_live.json')
+        if os.path.isfile(address_file):
+            address_set: List[Set[str]] = from_json(address_file)
+            tcash_address_list.append(address_set)
 
     logger.info('clustering with networkx')
     if args.debug:
@@ -300,11 +324,6 @@ def main(args: Any):
             logger.error('failed in cluster_graph()')
             sys.exit(0)
 
-    # --
-    # TODO: need to remap these clusters to old ones. this can be tricky.
-    # skipping this for now.
-    # -- 
-
     logger.info('adding clusters into metadata')
     if args.debug:
         metadata: pd.DataFrame = add_clusters_to_metadata(
@@ -315,6 +334,18 @@ def main(args: Any):
                 metadata, user_clusters, exchange_clusters)
         except:
             logger.error('failed in add_clusters_to_metadata()')
+            sys.exit(0)
+
+    # merge these user_clusters consistently with the existing
+    # clusters such that any address is in only one address
+    logger.info('merging clusters in current metadata with db')
+    if args.debug:
+        metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+    else:
+        try:
+            metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+        except:
+            logger.error('failed in merge_clusters_with_db()')
             sys.exit(0)
 
     # save new metadata to file
