@@ -658,6 +658,9 @@ def search_address(request: Request) -> Response:
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
+            output['data']['query']['hovers'] = {
+                'heuristic': 'this is the primary reveal linking the input address to addresses shown below. It will default to diff2vec, the ML algorithm.'
+            }
             output['data']['cluster'] = cluster
             output['data']['metadata']['cluster_size'] = cluster_size
             output['data']['metadata']['num_pages'] = int(math.ceil(cluster_size / size))
