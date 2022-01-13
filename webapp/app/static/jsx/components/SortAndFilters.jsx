@@ -114,7 +114,7 @@ const CategoryBody = ({ k, values, getNewResults }) => {
                         obj[getFilterParam(k)] = value;
                         getNewResults(false, obj);
                     }}>
-                    {value}
+                    {value === 'conf' ? 'confidence' : value}
                 </Dropdown.Item>)}
         </Accordion.Body>
     )
