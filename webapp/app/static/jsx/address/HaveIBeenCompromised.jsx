@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useState, useRef } from 'react';
 import { InputGroup, FormControl, Form, } from 'react-bootstrap';
 import { compromisedTcashAddrResponse, failedCompromisedTcashResponse } from '../../data/ihavebeencompromised';
-import AccordionOfResults from '../components/AccordionOfResults';
+import ListOfResults from '../components/ListOfResults';
 
 
 export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
@@ -58,7 +58,7 @@ export default function HaveIBeenCompromised({ tcashAddr, aliases }) {
             </InputGroup>
 
 
-            {compromisedTxns && <AccordionOfResults
+            {compromisedTxns && <ListOfResults
                 sectionHeader={numCompromised !== null && <div className="results-section col-12">Total deposits compromised: {numCompromised}</div>}
                 rowTitle='transaction'
                 rowBadge='heuristic'
