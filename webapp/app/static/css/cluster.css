@@ -84,6 +84,7 @@ body {
 .dropdown-accordion>a.dropdown-item,
 .dropdown-accordion.accordion-header>button>* {
     color: var(--almostwhite);
+    font-family: "PT Sans", sans-serif;
 }
 
 .dropdown-accordion > a.dropdown-item:hover,
@@ -440,10 +441,6 @@ ul.dropdown-menu {
   overflow-x: hidden;
   padding-right: 15px !important;
   padding-left: 15px !important;
-}
-
-.dropdown .dropdown-menu > div {
-  max-height: 250px;
 }
 
 .dropdown-menu > .dropdown-item:hover,
