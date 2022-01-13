@@ -915,13 +915,13 @@ def search_transaction():
         'num_ethereum': 'Number of Ethereum transaction reveals based on the Deposit Address Reuse Reveal',
         'num_tcash': 'Number of reveals by this address using Tornado Cash'
     }
-    stats['num_tcash']['hovers'] = dict(
-        SAME_ADDR_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
-        GAS_PRICE_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
-        SAME_NUM_TX_HEUR = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
-        LINKED_TX_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
-        TORN_MINE_HEUR = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
-    )
+    stats['num_tcash']['hovers'] = {
+        SAME_ADDR_HEUR: '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
+        GAS_PRICE_HEUR: '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
+        SAME_NUM_TX_HEUR: '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
+        LINKED_TX_HEUR: '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
+        TORN_MINE_HEUR: '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
+    }
     stats['num_ethereum']['hovers'] = dict(
         DEPO_REUSE_HEUR = 'when two user addresses send to the same centralized exchange deposit address, they are linked by the deposit address reuse heuristic'
     )
