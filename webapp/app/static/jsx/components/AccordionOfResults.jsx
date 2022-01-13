@@ -52,15 +52,27 @@ export default function AccordionOfResults(props) {
                     </div>
                 </Accordion.Header>
                 <div className="col-12 drop-info">
-                    {expandable &&
-                        <Accordion.Body className="my-accordion-body">
-                            <div className="panel-sub">result #{startIndex + idx + 1}</div>
-                            <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id', 'metadata'])} aliases={aliases} />
-                            <div className="etherscan-link">
-                                {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
-                                {rowTitle === 'transaction' && <a href={`https://etherscan.io/tx/${title}`}>view on etherscan</a>}
-                            </div>
-                        </Accordion.Body>}
+                    <div className="row">
+                        {expandable &&
+                            <Accordion.Body className="col-12">
+                                <div className="row">
+                                    <div className="col-12">
+                                        <div className="my-accordion-body">
+                                            <div className="row">
+                                                <div className="col-12 panel-sub">result #{startIndex + idx + 1}</div>
+                                                <div className="col-12 table-responsive">
+                                                    <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id', 'metadata'])} aliases={aliases} />
+                                                </div>
+                                                <div className="col-12 etherscan-link">
+                                                    {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}
+                                                    {rowTitle === 'transaction' && <a href={`https://etherscan.io/tx/${title}`}>view on etherscan</a>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Accordion.Body>}
+                    </div>
                 </div>
             </Accordion.Item>
         );

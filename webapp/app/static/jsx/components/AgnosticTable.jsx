@@ -29,7 +29,7 @@ export default function AgnosticTable({ toIgnore = new Set(), keyValues, aliases
                     return (
                         <tr className="detail-row" key={idx}>
                             <td>{k}
-                                {hovers && hovers[ogK] && <MyTooltip tooltipText={hovers[ogK]} />}
+                                {hovers && hovers[ogK] && <MyTooltip tooltipText={hovers[ogK]} />}:
                             </td>
                             <td>{typeof (value) === 'object'
                                 ? <AgnosticTable keyValues={value} aliases={aliases} />

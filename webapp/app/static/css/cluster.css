@@ -210,7 +210,12 @@ tbody tr:last-of-type>td:last-of-type {
 /**
 RESULTS
 */
-
+.fa-question-circle{
+    padding-right: 1.5rem;
+}
+.accordion-collapse{
+    width: 100%;
+}
 
 /**
 /* pagination ---------------------- */
@@ -572,7 +577,6 @@ ul.dropdown-menu {
 }
 
 .col-12 > table > tbody > tr:first-of-type{
-    flex-wrap: nowrap;
     justify-content:space-between;
 }
 

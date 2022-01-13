@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { Form } from 'react-bootstrap';
 import { getApi } from '../../js/utils';
-import exampleResponse from '../../data/plot';
+//import exampleResponse from '../../data/plot';
 
 const TIME_PERIODS = {
     '3mth': 'past 3 months',
@@ -31,7 +31,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     function onSelectWindow(windowOption) {
         setPlotWindow(windowOption);
         getApi(`/plot/transaction?address=${addr}&window=${windowOption}`, response => {
-            response = exampleResponse;
+            // response = exampleResponse;
             const { query, data, success } = response.data;
             if (success === 1) {
                 setPlotData(data);
@@ -72,7 +72,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                     <ResponsiveContainer aspect={0.5} maxHeight={500}>
                         <BarChart onClick={onClickWeek}
                             data={plotData}
-                            margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
+                            margin={{ top: 5, right: 0, left: -45, bottom: 125 }}>
                             <CartesianGrid />
                             <XAxis dataKey="name" interval='preserveStartEnd' />
                             <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
@@ -89,7 +89,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                                 // )}
                                 stackId="a" fill="white" />
 
-                            <Legend layout="vertical" verticalAlign="bottom" />
+                            <Legend layout="vertical" verticalAlign="bottom" height={5} />
 
                         </BarChart>
 
