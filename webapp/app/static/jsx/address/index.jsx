@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { buildQueryString} from '../../js/utils';
+import { buildQueryString } from '../../js/utils';
 import axios from 'axios';
 //import example from '../../data/example';
 import QueryInfo from './QueryInfo';
@@ -203,7 +203,7 @@ function ClusterPage(props) {
                                     <QueryObjContext.Provider value={queryObj}>
 
                                         <AccordionOfResults
-                                            myClassName="linked-adress"
+                                            myClassName="linked-address"
                                             sectionHeader={AddressClusterHeader}
                                             rowTitle='address'
                                             rowBadge='entity'

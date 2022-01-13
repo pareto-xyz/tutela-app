@@ -20,25 +20,25 @@ export default function ChooseTornadoPool() {
     return (
         <Dropdown className="col-md-12 col-lg-4 investigate" onSelect={onSelect}>
             <Dropdown.Toggle variant="dark" size="md">
-            <img width="20px" src="static/img/tornado_logo.svg"></img> investigate a tornado cash pool
+                <img width="20px" src="static/img/tornado_logo.svg"></img> investigate a tornado cash pool
             </Dropdown.Toggle>
             <div className="col-12">
                 <div className="row">
-                        <Dropdown.Menu className="col-12">
-                            <div className="row">
-                                <div className="col-12">
-                                    {poolOptions  && poolOptions.map(({address, name}) => {
-                                        return (
-                                            <Dropdown.Item eventKey={address} key={address} >
-                                                {name} pool
-                                            </Dropdown.Item>
-                                        )
-                                    })}
-                                </div>
+                    <Dropdown.Menu className="col-12">
+                        <div className="row">
+                            <div className="col-12">
+                                {poolOptions && poolOptions.map(({ address, name }) => {
+                                    return (
+                                        <Dropdown.Item className="pool-drop" eventKey={address} key={address} >
+                                            {name} pool
+                                        </Dropdown.Item>
+                                    )
+                                })}
                             </div>
-                        </Dropdown.Menu>
-                    </div>
+                        </div>
+                    </Dropdown.Menu>
                 </div>
+            </div>
         </Dropdown>
     )
 }

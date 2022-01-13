@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import AddressSearchBar from '../components/AddressSearchBar';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
+import AddressSearchBar from '../components/AddressSearchBar';
 import { buildQueryString, getApi } from '../../js/utils';
 import responseExample from '../../data/txns';
 import QueryInfo from '../address/QueryInfo';
 import RevealTimeline from './RevealsTimeline';
 import AccordionOfResults from '../components/AccordionOfResults';
 
-const TransactionsListHeader = ({start_date, end_date}) => (
+const TransactionsListHeader = ({ start_date, end_date }) => (
     <div className="results col-12">
         <div className="panel-title">
             REVEALING TRANSACTIONS ({start_date} - {end_date})
@@ -39,7 +40,7 @@ function TransactionPage({ params, aliases }) {
         const addr = params.get('address');
         if (addr !== null) {
             setInputAddress(addr);
-            loadNewData({address: addr});
+            loadNewData({ address: addr });
         }
     }, []);
 
@@ -73,15 +74,14 @@ function TransactionPage({ params, aliases }) {
         <div className="container">
             <div className="row">
                 <Header current={'transactions'} />
-                <div className="col-12 top-margin">
+                <div className="col-12 halved-bar">
                     {firstView &&
-                        <div id="instructions">
+                        <div id="instructions" className="instructions-transactions">
                             Enter an ethereum address (or ENS name) to see history of transactions that reduced anonymity.
                         </div>}
-                    <div className="row" >
+                    <div className="justify-center row" >
                         <AddressSearchBar
                             showTornadoHovers={false}
-                            myClassName="col-12"
                             onSubmit={submitInputAddress}
                             inputAddress={inputAddress}
                             setInputAddress={setInputAddress} />
@@ -95,13 +95,13 @@ function TransactionPage({ params, aliases }) {
 
                     {!firstView && <div className="row results-section">
                         <QueryInfo data={queryInfo} aliases={aliases} />
-                        <RevealTimeline 
-                        loadNewData={loadNewData}
-                        addr={params.get('address')} 
-                        aliases={aliases} />
+                        <RevealTimeline
+                            loadNewData={loadNewData}
+                            addr={params.get('address')}
+                            aliases={aliases} />
                     </div>}
                     {!firstView && <AccordionOfResults
-                        myClassName="linked-adress"
+                        myClassName="linked-address"
                         sectionHeader={TransactionsListHeader(queryInfo)}
                         rowTitle='transaction'
                         rowBadge='heuristic'
@@ -111,11 +111,8 @@ function TransactionPage({ params, aliases }) {
                     />}
 
                 </div>
+                <Footer />
             </div>
-
-
-
-
         </div>
     )
 }

@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { Form } from 'react-bootstrap';
 import { getApi } from '../../js/utils';
-import exampleResponse from '../../data/plot';
+//import exampleResponse from '../../data/plot';
 
 const TIME_PERIODS = {
     '3mth': 'past 3 months',
@@ -52,28 +52,29 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     }
 
     return (
-        <div className="col-md-12 col-lg-6">
-            <div className="tornado-info col-12">
+        <div className="col-md-12 col-lg-6 info-section">
+            <div className="tornado-info">
                 <div className="panel-sub col-12">about your input</div>
-                <div className="panel-title   row ">
-                    <div className="col-6 title-text">
-                        TIMELINE OF REVEALS
-
-                    </div>
-                    <div className="col-6 select-window">
-                        <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
-                            {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
-                        </Form.Select>
+                <div className="panel-title col-12">
+                    <div className="row">
+                        <div className="col-sm-12 col-md-6 title-text">
+                            TIMELINE OF REVEALS
+                        </div>
+                        <div className="col-sm-12 col-md-6 select-window">
+                            <Form.Select value={plotWindow} id="window" className="select-window-button" onChange={e => onSelectWindow(e.target.value)}>
+                                {Object.entries(TIME_PERIODS).map(([code, english]) => <option value={code}> {english} </option>)}
+                            </Form.Select>
+                        </div>
                     </div>
                 </div>
                 <div className="panel-sub col-12">
                     This shows reveals in the {TIME_PERIODS[plotWindow]}. Click on a bar in the chart to show the reveal transactions below.
-                    <ResponsiveContainer width="100%" height={600} >
+                    <ResponsiveContainer aspect={0.5} maxHeight={500}>
                         <BarChart onClick={onClickWeek}
                             data={plotData}
-                            margin={{ top: 5, right: 0, left: -20, bottom: 30 }}>
+                            margin={{ top: 5, right: 0, left: -45, bottom: 125 }}>
                             <CartesianGrid />
-                            <XAxis dataKey="name" interval='preserveStartEnd'/>
+                            <XAxis dataKey="name" interval='preserveStartEnd' />
                             <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
                             <Tooltip
                                 contentStyle={{ 'backgroundColor': '#404040', 'border': 'transparent', 'borderRadius': '5px' }} />
@@ -82,13 +83,13 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                             <Bar name={aliases.multi_denomination || 'multi_denomination'} dataKey="multi_denomination" stackId="a" fill="violet" />
                             <Bar name={aliases.linked_transaction || 'linked_transaction'} dataKey="linked_transaction" stackId="a" fill="#82ca9d" />
                             <Bar name={aliases.address_match || 'address_match'} dataKey="address_match" stackId="a" fill="lightblue" />
-                            <Bar name={aliases.torn_mine || 'torn_mine'} dataKey="torn_mine" 
-                            // background={({ name }) => (
-                            //     <div style={{ height: '100%', width: '50px', fill: name === selectedWeek ? '#ee11bb' : '#ff0033' }}></div>
-                            // )}
+                            <Bar name={aliases.torn_mine || 'torn_mine'} dataKey="torn_mine"
+                                // background={({ name }) => (
+                                //     <div style={{ height: '100%', width: '50px', fill: name === selectedWeek ? '#ee11bb' : '#ff0033' }}></div>
+                                // )}
                                 stackId="a" fill="white" />
 
-                            <Legend verticalAlign="bottom" height={5} />
+                            <Legend layout="vertical" verticalAlign="bottom" height={5} />
 
                         </BarChart>
 

@@ -29,10 +29,12 @@ export default function IndexPage() {
                             based on public data on previous transactions. </div>
                     </div>
                     <div className="row instruct instructions">
-                        -- or -- 
-                    </div>
-                    <div className="row instruct instructions">
-                        Use the Tornado Cash Pool Anonymity Auditor
+                        <div className="col-12">
+                            -- or --
+                        </div>
+                        <div className="col-12">
+                            Use the Tornado Cash Pool Anonymity Auditor
+                        </div>
                     </div>
                     <div className="row justify-center">
                         <ChooseTornadoPool />

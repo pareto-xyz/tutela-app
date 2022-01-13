@@ -92,7 +92,7 @@ header.fixed {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000;
+  z-index: 9999;
   justify-content: space-between;
 }
 header ul {
@@ -136,6 +136,10 @@ a:hover {
   color: white;
 }
 
+.pool-drop:hover{
+  color: #000 !important;
+}
+
 /**
 MAIN PAGE SEARCH SECTION
 */
@@ -148,15 +152,10 @@ MAIN PAGE SEARCH SECTION
   justify-content: center;
 }
 
-.input-group.fixed-width,
-.input-adress {
+.input-group.fixed-width {
   /* height: 1rem ; */
   font-size: 1.2rem;
   border: transparent;
-}
-
-.input-adress {
-  width: 80%;
 }
 
 .address-form {

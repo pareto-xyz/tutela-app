@@ -95,11 +95,13 @@
 </body>
       <!-- Change nav color on scroll -->
       <script>
-        let hamb = document.querySelector(".navbar-toggler");
-        hamb.addEventListener("click", function () {
-          if($(".nav.scrolled")){
-            $(".nav").toggleClass("scrolled", !document.querySelector(".navbar-collapse").classList.contains("show"));
-          }
+        window.addEventListener("load", function () {
+          let hamb = document.querySelector(".navbar-toggler");
+          hamb.addEventListener("click", function () {
+            if($(".nav.scrolled")){
+              $(".nav").toggleClass("scrolled", !document.querySelector(".navbar-collapse").classList.contains("show"));
+            }
+          });
         });
         window.addEventListener("scroll", function () {
           if($(".navbar-collapse.show")){

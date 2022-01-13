@@ -1,7 +1,7 @@
 import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-export default function MyTooltip({tooltipText}) {
+export default function MyTooltip({ tooltipText }) {
 
     const renderHelpTooltip = props => {
         return (
@@ -13,11 +13,11 @@ export default function MyTooltip({tooltipText}) {
 
     return (
         <OverlayTrigger
-            placement="right"
+            placement="bottom"
             delay={{ show: 250, hide: 400 }}
             overlay={renderHelpTooltip}
         >
-          <i className="far fa-question-circle"></i>
+            <i className="col-2 far fa-question-circle"></i>
         </OverlayTrigger>
     );
 }
