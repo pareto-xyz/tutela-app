@@ -576,29 +576,47 @@ ul.dropdown-menu {
     border-top: transparent;
 }
 
-.col-12 > table > tbody > tr:first-of-type{
-    justify-content:space-between;
+.col-12 > table > tbody > tr{
+    justify-content:flex-start;
 }
 
 .col-12 > table > tbody > tr:first-of-type > td:last-of-type{
     word-break: break-all;
+    padding: 0 1rem;
 }
+
+.col-12 > table > tbody > tr > td:last-of-type{
+    margin:0 auto;
+}
+
+.col-12 > table > tbody > tr> td:first-of-type{
+    padding: 0.5rem 1rem;
+}
+
 
 .col-12 > table > tbody > tr:not(:first-of-type) > td:first-of-type{
     width: 100%;
     display: block;
+    padding-top: 0.5rem;
 }
 
 tr{
-    width: 100%;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    justify-content:center;
     margin-top: 0.2rem;
     background-color: var(--fadedgrey);
 }
 
 .tornado-row table > tbody > tr{
     justify-content: space-between;
+}
+
+.my-accordion-body .col-12 > table > tbody > tr > td:first-of-type{
+    max-width: 140px;
+}
+
+.my-accordion-body .col-12 > table > tbody > tr > td:last-of-type{
+    margin: 0;
+    padding:0 1rem;
 }
