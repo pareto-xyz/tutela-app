@@ -48,7 +48,7 @@ function TransactionPage({ params, aliases }) {
 
         setLoadingOverall(true);
         getApi('/search/transaction' + buildQueryString(queryObj), response => {
-            response = responseExample;
+            // response = responseExample;
             const { data, success } = response.data;
             if (success === 1) {
                 const { metadata, query, transactions } = data;
