@@ -38,7 +38,8 @@ def export_bigquery_table_to_cloud_bucket(
     try:
         handler.export_to_bucket(src_table, dest_bucket)
         return True
-    except: 
+    except Exception as e:
+        print(e.message, e.args)
         return False
 
 
@@ -47,7 +48,8 @@ def delete_bucket_contents(bucket: str) -> bool:
     try:
         handler.empty_bucket(bucket)
         return True
-    except: 
+    except Exception as e:
+        print(e.message, e.args)
         return False
 
 
@@ -57,7 +59,8 @@ def export_cloud_bucket_to_csv(
     try:
         files: List[str] = handler.export_to_csv(bucket, out_dir)
         return True, files
-    except: 
+    except Exception as e:
+        print(e.message, e.args)
         return False, []
 
 
