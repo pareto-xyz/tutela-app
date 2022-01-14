@@ -224,12 +224,9 @@ def main(args: Any):
         sys.exit(0)
 
     logger.info('sorting and combining block files')
-    block_df: pd.DataFrame = utils.load_data_from_chunks(block_files)
+    block_df: pd.DataFrame = utils.load_data_from_chunks(
+        block_files, sort_column = 'number')
     block_df.drop_duplicates('hash', inplace=True)
-    
-    logger.info('sorting and combining transaction files')
-    transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
-    transaction_df.drop_duplicates('transaction', inplace=True)
 
     logger.info('saving block chunks')
     save_file(block_df, 'ethereum_blocks_live.csv')
@@ -237,8 +234,15 @@ def main(args: Any):
     logger.info('deleting block files')
     delete_files(block_files)
     
-    logger.info('saving transaction chunks')
-    save_file(transaction_df, 'ethereum_transactions_live.csv')
+    logger.info('sorting and combining transaction files')
+    transaction_out_file: str = join(
+        utils.CONSTANTS['data_path'], 
+        'live/depositreuse/ethereum_transactions_live.csv')
+    
+    utils.load_data_from_chunks_low_memory(
+        transaction_files, 
+        transaction_out_file,
+        sort_column = 'block_number')
 
     logger.info('deleting transaction files')
     delete_files(transaction_files)
