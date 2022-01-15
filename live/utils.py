@@ -8,7 +8,7 @@ import tempfile
 import subprocess
 import pandas as pd
 from tqdm import tqdm
-from typing import Tuple, List
+from typing import Tuple, List, Any
 from os.path import join, dirname, realpath
 
 from src.utils.bigquery import EthereumBigQuery
@@ -139,11 +139,7 @@ def load_data_from_chunks_low_memory(
 
 # -- external sort utilities -- 
 
-def memorysort(
-    filename: str,
-    outname: str,
-    colname: str = 'block_number',
-):
+def memorysort(filename: str, outname: str, colname: str = 'block_number'):
     """Sort this CSV file in memory on the given columns"""
     df: pd.DataFrame = pd.read_csv(filename)
     df: pd.DataFrame = df.sort_values(colname)
@@ -162,8 +158,8 @@ def mergesort(sorted_filenames, nway=2, merge_idx=5):
         # sorted_filenames = remaining files to sort
         merge_filenames, sorted_filenames = \
             sorted_filenames[:nway], sorted_filenames[nway:]
-        num_remaining = len(sorted_filenames)
-        num_total = len(merge_filenames) + len(sorted_filenames)
+        num_remaining: int = len(sorted_filenames)
+        num_total: int = len(merge_filenames) + len(sorted_filenames)
 
         if merge_n % 10 == 0:
             print(f'{merge_n} merged | {num_remaining} remaining | {num_total} total')
@@ -192,17 +188,17 @@ def mergesort(sorted_filenames, nway=2, merge_idx=5):
 
 def make_iterator(filename):
     with open(filename, newline='') as fp:
-        count = 0
+        count: int = 0
         for row in csv.reader(fp):
             if count == 0:    
-                count = 1  # just make it not 0
+                count: int = 1  # just make it not 0
                 continue  # skip header
             yield row
 
 
 def get_header(filename) -> List[str]:
     with open(filename, newline='') as fp:
-        reader = csv.reader(fp, delimiter=',')
+        reader: csv.reader = csv.reader(fp, delimiter=',')
         header: List[str] = next(reader)
 
     return header
