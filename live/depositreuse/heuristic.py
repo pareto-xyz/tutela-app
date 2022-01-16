@@ -335,18 +335,6 @@ def main(args: Any):
             logger.error('failed in add_clusters_to_metadata()')
             sys.exit(0)
 
-    # merge these user_clusters consistently with the existing
-    # clusters such that any address is in only one address
-    logger.info('merging clusters in current metadata with db')
-    if args.debug:
-        metadata: pd.DataFrame = merge_clusters_with_db(metadata)
-    else:
-        try:
-            metadata: pd.DataFrame = merge_clusters_with_db(metadata)
-        except:
-            logger.error('failed in merge_clusters_with_db()')
-            sys.exit(0)
-
     # save new metadata to file
     final_file: str = join(proc_path, 'final.csv')
     metadata.to_csv(final_file, index=False)
@@ -363,6 +351,18 @@ def main(args: Any):
 
         # step 1: delete rows from address table where TCash
         cursor.execute("delete from address where heuristic > 0");
+
+        # merge these user_clusters consistently with the existing
+        # clusters such that any address is in only one address
+        logger.info('merging clusters in current metadata with db')
+        if args.debug:
+            metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+        else:
+            try:
+                metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+            except:
+                logger.error('failed in merge_clusters_with_db()')
+                sys.exit(0)
 
         # step 2: insert metadata rows into address table: this includes 
         # all TCash and includes most recent DAR
@@ -401,8 +401,12 @@ def main(args: Any):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no-db', action='store_true', default=False)
-    parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('--no-db', action='store_true', default=False,
+                        help='skip the code to edit database (default: False)')
+    parser.add_argument('--db-only', action='store_true', default=False,
+                        help='only execute the code to edit database (default: False)')
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help='throw errors / no try-catch (default: False)')
     args = parser.parse_args()
 
     main(args)

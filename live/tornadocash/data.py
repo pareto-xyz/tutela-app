@@ -330,113 +330,119 @@ def delete_files(paths: List[str]):
 
 
 def main(args: Any):
-    log_path: str = utils.CONSTANTS['log_path']
-    os.makedirs(log_path, exist_ok=True)
+    if not args.db_only:
+        log_path: str = utils.CONSTANTS['log_path']
+        os.makedirs(log_path, exist_ok=True)
 
-    log_file: str = join(log_path, 'tornadocash-data.log')
-    if os.path.isfile(log_file):
-        os.remove(log_file)  # remove old file (yesterday's)
+        log_file: str = join(log_path, 'tornadocash-data.log')
+        if os.path.isfile(log_file):
+            os.remove(log_file)  # remove old file (yesterday's)
 
-    logger = utils.get_logger(log_file)
+        logger = utils.get_logger(log_file)
 
-    if args.scratch:
-        logger.info('starting from scratch')
-        last_block: int = 0
+        if args.scratch:
+            logger.info('starting from scratch')
+            last_block: int = 0
+        else:
+            logger.info('entering get_last_block')
+            last_block: int = get_last_block()
+            logger.info(f'last_block={last_block}')
+
+        logger.info('entering update_bigquery')
+        success, _ = update_bigquery(last_block, delete_before = args.scratch)
+
+        if not success:
+            logger.error('failed on updating bigquery tables')
+            sys.exit(0)
+
+        logger.info('entering empty_bucket')
+        success, _ = empty_bucket()
+
+        if not success:
+            logger.error('failed on emptying cloud buckets')
+            sys.exit(0)
+
+        logger.info('entering update_bucket')
+        success, _ = update_bucket()
+
+        if not success:
+            logger.error('failed on updating cloud buckets')
+            sys.exit(0)
+
+        logger.info('entering download_bucket')
+        success, data = download_bucket()
+
+        if not success:
+            logger.error('failed on downloading cloud buckets')
+            sys.exit(0)
+
+        trace_files: List[str] = data['trace']
+        transaction_files: List[str] = data['transaction']
+        miner_files: List[str] = data['miner']
+
+        if len(trace_files) == 0:
+            logger.error('found 0 files for tornado cash traces')
+            sys.exit(0)
+
+        if len(transaction_files) == 0:
+            logger.error('found 0 files for tornado cash transactions')
+            sys.exit(0)
+
+        if len(miner_files) == 0:
+            logger.error('found 0 files for tornado cash miners')
+            sys.exit(0)
+
+        logger.info('sorting and combining trace files')
+        trace_df: pd.DataFrame = utils.load_data_from_chunks(trace_files)
+        logger.info('sorting and combining transaction files')
+        transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
+        logger.info('sorting and combining miner files')
+        miner_df: pd.DataFrame = utils.load_data_from_chunks(miner_files)
+
+        # drop duplicates
+        trace_df.drop_duplicates('transaction_hash', inplace=True)
+        transaction_df.drop_duplicates('hash', inplace=True)
+        miner_df.drop_duplicates('hash', inplace=True)
+
+        logger.info('saving trace chunks')
+        save_file(trace_df, 'tornado_traces.csv')
+        logger.info('saving transaction chunks')
+        save_file(transaction_df, 'tornado_transactions.csv')
+        logger.info('saving miner chunks')
+        save_file(miner_df, 'miner_txs.csv')
+
+        logger.info('deleting trace files')
+        delete_files(trace_files)
+        logger.info('deleting transaction files')
+        delete_files(transaction_files)
+        logger.info('deleting miner files')
+        delete_files(miner_files)
+
+        logger.info('entering get_deposit_and_withdraw')
+        success, data = get_deposit_and_withdraw(trace_df, transaction_df)
+
+        if not success:
+            logger.error('failed on computing deposit and withdraw dataframes')
+            sys.exit(0)
+
+        deposit_df: pd.DataFrame = data['deposit']
+        withdraw_df: pd.DataFrame = data['withdraw']
+
+        logger.info('entering external_pipeline')
+        success, _ = external_pipeline(
+            last_block, deposit_df, withdraw_df, delete_before = args.scratch)
+
+        if not success:
+            logger.error('failed on processing external transactions')
+            sys.exit(0)
+
+        deposit_file: str = save_file(deposit_df, 'deposit_txs.csv')
+        withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
     else:
-        logger.info('entering get_last_block')
-        last_block: int = get_last_block()
-        logger.info(f'last_block={last_block}')
-
-    logger.info('entering update_bigquery')
-    success, _ = update_bigquery(last_block, delete_before = args.scratch)
-
-    if not success:
-        logger.error('failed on updating bigquery tables')
-        sys.exit(0)
-
-    logger.info('entering empty_bucket')
-    success, _ = empty_bucket()
-
-    if not success:
-        logger.error('failed on emptying cloud buckets')
-        sys.exit(0)
-
-    logger.info('entering update_bucket')
-    success, _ = update_bucket()
-
-    if not success:
-        logger.error('failed on updating cloud buckets')
-        sys.exit(0)
-
-    logger.info('entering download_bucket')
-    success, data = download_bucket()
-
-    if not success:
-        logger.error('failed on downloading cloud buckets')
-        sys.exit(0)
-
-    trace_files: List[str] = data['trace']
-    transaction_files: List[str] = data['transaction']
-    miner_files: List[str] = data['miner']
-
-    if len(trace_files) == 0:
-        logger.error('found 0 files for tornado cash traces')
-        sys.exit(0)
-
-    if len(transaction_files) == 0:
-        logger.error('found 0 files for tornado cash transactions')
-        sys.exit(0)
-
-    if len(miner_files) == 0:
-        logger.error('found 0 files for tornado cash miners')
-        sys.exit(0)
-
-    logger.info('sorting and combining trace files')
-    trace_df: pd.DataFrame = utils.load_data_from_chunks(trace_files)
-    logger.info('sorting and combining transaction files')
-    transaction_df: pd.DataFrame = utils.load_data_from_chunks(transaction_files)
-    logger.info('sorting and combining miner files')
-    miner_df: pd.DataFrame = utils.load_data_from_chunks(miner_files)
-
-    # drop duplicates
-    trace_df.drop_duplicates('transaction_hash', inplace=True)
-    transaction_df.drop_duplicates('hash', inplace=True)
-    miner_df.drop_duplicates('hash', inplace=True)
-
-    logger.info('saving trace chunks')
-    save_file(trace_df, 'tornado_traces.csv')
-    logger.info('saving transaction chunks')
-    save_file(transaction_df, 'tornado_transactions.csv')
-    logger.info('saving miner chunks')
-    save_file(miner_df, 'miner_txs.csv')
-
-    logger.info('deleting trace files')
-    delete_files(trace_files)
-    logger.info('deleting transaction files')
-    delete_files(transaction_files)
-    logger.info('deleting miner files')
-    delete_files(miner_files)
-
-    logger.info('entering get_deposit_and_withdraw')
-    success, data = get_deposit_and_withdraw(trace_df, transaction_df)
-
-    if not success:
-        logger.error('failed on computing deposit and withdraw dataframes')
-        sys.exit(0)
-
-    deposit_df: pd.DataFrame = data['deposit']
-    withdraw_df: pd.DataFrame = data['withdraw']
-
-    logger.info('entering external_pipeline')
-    success, _ = external_pipeline(
-        last_block, deposit_df, withdraw_df, delete_before = args.scratch)
-
-    if not success:
-        logger.error('failed on processing external transactions')
-        sys.exit(0)
-
-    deposit_file: str = save_file(deposit_df, 'deposit_txs.csv')
-    withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
+        data_path:  str = utils.CONSTANTS['data_path']
+        out_dir: str = join(data_path, 'live/tornado_cash')
+        deposit_file: str = join(out_dir, 'deposit_txs.csv')
+        withdraw_file: str = join(out_dir, 'withdraw_txs.csv')
 
     if not args.no_db:
         import psycopg2
@@ -474,7 +480,10 @@ if __name__ == "__main__":
     import argparse 
     parser = argparse.ArgumentParser()
     parser.add_argument('--scratch', action='store_true', default=False)
-    parser.add_argument('--no-db', action='store_true', default=False)
+    parser.add_argument('--no-db', action='store_true', default=False,
+                        help='skip the code to edit database (default: False)')
+    parser.add_argument('--db-only', action='store_true', default=False,
+                        help='only execute the code to edit database (default: False)')
     args = parser.parse_args()
     main(args)
 

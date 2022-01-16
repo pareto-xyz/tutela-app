@@ -44,15 +44,16 @@ def load_input_data():
 
 
 def main(args: Any):
-    log_path: str = utils.CONSTANTS['log_path']
-    os.makedirs(log_path, exist_ok=True)
+    if not args.db_only:  # no need for logging if only db
+        log_path: str = utils.CONSTANTS['log_path']
+        os.makedirs(log_path, exist_ok=True)
 
-    log_file: str = join(log_path, 'tornadocash-heuristic.log')
-    
-    if os.path.isdir(log_file):
-        os.remove(log_file)  # remove old file (yesterday's)
+        log_file: str = join(log_path, 'tornadocash-heuristic.log')
 
-    logger = utils.get_logger(log_file)
+        if os.path.isdir(log_file):
+            os.remove(log_file)  # remove old file (yesterday's)
+
+        logger = utils.get_logger(log_file)
 
     data_path: str = utils.CONSTANTS['data_path']
     tx_root: str = join(data_path, 'live/tornado_cash')
@@ -73,16 +74,17 @@ def main(args: Any):
             if i != args.heuristic:
                 continue
 
-        logger.info(f'entering heuristic {i+1}')
+        if not args.db_only:
+            logger.info(f'entering heuristic {i+1}')
 
-        if args.debug:
-            heuristic.run()
-        else:
-            try:
+            if args.debug:
                 heuristic.run()
-            except:
-                logger.error(f'failed in heuristic {i+1}')
-                sys.exit(0)
+            else:
+                try:
+                    heuristic.run()
+                except:
+                    logger.error(f'failed in heuristic {i+1}')
+                    sys.exit(0)
 
         name: str = heuristic._name
 
@@ -114,9 +116,13 @@ def main(args: Any):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no-db', action='store_true', default=False)
+    parser.add_argument('--no-db', action='store_true', default=False,
+                        help='skip the code to edit database (default: False)')
+    parser.add_argument('--db-only', action='store_true', default=False,
+                        help='only execute the code to edit database (default: False)')
     parser.add_argument('--heuristic', type=int, default=-1, help='index of heuristic to run (index: -1)')
-    parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help='throw errors / no try-catch (default: False)')
     args = parser.parse_args()
 
     main(args)
