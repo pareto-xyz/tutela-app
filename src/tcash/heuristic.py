@@ -897,7 +897,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         return self.__is_W_type(address1, deposits, withdraws) and \
             self.__is_D_type(address2, deposits, withdraws)
 
-    def is_D_DW_tx(
+    def __is_D_DW_tx(
         self, address1: str, address2: str,
         deposits: Set[str], withdraws: Set[str]) -> bool:
         return self.__is_D_type(address1, deposits, withdraws) and \
