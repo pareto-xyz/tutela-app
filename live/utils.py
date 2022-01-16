@@ -135,7 +135,24 @@ def load_data_from_chunks_low_memory(
     print('running merge sort')
     temp_filename: str = mergesort(files, nway=2, merge_idx=merge_idx)
 
-    shutil.move(temp_filename, outfile)
+    print('writing temp file to new file')
+    count: int = 0
+    with open(outfile, 'w', newline='') as fp:
+        writer: csv.writer = csv.writer(
+            fp, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(header)
+
+        with open(temp_filename, newline='') as sfp:
+            for row in csv.reader(sfp):
+                writer.writerow(row)
+
+                if count % 1000000 == 0:
+                    print(f'Written {count} rows.')
+
+                count += 1
+
+    print('removing temp file')
+    os.remove(temp_filename)
 
 # -- external sort utilities -- 
 
