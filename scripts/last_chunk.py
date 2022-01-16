@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('transaction_csv', type=str, help='path to transaction csv')
     parser.add_argument('out_csv', type=str, help='path to output csv')
-    parser.add_argument('min_block', type, int, help='smallest block number to consider')
+    parser.add_argument('min_block', type=int, help='smallest block number to consider')
     parser.add_argument('--t-max', type=int, default=3200, help='t_max (default: 3200)')
     args: Any = parser.parse_args()
     main(args)
