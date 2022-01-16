@@ -19,7 +19,6 @@ If possible look into ovewriting here rather than deleting rows.
 """
 import os
 import sys
-import psycopg2
 import pandas as pd
 from os.path import join
 from typing import List, Any
@@ -86,6 +85,8 @@ def main(args: Any):
         name: str = heuristic._name
 
         if not args.no_db:
+            import psycopg2
+
             save_file: str = join(proc_root, f'{name}.csv')
 
             conn: Any = psycopg2.connect(

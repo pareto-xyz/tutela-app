@@ -15,7 +15,6 @@ even though most of the rows will remain identical.
 
 import os
 import sys
-import psycopg2
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -355,6 +354,8 @@ def main(args: Any):
     # -- 
     # algorithm completed at this point: we need to now populate db
     if not args.no_db:
+        import psycopg2
+
         conn: Any = psycopg2.connect(
             database = utils.CONSTANTS['postgres_db'], 
             user = utils.CONSTANTS['postgres_user'])

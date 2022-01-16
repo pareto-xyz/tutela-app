@@ -1,5 +1,4 @@
 import os, sys
-import psycopg2
 import numpy as np
 import pandas as pd
 from glob import glob

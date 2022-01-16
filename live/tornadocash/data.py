@@ -25,7 +25,6 @@ and complete_deposit_tx.csv.
 """
 import os
 import sys
-import psycopg2
 import numpy as np
 import pandas as pd
 from os.path import join
@@ -440,6 +439,7 @@ def main(args: Any):
     withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
 
     if not args.no_db:
+        import psycopg2
         # write csvs into databases
         conn = psycopg2.connect(
             database = utils.CONSTANTS['postgres_db'], 
