@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
+from copy import copy
 from typing import List, Dict, Any, Tuple, Optional
 
 from src.utils.utils import Entity, Heuristic
@@ -38,7 +39,7 @@ class DepositCluster(BaseCluster):
 
     def make_clusters(self):
         # seed last chunk 
-        last_chunk: pd.DataFrame = self._last_chunk
+        last_chunk: pd.DataFrame = copy(self._last_chunk)
 
         # assumes a maximum of 10k txs per block. 
         max_txs_per_block: int = 10000
