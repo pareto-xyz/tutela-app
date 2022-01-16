@@ -218,7 +218,7 @@ def main(args: Any):
 
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
-        depo_path: str = join(data_path, '/live/depositreuse'))
+        depo_path: str = join(data_path, '/live/depositreuse')
 
         # we will need to put some of these files into the Address db table
         tcash_root: str = join(data_path, 'static/tcash/processed')
