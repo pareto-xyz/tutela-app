@@ -162,59 +162,59 @@ def delete_files(paths: List[str]):
 
 
 def main(args: Any):
-    # log_path: str = utils.CONSTANTS['log_path']
-    # os.makedirs(log_path, exist_ok=True)
+    log_path: str = utils.CONSTANTS['log_path']
+    os.makedirs(log_path, exist_ok=True)
 
-    # log_file: str = join(log_path, 'depositreuse-data.log')
-    # if os.path.isfile(log_file):
-    #     os.remove(log_file)  # remove old file (yesterday's)
+    log_file: str = join(log_path, 'depositreuse-data.log')
+    if os.path.isfile(log_file):
+        os.remove(log_file)  # remove old file (yesterday's)
 
-    # logger = utils.get_logger(log_file)
+    logger = utils.get_logger(log_file)
 
-    # if args.scratch:
-    #     logger.info('starting from scratch')
-    #     # NOTE: scratch here does not mean starting from 0, that would be
-    #     # ridiculous, this instead will be starting from our known endpt.
-    #     # This data is already loaded into our db. We are even writing to 
-    #     # a separate table/bucket to preserve this checkpoint.
-    #     last_block: int = 13330090
-    # else:
-    #     logger.info('entering get_last_block')
-    #     last_block: int = get_last_block()
-    #     logger.info(f'last_block={last_block}')
+    if args.scratch:
+        logger.info('starting from scratch')
+        # NOTE: scratch here does not mean starting from 0, that would be
+        # ridiculous, this instead will be starting from our known endpt.
+        # This data is already loaded into our db. We are even writing to 
+        # a separate table/bucket to preserve this checkpoint.
+        last_block: int = 13330090
+    else:
+        logger.info('entering get_last_block')
+        last_block: int = get_last_block()
+        logger.info(f'last_block={last_block}')
 
-    # logger.info('entering update_bigquery')
-    # # NOTE: we always wipe this table. This bigquery table ONLY stores 
-    # # the most recent data.
-    # success, _ = update_bigquery(last_block, delete_before = True)
+    logger.info('entering update_bigquery')
+    # NOTE: we always wipe this table. This bigquery table ONLY stores 
+    # the most recent data.
+    success, _ = update_bigquery(last_block, delete_before = True)
 
-    # if not success:
-    #     logger.error('failed on updating bigquery tables')
-    #     sys.exit(0)
+    if not success:
+        logger.error('failed on updating bigquery tables')
+        sys.exit(0)
 
-    # logger.info('entering empty_bucket')
-    # success, _ = empty_bucket()
+    logger.info('entering empty_bucket')
+    success, _ = empty_bucket()
 
-    # if not success:
-    #     logger.error('failed on emptying cloud buckets')
-    #     sys.exit(0)
+    if not success:
+        logger.error('failed on emptying cloud buckets')
+        sys.exit(0)
 
-    # logger.info('entering update_bucket')
-    # success, _ = update_bucket()
+    logger.info('entering update_bucket')
+    success, _ = update_bucket()
 
-    # if not success:
-    #     logger.error('failed on updating cloud buckets')
-    #     sys.exit(0)
+    if not success:
+        logger.error('failed on updating cloud buckets')
+        sys.exit(0)
 
-    # logger.info('entering download_bucket')
-    # success, data = download_bucket()
+    logger.info('entering download_bucket')
+    success, data = download_bucket()
 
-    # if not success:
-    #     logger.error('failed on downloading cloud buckets')
-    #     sys.exit(0)
+    if not success:
+        logger.error('failed on downloading cloud buckets')
+        sys.exit(0)
 
-    # block_files: List[str] = data['block']
-    # transaction_files: List[str] = data['transaction']
+    block_files: List[str] = data['block']
+    transaction_files: List[str] = data['transaction']
     
     root: str = utils.CONSTANTS['data_path']
     block_files = glob(
@@ -223,25 +223,25 @@ def main(args: Any):
         join(root, 'live/depositreuse/transactions_live-*.csv'))
 
     if len(block_files) == 0:
-        # logger.error('found 0 files for deposit reuse blocks')
+        logger.error('found 0 files for deposit reuse blocks')
         sys.exit(0)
     
     if len(transaction_files) == 0:
-        # logger.error('found 0 files for deposit reuse transactions')
+        logger.error('found 0 files for deposit reuse transactions')
         sys.exit(0)
 
-    # logger.info('sorting and combining block files')
+    logger.info('sorting and combining block files')
     block_df: pd.DataFrame = utils.load_data_from_chunks(
         block_files, sort_column = 'number')
     block_df.drop_duplicates('hash', inplace=True)
 
-    # logger.info('saving block chunks')
+    logger.info('saving block chunks')
     save_file(block_df, 'ethereum_blocks_live.csv')
 
-    # logger.info('deleting block files')
+    logger.info('deleting block files')
     delete_files(block_files)
     
-    # logger.info('sorting and combining transaction files')
+    logger.info('sorting and combining transaction files')
     transaction_out_file: str = join(
         utils.CONSTANTS['data_path'], 
         'live/depositreuse/ethereum_transactions_live.csv')
@@ -251,7 +251,7 @@ def main(args: Any):
         transaction_out_file,
         sort_column = 'block_number')
 
-    # logger.info('deleting transaction files')
+    logger.info('deleting transaction files')
     delete_files(transaction_files)
 
 
