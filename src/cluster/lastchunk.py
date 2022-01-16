@@ -1,6 +1,11 @@
 import pandas as pd
 from io import StringIO
+from typing import List
 from collections import deque
+
+
+def get_header(csv_file: str) -> List[str]:
+    return pd.read_csv(csv_file, index_col=0, nrows=0).columns.tolist()
 
 
 def restore_last_chunk(
@@ -20,8 +25,11 @@ def restore_last_chunk(
     @chunk_csv: (str) where to save the file
     """
 
+    header: List[str] = get_header(transaction_csv)
+
     with open(transaction_csv, 'r') as f:
         queue: deque = deque(f, chunk_size)
 
     df = pd.read_csv(StringIO(''.join(queue)), header=None)
+    df.columns = header  # assign header
     df.to_csv(chunk_csv, index=False)
