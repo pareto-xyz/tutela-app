@@ -207,150 +207,149 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 # --
 
 def main(args: Any):
-    log_path: str = utils.CONSTANTS['log_path']
-    os.makedirs(log_path, exist_ok=True)
+    if not args.db_only:
+        log_path: str = utils.CONSTANTS['log_path']
+        os.makedirs(log_path, exist_ok=True)
 
-    log_file: str = join(log_path, 'depositreuse-heuristic.log')
-    os.remove(log_file)  # remove old file (yesterday's)
+        log_file: str = join(log_path, 'depositreuse-heuristic.log')
+        os.remove(log_file)  # remove old file (yesterday's)
 
-    logger = utils.get_logger(log_file)
+        logger = utils.get_logger(log_file)
 
-    data_path: str = utils.CONSTANTS['data_path']
-    static_path: str = utils.CONSTANTS['static_path']
-    depo_path: str = join(data_path, '/live/depositreuse')
+        data_path: str = utils.CONSTANTS['data_path']
+        static_path: str = utils.CONSTANTS['static_path']
+        depo_path: str = join(data_path, '/live/depositreuse')
 
-    # we will need to put some of these files into the Address db table
-    tcash_root: str = join(data_path, 'static/tcash/processed')
-    proc_path: str = join(depo_path, 'processed')
+        # we will need to put some of these files into the Address db table
+        tcash_root: str = join(data_path, 'static/tcash/processed')
+        proc_path: str = join(depo_path, 'processed')
 
-    logger.info('loading dataframe for DAR')
-    loader: DataframeLoader = DataframeLoader(
-        join(depo_path, 'ethereum_blocks_live.csv'),
-        join(static_path, 'known_addresses.csv'),
-        join(depo_path, 'ethereum_transactions_live.csv'),
-        proc_path,
-    )
-    logger.info('initializing DAR instance')
-    heuristic: DepositCluster = DepositCluster(
-        loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
+        logger.info('loading dataframe for DAR')
+        loader: DataframeLoader = DataframeLoader(
+            join(depo_path, 'ethereum_blocks_live.csv'),
+            join(static_path, 'known_addresses.csv'),
+            join(depo_path, 'ethereum_transactions_live.csv'),
+            proc_path,
+        )
+        logger.info('initializing DAR instance')
+        heuristic: DepositCluster = DepositCluster(
+            loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
 
-    if args.debug:
-        heuristic.make_clusters()
-    else:
-        try:
+        if args.debug:
             heuristic.make_clusters()
-        except:
-            logger.error('failed in make_clusters()')
-            sys.exit(0)
+        else:
+            try:
+                heuristic.make_clusters()
+            except:
+                logger.error('failed in make_clusters()')
+                sys.exit(0)
 
-    data_file: str = join(proc_path, 'data.csv')
-    metadata_file: str = join(proc_path, 'metadata.csv')
-    tx_file: str = join(proc_path, 'transactions.csv')
+        data_file: str = join(proc_path, 'data.csv')
+        metadata_file: str = join(proc_path, 'metadata.csv')
+        tx_file: str = join(proc_path, 'transactions.csv')
 
-    # should be okay for memory
-    data: pd.DataFrame = pd.read_csv(data_file)
-    metadata: pd.DataFrame = pd.read_csv(metadata_file)
+        # should be okay for memory
+        data: pd.DataFrame = pd.read_csv(data_file)
+        metadata: pd.DataFrame = pd.read_csv(metadata_file)
 
-    logger.info('pruning data')
-    if args.debug:
-        data = prune_data(data)
-    else:
-        try:
+        logger.info('pruning data')
+        if args.debug:
             data = prune_data(data)
-        except:
-            logger.error('failed in prune_data()')
-            sys.exit(0)
+        else:
+            try:
+                data = prune_data(data)
+            except:
+                logger.error('failed in prune_data()')
+                sys.exit(0)
 
-    logger.info('pruning metadata')
-    if args.debug:
-        metadata = prune_data(metadata)
-    else:
-        try:
+        logger.info('pruning metadata')
+        if args.debug:
             metadata = prune_data(metadata)
-        except:
-            logger.error('failed in prune_metadata()')
-            sys.exit(0)
+        else:
+            try:
+                metadata = prune_data(metadata)
+            except:
+                logger.error('failed in prune_metadata()')
+                sys.exit(0)
 
-    logger.info('loading metadata from tcash heuristics')
-    tcash_names: List[str] = [
-        'exact_match',
-        'gas_price',
-        'multi_denom',
-        'linked_transaction',
-        'torn_mine',
-    ]
-    tcash_metadata_list: List[pd.DataFrame] = []
-    for name in tcash_names:
-        df: pd.DataFrame = pd.read_csv(
-            join(tcash_root, f'{name}_metadata_live.csv'))
-        tcash_metadata_list.append(df)
+        logger.info('loading metadata from tcash heuristics')
+        tcash_names: List[str] = [
+            'exact_match',
+            'gas_price',
+            'multi_denom',
+            'linked_transaction',
+            'torn_mine',
+        ]
+        tcash_metadata_list: List[pd.DataFrame] = []
+        for name in tcash_names:
+            df: pd.DataFrame = pd.read_csv(
+                join(tcash_root, f'{name}_metadata_live.csv'))
+            tcash_metadata_list.append(df)
 
-    logger.info('merging metadata')
-    if args.debug:
-        metadata: pd.DataFrame = merge_metadata(metadata, tcash_metadata_list)
-    else:
-        try:
+        logger.info('merging metadata')
+        if args.debug:
             metadata: pd.DataFrame = merge_metadata(metadata, tcash_metadata_list)
-        except:
-            logger.error('failed in merge_metadata()')
-            sys.exit(0)
+        else:
+            try:
+                metadata: pd.DataFrame = merge_metadata(metadata, tcash_metadata_list)
+            except:
+                logger.error('failed in merge_metadata()')
+                sys.exit(0)
 
-    logger.info('loading addresses from tcash heuristics')
-    tcash_names: List[str] = [
-        'exact_match',
-        'gas_price',
-        'multi_denom',
-        'linked_transaction',
-        'torn_mine',
-    ]
-    tcash_address_list: List[pd.DataFrame] = []
-    for name in tcash_names:
-        # only load if it exists
-        address_file: str  = join(tcash_root, f'{name}_address_live.json')
-        if os.path.isfile(address_file):
-            address_set: List[Set[str]] = from_json(address_file)
-            tcash_address_list.append(address_set)
+        logger.info('loading addresses from tcash heuristics')
+        tcash_names: List[str] = [
+            'exact_match',
+            'gas_price',
+            'multi_denom',
+            'linked_transaction',
+            'torn_mine',
+        ]
+        tcash_address_list: List[pd.DataFrame] = []
+        for name in tcash_names:
+            # only load if it exists
+            address_file: str  = join(tcash_root, f'{name}_address_live.json')
+            if os.path.isfile(address_file):
+                address_set: List[Set[str]] = from_json(address_file)
+                tcash_address_list.append(address_set)
 
-    logger.info('clustering with networkx')
-    if args.debug:
-        user_clusters, exchange_clusters = cluster_graph(
-            metadata, tcash_address_list)
-    else:
-        try:
+        logger.info('clustering with networkx')
+        if args.debug:
             user_clusters, exchange_clusters = cluster_graph(
                 metadata, tcash_address_list)
-        except:
-            logger.error('failed in cluster_graph()')
-            sys.exit(0)
+        else:
+            try:
+                user_clusters, exchange_clusters = cluster_graph(
+                    metadata, tcash_address_list)
+            except:
+                logger.error('failed in cluster_graph()')
+                sys.exit(0)
 
-    logger.info('adding clusters into metadata')
-    if args.debug:
-        metadata: pd.DataFrame = add_clusters_to_metadata(
-            metadata, user_clusters, exchange_clusters)
-    else:
-        try:
+        logger.info('adding clusters into metadata')
+        if args.debug:
             metadata: pd.DataFrame = add_clusters_to_metadata(
                 metadata, user_clusters, exchange_clusters)
-        except:
-            logger.error('failed in add_clusters_to_metadata()')
-            sys.exit(0)
+        else:
+            try:
+                metadata: pd.DataFrame = add_clusters_to_metadata(
+                    metadata, user_clusters, exchange_clusters)
+            except:
+                logger.error('failed in add_clusters_to_metadata()')
+                sys.exit(0)
 
-    # save new metadata to file
-    final_file: str = join(proc_path, 'final.csv')
-    metadata.to_csv(final_file, index=False)
+        # save new metadata to file
+        metadata_file: str = join(proc_path, 'metadata.csv')
+        metadata.to_csv(metadata_file, index=False)
+    else:
+        data_path: str = utils.CONSTANTS['data_path']
+        depo_path: str = join(data_path, '/live/depositreuse')
+        proc_path: str = join(depo_path, 'processed')
+        metadata_file: str = join(proc_path, 'metadata.csv')
+        tx_file: str = join(proc_path, 'transactions.csv')
 
     # -- 
     # algorithm completed at this point: we need to now populate db
     if not args.no_db:
-        import psycopg2
-
-        conn: Any = psycopg2.connect(
-            database = utils.CONSTANTS['postgres_db'], 
-            user = utils.CONSTANTS['postgres_user'])
-        cursor: Any = conn.cursor()
-
-        # step 1: delete rows from address table where TCash
-        cursor.execute("delete from address where heuristic > 0");
+        metadata: pd.DataFrame = pd.read_csv(metadata_file)
 
         # merge these user_clusters consistently with the existing
         # clusters such that any address is in only one address
@@ -364,6 +363,19 @@ def main(args: Any):
                 logger.error('failed in merge_clusters_with_db()')
                 sys.exit(0)
 
+        merged_file: str = join(proc_path, 'metadata-merged.csv')
+        metadata.to_csv(merged_file, index=False)
+
+        import psycopg2
+
+        conn: Any = psycopg2.connect(
+            database = utils.CONSTANTS['postgres_db'], 
+            user = utils.CONSTANTS['postgres_user'])
+        cursor: Any = conn.cursor()
+
+        # step 1: delete rows from address table where TCash
+        cursor.execute("delete from address where heuristic > 0");
+
         # step 2: insert metadata rows into address table: this includes 
         # all TCash and includes most recent DAR
         columns: List[str] = [
@@ -376,7 +388,7 @@ def main(args: Any):
             'exchange_cluster',
         ]
         columns: str = ','.join(columns)
-        command: str = f"COPY address({columns}) FROM '{final_file}' DELIMITER ',' CSV HEADER;"
+        command: str = f"COPY address({columns}) FROM '{merged_file}' DELIMITER ',' CSV HEADER;"
         cursor.execute(command)
 
         # step 3: insert transactions into deposit_transactions table
