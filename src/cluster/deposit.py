@@ -121,6 +121,8 @@ class DepositCluster(BaseCluster):
 
             del metadata, result, tx_result, tx_chunk, scores, both_chunks
 
+        self._last_chunk = copy(last_chunk)
+
     def _make_metadata(self, data: pd.DataFrame):
         """
         Store anything we may want to lookup about these people.

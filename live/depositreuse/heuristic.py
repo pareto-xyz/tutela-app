@@ -218,7 +218,7 @@ def main(args: Any):
 
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
-        depo_path: str = join(data_path, '/live/depositreuse')
+        depo_path: str = join(data_path, '/live/depositreuse'))
 
         # we will need to put some of these files into the Address db table
         tcash_root: str = join(data_path, 'static/tcash/processed')
@@ -235,6 +235,11 @@ def main(args: Any):
         heuristic: DepositCluster = DepositCluster(
             loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
 
+        # set last chunk
+        lastchunk_path: str = join(proc_path, 'lastchunk.csv')
+        lastchunk: pd.DataFrame = pd.read_csv(lastchunk_path)
+        heuristic.set_last_chunk(lastchunk)
+
         if args.debug:
             heuristic.make_clusters()
         else:
@@ -243,6 +248,11 @@ def main(args: Any):
             except:
                 logger.error('failed in make_clusters()')
                 sys.exit(0)
+
+        # get new last chunk
+        lastchunk: pd.DataFrame = heuristic.get_last_chunk()
+        lastchunk.to_csv(lastchunk_path, index=False)
+        # --
 
         data_file: str = join(proc_path, 'data.csv')
         metadata_file: str = join(proc_path, 'metadata.csv')
