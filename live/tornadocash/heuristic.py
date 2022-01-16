@@ -48,7 +48,9 @@ def main(args: Any):
     os.makedirs(log_path, exist_ok=True)
 
     log_file: str = join(log_path, 'tornadocash-heuristic.log')
-    os.remove(log_file)  # remove old file (yesterday's)
+    
+    if os.path.isdir(log_file):
+        os.remove(log_file)  # remove old file (yesterday's)
 
     logger = utils.get_logger(log_file)
 
