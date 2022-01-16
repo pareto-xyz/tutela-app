@@ -11,7 +11,8 @@ def get_header(csv_file: str) -> List[str]:
 def restore_last_chunk(
     transaction_csv: str,
     chunk_csv: str, 
-    chunk_size: int = 32000000) -> pd.DataFrame:
+    min_block: int,
+    t_max: int = 3200) -> pd.DataFrame:
     """
     In the deposit reuse algorithm, it is important to get a last chunk.
     We will want to store a live version of this locally but that if something
@@ -24,12 +25,17 @@ def restore_last_chunk(
     @chunk_size: (int) how big of a chunk we want
     @chunk_csv: (str) where to save the file
     """
-
     header: List[str] = get_header(transaction_csv)
 
-    with open(transaction_csv, 'r') as f:
-        queue: deque = deque(f, chunk_size)
+    last_chunk: pd.DataFrame = []
+    for chunk in pd.read_csv(transaction_csv, chunksize=10000*t_max):
+        part = chunk[chunk.block_number >= (min_block - (t_max + 1))]
+        last_chunk.append(part)
+        if len(part) > 0:
+            print('!', end = '', flush=True)
+        else:
+            print('.', end = '', flush=True)
+        del chunk
 
-    df = pd.read_csv(StringIO(''.join(queue)), header=None)
-    df.columns = header  # assign header
-    df.to_csv(chunk_csv, index=False)
+    last_chunk = pd.concat(last_chunk)
+    last_chunk.to_csv(chunk_csv, index=False)
