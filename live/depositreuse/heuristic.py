@@ -236,7 +236,8 @@ def main(args: Any):
             loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
 
         # set last chunk
-        lastchunk_path: str = join(proc_path, 'lastchunk.csv')
+        logger.info('loading last-chunk')
+        lastchunk_path: str = join(proc_path, 'transactions-lastchunk.csv')
         lastchunk: pd.DataFrame = pd.read_csv(lastchunk_path)
         heuristic.set_last_chunk(lastchunk)
 
@@ -250,6 +251,7 @@ def main(args: Any):
                 sys.exit(0)
 
         # get new last chunk
+        logger.info('saving new last-chunk')
         lastchunk: pd.DataFrame = heuristic.get_last_chunk()
         lastchunk.to_csv(lastchunk_path, index=False)
         # --
