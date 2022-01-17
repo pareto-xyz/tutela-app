@@ -86,7 +86,7 @@ export default function AddressSearchBar({ onSubmit, inputAddress, setInputAddre
                     >
                     </FormControl>
 
-                    <InputGroup.Text onClick={submitInputAddress} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
+                    <InputGroup.Text onClick={() => submitInputAddress(inputAddress)} className="right-submit-icon"><img width="15" src="/static/img/loupe.svg" alt="search"></img> </InputGroup.Text>
                     <Form.Control.Feedback type="invalid">
                         Please enter a valid ethereum address or .eth ens name.
                     </Form.Control.Feedback>
