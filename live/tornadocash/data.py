@@ -436,6 +436,19 @@ def main(args: Any):
             logger.error('failed on processing external transactions')
             sys.exit(0)
 
+        # subset columns
+        deposit_columns: List[str] = [
+            'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
+            'gas_price', 'block_number', 'block_hash', 'tornado_cash_address'
+        ]
+        withdraw_columns: List[str] = [
+            'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
+            'gas_price', 'block_number', 'block_hash', 'tornado_cash_address',
+            'recipient_address',
+        ]
+        deposit_df: pd.DataFrame = deposit_df[deposit_columns]
+        withdraw_df: pd.DataFrame = withdraw_df[deposit_columns]
+
         deposit_file: str = save_file(deposit_df, 'deposit_txs.csv')
         withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
     else:
