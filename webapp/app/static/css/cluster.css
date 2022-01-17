@@ -429,7 +429,6 @@ input.form-control.rounded {
 .all-input-search {
   margin-right: -15px;
   gap: 1.5rem 0;
-  justify-content: center;
 }
 
 .entry-entity {
@@ -497,7 +496,6 @@ ul.dropdown-menu {
   color: var(--almostwhite);
   overflow-x: hidden;
   padding: 0.5rem 1rem 1rem;
-  max-height: 13rem;
 }
 
 .dropdown-menu > .dropdown-item:hover,
@@ -578,20 +576,27 @@ ul.dropdown-menu {
     border-top: transparent;
 }
 
-.col-12 > table > tbody > tr td:last-of-type{
-    padding: 0 1rem;
+.col-12 > table > tbody > tr{
+    justify-content:flex-start;
 }
 
 .col-12 > table > tbody > tr:first-of-type > td:last-of-type{
     word-break: break-all;
+    padding: 0 1rem;
+}
+
+.col-12 > table > tbody > tr > td:last-of-type{
+    margin:0 auto;
 }
 
 .col-12 > table > tbody > tr> td:first-of-type{
-    padding: 0.5rem 0 0.5rem 1rem;
+    padding: 0.5rem 1rem;
 }
 
 
 .col-12 > table > tbody > tr:not(:first-of-type) > td:first-of-type{
+    width: 100%;
+    display: block;
     padding-top: 0.5rem;
 }
 
@@ -601,6 +606,10 @@ tr{
     align-items: baseline;
     margin-top: 0.2rem;
     background-color: var(--fadedgrey);
+}
+
+.tornado-row table > tbody > tr{
+    justify-content: space-between;
 }
 
 .my-accordion-body .col-12 > table > tbody > tr > td:first-of-type{

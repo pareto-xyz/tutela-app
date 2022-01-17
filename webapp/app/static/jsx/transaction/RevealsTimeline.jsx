@@ -31,7 +31,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
     function onSelectWindow(windowOption) {
         setPlotWindow(windowOption);
         getApi(`/plot/transaction?address=${addr}&window=${windowOption}`, response => {
-            //response = exampleResponse;
+            // response = exampleResponse;
             const { query, data, success } = response.data;
             if (success === 1) {
                 setPlotData(data);
