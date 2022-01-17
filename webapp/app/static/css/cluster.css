@@ -429,6 +429,7 @@ input.form-control.rounded {
 .all-input-search {
   margin-right: -15px;
   gap: 1.5rem 0;
+  justify-content: center;
 }
 
 .entry-entity {
@@ -496,6 +497,7 @@ ul.dropdown-menu {
   color: var(--almostwhite);
   overflow-x: hidden;
   padding: 0.5rem 1rem 1rem;
+  max-height: 13rem;
 }
 
 .dropdown-menu > .dropdown-item:hover,
