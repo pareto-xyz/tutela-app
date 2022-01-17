@@ -167,7 +167,7 @@ TOP
 */
 
 .halved-bar {
-    padding: 90px 10px;
+    margin: 90px 0;
 }
 
 .anon-score-group {
@@ -497,7 +497,12 @@ ul.dropdown-menu {
   color: var(--almostwhite);
   overflow-x: hidden;
   padding: 0.5rem 1rem 1rem;
-  max-height: 13rem;
+}
+
+.addres-drop, 
+.address-drop .dropdown-menu, 
+.address-drop .col-12{
+    max-height: 13rem;
 }
 
 .dropdown-menu > .dropdown-item:hover,
