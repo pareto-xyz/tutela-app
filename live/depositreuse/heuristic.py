@@ -222,10 +222,10 @@ def main(args: Any):
         depo_path: str = join(data_path, 'live/depositreuse')
 
         # we will need to put some of these files into the Address db table
-        tcash_root: str = join(data_path, 'static/tcash/processed')
+        tcash_root: str = join(data_path, 'live/tornado_cash/processed')
         proc_path: str = join(depo_path, 'processed')
 
-        if args.no_algo:
+        if not args.no_algo:
             logger.info('loading dataframe for DAR')
             loader: DataframeLoader = DataframeLoader(
                 join(depo_path, 'ethereum_blocks_live.csv'),
@@ -296,8 +296,7 @@ def main(args: Any):
         ]
         tcash_metadata_list: List[pd.DataFrame] = []
         for name in tcash_names:
-            df: pd.DataFrame = pd.read_csv(
-                join(tcash_root, f'{name}_metadata_live.csv'))
+            df: pd.DataFrame = pd.read_csv(join(tcash_root, f'{name}_metadata.csv'))
             tcash_metadata_list.append(df)
 
         logger.info('merging metadata')
