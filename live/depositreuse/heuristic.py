@@ -327,7 +327,6 @@ def main(args: Any):
 
         logger.info('clustering with networkx')
         if args.debug:
-            breakpoint()
             user_clusters, exchange_clusters = cluster_graph(
                 data, tcash_address_list)
         else:
