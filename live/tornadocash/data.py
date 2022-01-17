@@ -447,7 +447,7 @@ def main(args: Any):
             'recipient_address',
         ]
         deposit_df: pd.DataFrame = deposit_df[deposit_columns]
-        withdraw_df: pd.DataFrame = withdraw_df[deposit_columns]
+        withdraw_df: pd.DataFrame = withdraw_df[withdraw_columns]
 
         deposit_file: str = save_file(deposit_df, 'deposit_txs.csv')
         withdraw_file: str = save_file(withdraw_df, 'withdraw_txs.csv')
