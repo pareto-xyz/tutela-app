@@ -465,8 +465,8 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         if len(withdraw_counts) == 1:
             return (False, None)
 
-        # if there are only 1 or 2 txs, ignore
-        if sum(withdraw_counts.values()) < 2:
+        # if individual made less than 5 transactions, ignore
+        if sum(withdraw_counts.values()) < 5:
             return (False, None)
 
         withdraw_addr: str = withdraw_tx.recipient_address  # who's gets the withdrawn
