@@ -37,6 +37,7 @@ class DepositCluster(BaseCluster):
         return self._last_chunk
 
     def set_last_chunk(self, df: pd.DataFrame):
+        df.value = df.value.astype(float) / 10**18
         self._last_chunk: pd.DataFrame = df
 
     def make_clusters(self):
