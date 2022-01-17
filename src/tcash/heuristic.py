@@ -590,8 +590,9 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         df: pd.DataFrame = pd.DataFrame.from_dict(dataset)
         
         df.to_csv(join(self._out_dir, f'{self._name}.csv'), index=False)
+        to_json(address_sets, join(self._out_dir, f'{self._name}_address.json'))
         address_table.to_csv(
-            join(self._out_dir, f'{self._name}_address.csv'), index=False)
+            join(self._out_dir, f'{self._name}_metadata.csv'), index=False)
 
 
 class LinkedTransactionHeuristic(BaseHeuristic):
