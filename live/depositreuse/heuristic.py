@@ -212,48 +212,52 @@ def main(args: Any):
         os.makedirs(log_path, exist_ok=True)
 
         log_file: str = join(log_path, 'depositreuse-heuristic.log')
-        os.remove(log_file)  # remove old file (yesterday's)
+        if os.path.isfile(log_file):
+            os.remove(log_file)  # remove old file (yesterday's)
 
         logger = utils.get_logger(log_file)
 
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
-        depo_path: str = join(data_path, '/live/depositreuse')
+        depo_path: str = join(data_path, 'live/depositreuse')
 
         # we will need to put some of these files into the Address db table
         tcash_root: str = join(data_path, 'static/tcash/processed')
         proc_path: str = join(depo_path, 'processed')
 
-        logger.info('loading dataframe for DAR')
-        loader: DataframeLoader = DataframeLoader(
-            join(depo_path, 'ethereum_blocks_live.csv'),
-            join(static_path, 'known_addresses.csv'),
-            join(depo_path, 'ethereum_transactions_live.csv'),
-            proc_path,
-        )
-        logger.info('initializing DAR instance')
-        heuristic: DepositCluster = DepositCluster(
-            loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
+        if args.no_algo:
+            logger.info('loading dataframe for DAR')
+            loader: DataframeLoader = DataframeLoader(
+                join(depo_path, 'ethereum_blocks_live.csv'),
+                join(static_path, 'known_addresses.csv'),
+                join(depo_path, 'ethereum_transactions_live.csv'),
+                proc_path,
+            )
+            logger.info('initializing DAR instance')
+            heuristic: DepositCluster = DepositCluster(
+                loader, a_max = 0.01, t_max = 3200, save_dir = proc_path)
 
-        # set last chunk
-        lastchunk_path: str = join(proc_path, 'lastchunk.csv')
-        lastchunk: pd.DataFrame = pd.read_csv(lastchunk_path)
-        heuristic.set_last_chunk(lastchunk)
+            # set last chunk
+            logger.info('loading last-chunk')
+            lastchunk_path: str = join(proc_path, 'transactions-lastchunk.csv')
+            lastchunk: pd.DataFrame = pd.read_csv(lastchunk_path)
+            heuristic.set_last_chunk(lastchunk)
 
-        if args.debug:
-            heuristic.make_clusters()
-        else:
-            try:
+            if args.debug:
                 heuristic.make_clusters()
-            except:
-                logger.error('failed in make_clusters()')
-                sys.exit(0)
+            else:
+                try:
+                    heuristic.make_clusters()
+                except:
+                    logger.error('failed in make_clusters()')
+                    sys.exit(0)
 
-        # get new last chunk
-        lastchunk: pd.DataFrame = heuristic.get_last_chunk()
-        lastchunk.to_csv(lastchunk_path, index=False)
+            # get new last chunk
+            logger.info('saving new last-chunk')
+            lastchunk: pd.DataFrame = heuristic.get_last_chunk()
+            lastchunk.to_csv(lastchunk_path, index=False)
+        
         # --
-
         data_file: str = join(proc_path, 'data.csv')
         metadata_file: str = join(proc_path, 'metadata.csv')
         tx_file: str = join(proc_path, 'transactions.csv')
@@ -274,10 +278,10 @@ def main(args: Any):
 
         logger.info('pruning metadata')
         if args.debug:
-            metadata = prune_data(metadata)
+            metadata = prune_metadata(metadata)
         else:
             try:
-                metadata = prune_data(metadata)
+                metadata = prune_metadata(metadata)
             except:
                 logger.error('failed in prune_metadata()')
                 sys.exit(0)
@@ -425,6 +429,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-db', action='store_true', default=False,
                         help='skip the code to edit database (default: False)')
+    parser.add_argument('--no-algo', action='store_true', default=False,
+                        help='skip the DAR algorithm but do everything else (default: False)')
     parser.add_argument('--db-only', action='store_true', default=False,
                         help='only execute the code to edit database (default: False)')
     parser.add_argument('--debug', action='store_true', default=False,

@@ -5,7 +5,9 @@ import pandas as pd
 from copy import copy
 from typing import List, Dict, Any, Tuple, Optional
 
-from src.utils.utils import Entity, Heuristic
+pd.options.mode.chained_assignment = None 
+
+from src.utils.utils import Entity, Heuristic, JSONSetEncoder
 from src.utils.loader import DataframeLoader
 from src.cluster.base import BaseCluster
 
@@ -35,6 +37,7 @@ class DepositCluster(BaseCluster):
         return self._last_chunk
 
     def set_last_chunk(self, df: pd.DataFrame):
+        df.value = df.value.astype(float) / 10**18
         self._last_chunk: pd.DataFrame = df
 
     def make_clusters(self):
@@ -146,16 +149,17 @@ class DepositCluster(BaseCluster):
             metadata['conf'].append(conf)
             metadata['entity'].append(Entity.EOA.value)
             metadata['heuristic'].append(Heuristic.DEPO_REUSE.value)
-            metadata['meta_data'].append(json.dumps({}))
+            metadata['meta_data'].append(json.dumps({}, cls=JSONSetEncoder))
 
         for exchange, exchange_df in data.groupby('exchange'):
             conf: float = exchange_df.conf.mean()
             exchange_metadata: Dict[str, Any] = self.loader.get_exchange_metadata(exchange)
+
             metadata['address'].append(exchange)
             metadata['conf'].append(conf)
             metadata['entity'].append(Entity.EXCHANGE.value)
             metadata['heuristic'].append(Heuristic.DEPO_REUSE.value)
-            metadata['meta_data'].append(json.dumps(exchange_metadata))
+            metadata['meta_data'].append(json.dumps(exchange_metadata, cls=JSONSetEncoder))
 
         for deposit, deposit_df in data.groupby('deposit'):
             exchange: str = deposit_df.iloc[0].exchange
@@ -171,7 +175,7 @@ class DepositCluster(BaseCluster):
                 'exchange_name': exchange_name,
                 'name': f'Deposit for {exchange_name}',
             }
-            metadata['meta_data'].append(json.dumps(deposit_metadata))
+            metadata['meta_data'].append(json.dumps(deposit_metadata, cls=JSONSetEncoder))
 
         metadata: pd.DataFrame = pd.DataFrame(metadata)
         return metadata
@@ -188,7 +192,7 @@ class DepositCluster(BaseCluster):
 
         columns: List[str] = [
             'transaction', 'block_number', 'block_timestamp', 'from_address', 'to_address', 'value']
-        tx_chunk: pd.DataFrame = tx_chunk[columns].sort_values('block_number')
+        tx_chunk: pd.DataFrame = tx_chunk[columns]  # .sort_values('block_number')
         tx_chunk['block'] = tx_chunk['block_number']  # dummy column
 
         # sender should not be a miner (avoid mining pools)
