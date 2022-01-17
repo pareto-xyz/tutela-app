@@ -320,19 +320,20 @@ def main(args: Any):
         tcash_address_list: List[pd.DataFrame] = []
         for name in tcash_names:
             # only load if it exists
-            address_file: str  = join(tcash_root, f'{name}_address_live.json')
+            address_file: str  = join(tcash_root, f'{name}_address.json')
             if os.path.isfile(address_file):
                 address_set: List[Set[str]] = from_json(address_file)
                 tcash_address_list.append(address_set)
 
         logger.info('clustering with networkx')
         if args.debug:
+            breakpoint()
             user_clusters, exchange_clusters = cluster_graph(
-                metadata, tcash_address_list)
+                data, tcash_address_list)
         else:
             try:
                 user_clusters, exchange_clusters = cluster_graph(
-                    metadata, tcash_address_list)
+                    data, tcash_address_list)
             except:
                 logger.error('failed in cluster_graph()')
                 sys.exit(0)
