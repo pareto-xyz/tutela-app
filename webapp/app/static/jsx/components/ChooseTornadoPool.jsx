@@ -22,7 +22,7 @@ export default function ChooseTornadoPool() {
             <Dropdown.Toggle variant="dark" size="md">
                 <img width="20px" src="static/img/tornado_logo.svg"></img> investigate a tornado cash pool
             </Dropdown.Toggle>
-            <div className="col-12">
+            <div className="col-12 address-drop">
                 <div className="row">
                     <Dropdown.Menu className="col-12">
                         <div className="row">
