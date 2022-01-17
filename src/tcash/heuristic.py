@@ -411,15 +411,6 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
                 deposit_tx2addr: Dict[str, str] = response_dict['deposit_tx2addr']
                 tx_cluster: Set[str] = set(withdraw_txs + deposit_txs)
 
-                withdraw_addr: str = response_dict['withdraw_addr']
-                deposit_addrs: List[str] = response_dict['deposit_addrs']
-                deposit_confs: List[float] = response_dict['deposit_confs']
-
-                for deposit_addr, deposit_conf in zip(deposit_addrs, deposit_confs):
-                    if withdraw_addr != deposit_addr:
-                        address_sets.append([withdraw_addr, deposit_addr])
-                        addr2conf[(withdraw_addr, deposit_addr)] = deposit_conf
-
                 tx2addr.update(withdraw_tx2addr)
                 tx2addr.update(deposit_tx2addr)
                 tx_clusters.append(tx_cluster)
@@ -427,7 +418,7 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
             pbar.update()
         pbar.close()
 
-        return tx_clusters, address_sets, tx2addr, addr2conf
+        return tx_clusters, address_sets, tx2addr
 
     def __make_portfolio_df(
         self,
@@ -482,14 +473,12 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
 
         deposit_addrs: List[str] = []
         deposit_txs: List[str] = []
-        deposit_confs: List[float] = []
         deposit_tx2addr: Dict[str, str] = {}
 
         for match in matched_deposits:
             deposit_addrs.append(match.from_address.iloc[0])
             txs: List[str] = match.hash.to_list()
             deposit_txs.extend(txs)
-            deposit_confs.extend([1.0] * len(txs))
             deposit_tx2addr.update(dict(zip(match.hash, match.from_address)))
 
         deposit_addrs: List[str] = list(set(deposit_addrs))
@@ -498,7 +487,6 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
         response_dict: Dict[str, Any] = dict(
             withdraw_txs = withdraw_txs,
             deposit_txs = deposit_txs,
-            deposit_confs = deposit_confs,
             withdraw_addr = withdraw_addr,
             deposit_addrs = deposit_addrs,
             withdraw_tx2addr = withdraw_tx2addr,
@@ -575,12 +563,12 @@ class SameNumTransactionsHeuristic(BaseHeuristic):
     def run(self):
         deposit_df, withdraw_df, tornado_df = self.load_data()
         self.load_custom_data()
-        clusters, address_sets, tx2addr, addr2conf = \
+        clusters, address_sets, tx2addr = \
             self.apply_heuristic(deposit_df, withdraw_df, tornado_df)
         transactions, tx2cluster = get_transactions(clusters)
         tx2block, tx2ts = get_transaction_info(withdraw_df, deposit_df)
         address_sets: List[Set[str]] = get_address_sets(clusters, tx2addr)
-        address_table: pd.DataFrame = get_metadata_with_conf(address_sets, addr2conf)
+        address_table: pd.DataFrame = get_metadata(address_sets)
 
         transactions: List[str] = list(transactions)
         addresses: List[str] = [tx2addr[tx] for tx in transactions]
