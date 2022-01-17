@@ -50,7 +50,7 @@ def main(args: Any):
 
         log_file: str = join(log_path, 'tornadocash-heuristic.log')
 
-        if os.path.isdir(log_file):
+        if os.path.isfile(log_file):
             os.remove(log_file)  # remove old file (yesterday's)
 
         logger = utils.get_logger(log_file)

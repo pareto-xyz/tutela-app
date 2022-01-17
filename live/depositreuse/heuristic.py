@@ -212,13 +212,14 @@ def main(args: Any):
         os.makedirs(log_path, exist_ok=True)
 
         log_file: str = join(log_path, 'depositreuse-heuristic.log')
-        os.remove(log_file)  # remove old file (yesterday's)
+        if os.path.isfile(log_file):
+            os.remove(log_file)  # remove old file (yesterday's)
 
         logger = utils.get_logger(log_file)
 
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
-        depo_path: str = join(data_path, '/live/depositreuse')
+        depo_path: str = join(data_path, 'live/depositreuse')
 
         # we will need to put some of these files into the Address db table
         tcash_root: str = join(data_path, 'static/tcash/processed')

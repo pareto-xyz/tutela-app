@@ -5,6 +5,8 @@ import pandas as pd
 from copy import copy
 from typing import List, Dict, Any, Tuple, Optional
 
+pd.options.mode.chained_assignment = None 
+
 from src.utils.utils import Entity, Heuristic
 from src.utils.loader import DataframeLoader
 from src.cluster.base import BaseCluster
@@ -188,7 +190,7 @@ class DepositCluster(BaseCluster):
 
         columns: List[str] = [
             'transaction', 'block_number', 'block_timestamp', 'from_address', 'to_address', 'value']
-        tx_chunk: pd.DataFrame = tx_chunk[columns].sort_values('block_number')
+        tx_chunk: pd.DataFrame = tx_chunk[columns]  # .sort_values('block_number')
         tx_chunk['block'] = tx_chunk['block_number']  # dummy column
 
         # sender should not be a miner (avoid mining pools)
