@@ -704,7 +704,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         addr_pool_to_deposit: Dict[Tuple[str, str], str]) -> Dict[str, List[str]]:
 
         links: Dict[str, str] = {}
-        pbar = tqdm(len(withdraw_df))
+        pbar = tqdm(total=len(withdraw_df))
         for row in withdraw_df.itertuples():
             dic = self.__first_neighbors_heuristic(
                 row, withdraw2deposit, addr_pool_to_deposit)
@@ -715,6 +715,7 @@ class LinkedTransactionHeuristic(BaseHeuristic):
         return dict(filter(lambda elem: len(elem[1]) != 0, links.items()))
 
     def __first_neighbors_heuristic(
+        self,
         withdraw_df: pd.Series,
         withdraw2deposit: Dict[str, str],
         addr_pool_to_deposit: Dict[Tuple[str, str], str]) -> Dict[str, List[str]]:
@@ -734,7 +735,8 @@ class LinkedTransactionHeuristic(BaseHeuristic):
             for addr in interacted_addresses:
                 if AddressPool(address=addr, pool=pool) in addr_pool_to_deposit.keys():
                     for d in addr_pool_to_deposit[AddressPool(address=addr, pool=pool)]:
-                        if d.timestamp < withdraw_df.block_timestamp:
+                        d_timestamp: pd.Timestamp = pd.Timestamp(d.timestamp)
+                        if d_timestamp < withdraw_df.block_timestamp:
                             linked_deposits.append(d.deposit_hash)
                             
             return {withdraw_df.hash: linked_deposits}
