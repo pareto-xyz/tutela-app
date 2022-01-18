@@ -18,15 +18,15 @@
 
 \newcommand\BibTeX{B\textsc{ib}\TeX}
 
-\title{Tutela: An Anonymity Tool for Ethereum and Tornado Cash}
+\title{Tutela: An Open-Source Tool for Assessing User-Privacy \\ on Ethereum and Tornado Cash}
 
 \author{
   \small{Mike Wu, Will McTighe, Kaili Wang}\\
   \small{Stanford University} \\ \And
-  \small{Nick Bax} \\
-  \small{Convex Research} \\ \And
   \small{Istv\'{a}n A. Seres} \\
   \small{E\"{o}tv\"{o}s Lor\'{a}nd University} \\ \AND
+  \small{Nick Bax} \\
+  \small{Convex Research} \\ \And
   \small{Manuel Puebla, Mariano Mendez}\\
   \small{Universidad de Buenos Aires}\\
   \small{Facultad de Ingenieria}\\ \AND
@@ -38,9 +38,9 @@
 \maketitle
 \begin{abstract}
 A common misconception among blockchain users is that pseudonymity guarantees privacy. The reality is almost the opposite. Every transaction one makes is recorded on a public ledger and reveals information about one's identity.
-Mixers, such as Tornado Cash, were developed to preserve privacy through ``mixing'' transactions with those of others in an anonymity pool, such that it is much harder to link deposits and withdrawals from the pool. Unfortunately, it is still possible to reveal information about those in the anonymity pool if users are not careful.
+Mixers, such as Tornado Cash, were developed to preserve privacy through ``mixing'' transactions with those of others in an anonymity pool, making it harder to link deposits and withdrawals from the pool. Unfortunately, it is still possible to reveal information about those in the anonymity pool if users are not careful.
 We introduce Tutela, an application built on expert heuristics to report the true anonymity of an Ethereum address.
-In particular, Tutela has two functionalities: first, it clusters together Ethereum addresses based on interaction history such that for an Ethereum address, we can identify other addresses likely owned by the same entity; second, Tutela computes the true size of the anonymity pool of Tornado Cash mixing, taking into account compromised addresses that reveal identity information. A public implementation of Tutela can be found at \url{https://github.com/TutelaLabs/tutela-app}.
+In particular, Tutela has three functionalities: first, it clusters together Ethereum addresses based on interaction history such that for an Ethereum address, we can identify other addresses likely owned by the same entity; second, it shows Ethereum users their potentially compromised transactions; third, Tutela computes the true size of the anonymity pool of each Tornado Cash mixer by excluding potentially compromised transactions. A public implementation of Tutela can be found at \url{https://github.com/TutelaLabs/tutela-app}. To use Tutela, visit \url{https://www.tutela.xyz}\footnote{For related questions and inquiries, please contact the corresponding author at \texttt{wmctighe@stanford.edu}.}.
 \end{abstract}
 
 \input{1_introduction}

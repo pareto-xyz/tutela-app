@@ -1,0 +1,26 @@
+[
+  {
+    "description": "Hash of the block",
+    "mode": "REQUIRED",
+    "name": "hash",
+    "type": "STRING"
+  },
+  {
+    "description": "Address of the miner",
+    "mode": "REQUIRED",
+    "name": "miner",
+    "type": "STRING"
+  },
+  {
+    "description": "Timestamp of the block where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "Block number where this transaction was in",
+    "mode": "REQUIRED",
+    "name": "number",
+    "type": "INTEGER"
+  }
+]

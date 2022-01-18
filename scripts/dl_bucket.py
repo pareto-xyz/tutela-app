@@ -54,7 +54,9 @@ if __name__ == "__main__":
                                  'ethereum-transaction-1year-data',
                                  'ethereum-transaction-data',
                                  'ethereum-transaction-data2',
-                                 'ethereum-transaction-data3'])
+                                 'ethereum-transaction-data3',
+                                 'tornado-trace',
+                                 'tornado-transaction'])
     parser.add_argument('--gsutil', action='store_true', default=False)
     args: Any = parser.parse_args()
 

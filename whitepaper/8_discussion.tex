@@ -1,10 +1,11 @@
-\section{Discussion and Future Work} \label{sec:discussion}
+\section{Discussion and Future Work}
+\label{sec:discussion}
 
 We conclude with a few discussion points and final remarks. In particular, we present possible limitations and extensions to the proposed system.
 
 \subsection{Limitations}
 
-Generally, we acknowledge that heuristics are not perfect measures. In return for their simplicity, there may be false positives in practice, e.g., addresses in a cluster that should not be there, or faithful TC transactions labeled as compromised.
+We acknowledge that heuristics are not perfect measures. In return for simplicity, there will likely be false positives in practice, e.g., addresses in a cluster that should not be there, or faithful Tornado Cash transactions labeled as compromised.
 
 For the Ethereum heuristics, we emphasize that picking proper hyperparameters is a challenge. In DAR, the quality of the algorithm is very sensitive to the choice of maximum thresholds $\alpha$ and $\tau$. With too small thresholds, no clusters will be found; with too large thresholds, clusters will be low quality, containing many addresses they should not. Currently, the best practice is to tune these by hand. In NODE, the size of subgraph $l$ and the dimensionality $d$ similarly determine the resulting quality. The choice of $l$ should reflect the size of the full graph $G$: a bigger graph requires the embedding to summarize a larger neighborhood. Other NODE hyperparameters, such as window size or optimization choices, are less important to the final embedding. Running the DAR or NODE on Ethereum is computationally expensive, requiring both a large RAM and storage.
 

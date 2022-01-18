@@ -1,0 +1,26 @@
+[
+  {
+    "description": "Contract address on the chain",
+    "mode": "REQUIRED",
+    "name": "address",
+    "type": "STRING"
+  },
+  {
+    "description": "e.g. ETH or DAI",
+    "mode": "REQUIRED",
+    "name": "asset",
+    "type": "STRING"
+  },
+  {
+    "description": "Deposit amount",
+    "mode": "REQUIRED",
+    "name": "amount",
+    "type": "NUMERIC"
+  },
+  {
+    "description": "Human-readable name",
+    "mode": "REQUIRED",
+    "name": "name",
+    "type": "STRING"
+  }
+]
