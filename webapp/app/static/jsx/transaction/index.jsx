@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddressSearchBar from '../components/AddressSearchBar';
 import { buildQueryString, getApi } from '../../js/utils';
-import responseExample from '../../data/txns';
+//import responseExample from '../../data/txns';
 import QueryInfo from '../address/QueryInfo';
 import RevealTimeline from './RevealsTimeline';
 import AccordionOfResults from '../components/AccordionOfResults';
@@ -48,7 +48,7 @@ function TransactionPage({ params, aliases }) {
 
         setLoadingOverall(true);
         getApi('/search/transaction' + buildQueryString(queryObj), response => {
-            // response = responseExample;
+            //response = responseExample;
             const { data, success } = response.data;
             if (success === 1) {
                 const { metadata, query, transactions } = data;
