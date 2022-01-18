@@ -199,7 +199,7 @@ function ClusterPage(props) {
                                         data={queryInfo}
                                         loading={loadingQuery}
                                         aliases={aliases}
-                                        link={<a href={`/transactions?address=${inputAddress}`}>See revealing transactions</a>}
+                                        link={<a href={`/transactions?address=${inputAddress}`}>see revealing transactions</a>}
                                     />
                                     <TornadoInfo data={tornado} aliases={aliases} />
 

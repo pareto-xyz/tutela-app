@@ -94,7 +94,10 @@ function TransactionPage({ params, aliases }) {
                     </div>}
 
                     {!firstView && <div className="row results-section">
-                        <QueryInfo data={queryInfo} aliases={aliases} />
+                        <QueryInfo data={queryInfo} aliases={aliases} 
+                        link={<a href={`/cluster?address=${inputAddress}`}>see linked addresses</a>}
+                        
+                        />
                         <RevealTimeline
                             loadNewData={loadNewData}
                             addr={params.get('address')}
