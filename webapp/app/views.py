@@ -207,6 +207,103 @@ def haveibeencompromised():
     response: str = json.dumps(output)
     return Response(response)
 
+def query_diff2vec(node: Embedding) -> List[Dict[str, Any]]:
+    """
+    Search the embedding table to fetch neighbors from Diff2Vec cluster.
+    """
+    cluster: List[Dict[str, Any]] = []
+    cluster_conf: float = 0
+
+    if node is not None:
+        neighbors: List[int] = json.loads(node.neighbors)
+        distances: List[float] = json.loads(node.distances)
+
+        for neighbor, distance in zip(neighbors, distances):
+            # swap terms b/c of upload accident
+            neighbor, distance = distance, neighbor
+            if neighbor == address: continue  # skip
+            member: Dict[str, Any] = {
+                'address': neighbor,
+                # '_distance': distance,
+                    # add one to make max 1
+                'conf': round(float(1./abs(10.*distance+1.)), 3),
+                'heuristic': DIFF2VEC_HEUR, 
+                'entity': NODE,
+                'ens_name': get_ens_name(neighbor, ns),
+            }
+            cluster.append(member)
+            cluster_conf += member['conf']
+
+    cluster_size: int = len(cluster)
+    cluster_conf: float = cluster_conf / float(cluster_size)
+
+    return cluster, cluster_size, cluster_conf
+
+def compute_anonymity_score(
+        addr: Optional[Address],
+        ens_name: Optional[str] = None,
+        exchange_weight: float = 0.1,
+        slope: float = 0.1,
+        extra_cluster_sizes: List[int] = [],
+        extra_cluster_confs: List[float] = []
+    ) -> float:
+    """
+    Only EOA addresses have an anonymity score. If we get an exchange,
+    we return an anonymity score of 0. If we get a deposit, we return -1,
+    which represents N/A.
+
+    For EOA addresses, we grade the anonymity by the confidence and number 
+    of other EOA addresses in the same cluster, as well as the confidence 
+    and number of other exchanges in the same cluster (which we find through
+    the deposits this address interacts with). Exchange interactions are 
+    discounted (by `exchange_weight` factor) compared to other EOAs.
+
+    If ens_name is provided and not empty, we cap the anonymity score at 90.
+    If addr is None, we assume clusters are specified in extra_cluster_*.
+    """
+    cluster_confs: List[float] = extra_cluster_sizes
+    cluster_sizes: List[float] = extra_cluster_confs
+
+    if addr is not None:
+        if addr.entity == entity_to_int(DEPOSIT):
+            return -1  # represents N/A
+        elif addr.entity == entity_to_int(EXCHANGE):
+            return 0   # CEX have no anonymity
+
+        assert addr.entity == entity_to_int(EOA), \
+            f'Unknown entity: {entity_to_str(addr.entity)}'
+
+        if addr.user_cluster is not None:
+            # find all other EOA addresses with same `dar_user_cluster`.
+            num_cluster: int = Address.query.filter(
+                Address.user_cluster == addr.user_cluster,
+                or_(Address.entity == entity_to_int(EOA)),
+            ).limit(HARD_MAX).count()
+            cluster_confs.append(addr.conf)
+            cluster_sizes.append(num_cluster)
+
+            # find all DEPOSIT address with same `user_cluster`.
+            deposits: Optional[List[Address]] = Address.query.filter(
+                Address.user_cluster == addr.user_cluster,
+                Address.entity == entity_to_int(DEPOSIT),
+            ).limit(HARD_MAX).all()
+
+            exchanges: Set[str] = set([
+                deposit.exchange_cluster for deposit in deposits])
+            cluster_confs.append(addr.conf * exchange_weight)
+            cluster_sizes.append(len(exchanges))
+
+    cluster_confs: np.array = np.array(cluster_confs)
+    cluster_sizes: np.array = np.array(cluster_sizes)
+    score: float = get_anonymity_score(
+        cluster_confs, cluster_sizes, slope = slope)
+
+    if ens_name is not None:
+        if len(ens_name) > 0 and '.eth' in ens_name:
+            # having an ENS name caps your maximum anonymity score
+            score: float = min(score, 0.90)
+
+    return score
 
 def search_address(request: Request) -> Response:
     """
@@ -257,72 +354,6 @@ def search_address(request: Request) -> Response:
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
 
-
-    def compute_anonymity_score(
-        addr: Optional[Address],
-        ens_name: Optional[str] = None,
-        exchange_weight: float = 0.1,
-        slope: float = 0.1,
-        extra_cluster_sizes: List[int] = [],
-        extra_cluster_confs: List[float] = []
-    ) -> float:
-        """
-        Only EOA addresses have an anonymity score. If we get an exchange,
-        we return an anonymity score of 0. If we get a deposit, we return -1,
-        which represents N/A.
-
-        For EOA addresses, we grade the anonymity by the confidence and number 
-        of other EOA addresses in the same cluster, as well as the confidence 
-        and number of other exchanges in the same cluster (which we find through
-        the deposits this address interacts with). Exchange interactions are 
-        discounted (by `exchange_weight` factor) compared to other EOAs.
-
-        If ens_name is provided and not empty, we cap the anonymity score at 90.
-        If addr is None, we assume clusters are specified in extra_cluster_*.
-        """
-        cluster_confs: List[float] = extra_cluster_sizes
-        cluster_sizes: List[float] = extra_cluster_confs
-
-        if addr is not None:
-            if addr.entity == entity_to_int(DEPOSIT):
-                return -1  # represents N/A
-            elif addr.entity == entity_to_int(EXCHANGE):
-                return 0   # CEX have no anonymity
-
-            assert addr.entity == entity_to_int(EOA), \
-                f'Unknown entity: {entity_to_str(addr.entity)}'
-
-            if addr.user_cluster is not None:
-                # find all other EOA addresses with same `dar_user_cluster`.
-                num_cluster: int = Address.query.filter(
-                    Address.user_cluster == addr.user_cluster,
-                    or_(Address.entity == entity_to_int(EOA)),
-                ).limit(HARD_MAX).count()
-                cluster_confs.append(addr.conf)
-                cluster_sizes.append(num_cluster)
-
-                # find all DEPOSIT address with same `user_cluster`.
-                deposits: Optional[List[Address]] = Address.query.filter(
-                    Address.user_cluster == addr.user_cluster,
-                    Address.entity == entity_to_int(DEPOSIT),
-                ).limit(HARD_MAX).all()
-
-                exchanges: Set[str] = set([
-                    deposit.exchange_cluster for deposit in deposits])
-                cluster_confs.append(addr.conf * exchange_weight)
-                cluster_sizes.append(len(exchanges))
-
-        cluster_confs: np.array = np.array(cluster_confs)
-        cluster_sizes: np.array = np.array(cluster_sizes)
-        score: float = get_anonymity_score(
-            cluster_confs, cluster_sizes, slope = slope)
-
-        if ens_name is not None:
-            if len(ens_name) > 0 and '.eth' in ens_name:
-                # having an ENS name caps your maximum anonymity score
-                score: float = min(score, 0.90)
-
-        return score
 
     def query_heuristic(address: str, class_: Any) -> Set[str]:
         """
@@ -418,37 +449,7 @@ def search_address(request: Request) -> Response:
         )
         return stats
 
-    def query_diff2vec(node: Embedding) -> List[Dict[str, Any]]:
-        """
-        Search the embedding table to fetch neighbors from Diff2Vec cluster.
-        """
-        cluster: List[Dict[str, Any]] = []
-        cluster_conf: float = 0
-
-        if node is not None:
-            neighbors: List[int] = json.loads(node.neighbors)
-            distances: List[float] = json.loads(node.distances)
-
-            for neighbor, distance in zip(neighbors, distances):
-                # swap terms b/c of upload accident
-                neighbor, distance = distance, neighbor
-                if neighbor == address: continue  # skip
-                member: Dict[str, Any] = {
-                    'address': neighbor,
-                    # '_distance': distance,
-                     # add one to make max 1
-                    'conf': round(float(1./abs(10.*distance+1.)), 3),
-                    'heuristic': DIFF2VEC_HEUR, 
-                    'entity': NODE,
-                    'ens_name': get_ens_name(neighbor, ns),
-                }
-                cluster.append(member)
-                cluster_conf += member['conf']
-
-        cluster_size: int = len(cluster)
-        cluster_conf: float = cluster_conf / float(cluster_size)
-
-        return cluster, cluster_size, cluster_conf
+    
 
 
     if len(address) > 0:
