@@ -4,7 +4,7 @@ import MyTooltip from '../components/MyTooltip';
 
 const TO_IGNORE = new Set(['metadata', 'id', 'anonymity_score', 'start_date', 'end_date']);
 
-export default function QueryInfo({ data, loading = false, aliases }) {
+export default function QueryInfo({ data, loading = false, aliases, link=<></> }) {
     let { metadata, anonymity_score } = data;
     if (anonymity_score === undefined) {
         anonymity_score = 1;
@@ -32,6 +32,7 @@ export default function QueryInfo({ data, loading = false, aliases }) {
                     <div className="col-12 table-responsive">
                         {!loading && <AgnosticTable aliases={aliases} toIgnore={TO_IGNORE} keyValues={combined} />}
                     </div>
+                    <div className="col-12">{link}</div>
                 </div>
             </div>
         </div>
