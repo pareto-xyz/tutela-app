@@ -305,6 +305,82 @@ def compute_anonymity_score(
 
     return score
 
+def query_tornado_stats(address: str) -> Dict[str, Any]:
+    """
+    Given a user address, we want to supply a few statistics:
+
+    1) Number of deposits made to Tornado pools.
+    2) Number of withdraws made to Tornado pools.
+    3) Number of deposits made that are part of a cluster or of a TCash reveal.
+    """
+    exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
+    gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
+    multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
+    linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
+    torn_mine_txs: Set[str] = query_heuristic(address, TornMining)
+
+    reveal_txs: Set[str] = set().union(
+        exact_match_txs, gas_price_txs, multi_denom_txs, 
+        linked_txs, torn_mine_txs)
+
+    # find all txs where the from_address is the current user.
+    deposits: Optional[List[TornadoDeposit]] = \
+        TornadoDeposit.query.filter_by(from_address = address).all()
+    deposit_txs: Set[str] = set([d.hash for d in deposits])
+    num_deposit: int = len(deposit_txs)
+
+    # find all txs where the recipient_address is the current user
+    withdraws: Optional[List[TornadoWithdraw]] = \
+        TornadoWithdraw.query.filter_by(recipient_address = address).all()
+    withdraw_txs: Set[str] = set([w.hash for w in withdraws])
+    num_withdraw: int = len(withdraw_txs)
+
+    all_txs: Set[str] = deposit_txs.union(withdraw_txs)
+    num_all: int = num_deposit + num_withdraw
+
+    num_remain: int = len(all_txs - reveal_txs)
+    num_remain_exact_match: int = len(all_txs - exact_match_txs)
+    num_remain_gas_price: int = len(all_txs - gas_price_txs)
+    num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
+    num_remain_linked_tx: int = len(all_txs - linked_txs)
+    num_remain_torn_mine: int = len(all_txs - torn_mine_txs)
+
+    num_compromised: int = num_all - num_remain
+    num_compromised_exact_match = num_all - num_remain_exact_match
+    num_compromised_gas_price = num_all - num_remain_gas_price
+    num_compromised_multi_denom = num_all - num_remain_multi_denom
+    num_compromised_linked_tx = num_all - num_remain_linked_tx
+    num_compromised_torn_mine = num_all - num_remain_torn_mine
+
+    # compute number of txs compromised by TCash heuristics
+    stats: Dict[str, Any] = dict(
+        num_deposit = num_deposit,
+        num_withdraw = num_withdraw,
+        num_compromised = dict(
+            all_reveals = num_compromised,
+            num_compromised_exact_match = num_compromised_exact_match,
+            num_compromised_gas_price = num_compromised_gas_price,
+            num_compromised_multi_denom = num_compromised_multi_denom,
+            num_compromised_linked_tx = num_compromised_linked_tx,
+            num_compromised_torn_mine = num_compromised_torn_mine,
+            hovers = dict(
+                num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
+                num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
+                num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
+                num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
+                num_compromised_torn_mine = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
+            )
+        ),
+        num_uncompromised = num_all - num_compromised,
+        hovers = dict(
+            num_deposit = '# of deposit transactions into tornado cash pools.',
+            num_withdraw = '# of withdrawal transactions from tornado cash pools.',
+            num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
+            num_uncompromised = '# of deposits to/withdrawals from tornado cash pools that are not potentially linked by the five reveals',
+        )
+    )
+    return stats
+
 def search_address(request: Request) -> Response:
     """
     Master function for serving address requests. This function 
@@ -372,82 +448,6 @@ def search_address(request: Request) -> Response:
             cluster_txs: List[str] = [row.transaction for row in cluster]
 
         return set(cluster_txs)  # no duplicates
-
-    def query_tornado_stats(address: str) -> Dict[str, Any]:
-        """
-        Given a user address, we want to supply a few statistics:
-
-        1) Number of deposits made to Tornado pools.
-        2) Number of withdraws made to Tornado pools.
-        3) Number of deposits made that are part of a cluster or of a TCash reveal.
-        """
-        exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
-        gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
-        multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
-        linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
-        torn_mine_txs: Set[str] = query_heuristic(address, TornMining)
-
-        reveal_txs: Set[str] = set().union(
-            exact_match_txs, gas_price_txs, multi_denom_txs, 
-            linked_txs, torn_mine_txs)
-
-        # find all txs where the from_address is the current user.
-        deposits: Optional[List[TornadoDeposit]] = \
-            TornadoDeposit.query.filter_by(from_address = address).all()
-        deposit_txs: Set[str] = set([d.hash for d in deposits])
-        num_deposit: int = len(deposit_txs)
-
-        # find all txs where the recipient_address is the current user
-        withdraws: Optional[List[TornadoWithdraw]] = \
-            TornadoWithdraw.query.filter_by(recipient_address = address).all()
-        withdraw_txs: Set[str] = set([w.hash for w in withdraws])
-        num_withdraw: int = len(withdraw_txs)
-
-        all_txs: Set[str] = deposit_txs.union(withdraw_txs)
-        num_all: int = num_deposit + num_withdraw
-
-        num_remain: int = len(all_txs - reveal_txs)
-        num_remain_exact_match: int = len(all_txs - exact_match_txs)
-        num_remain_gas_price: int = len(all_txs - gas_price_txs)
-        num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
-        num_remain_linked_tx: int = len(all_txs - linked_txs)
-        num_remain_torn_mine: int = len(all_txs - torn_mine_txs)
-
-        num_compromised: int = num_all - num_remain
-        num_compromised_exact_match = num_all - num_remain_exact_match
-        num_compromised_gas_price = num_all - num_remain_gas_price
-        num_compromised_multi_denom = num_all - num_remain_multi_denom
-        num_compromised_linked_tx = num_all - num_remain_linked_tx
-        num_compromised_torn_mine = num_all - num_remain_torn_mine
-
-        # compute number of txs compromised by TCash heuristics
-        stats: Dict[str, Any] = dict(
-            num_deposit = num_deposit,
-            num_withdraw = num_withdraw,
-            num_compromised = dict(
-                all_reveals = num_compromised,
-                num_compromised_exact_match = num_compromised_exact_match,
-                num_compromised_gas_price = num_compromised_gas_price,
-                num_compromised_multi_denom = num_compromised_multi_denom,
-                num_compromised_linked_tx = num_compromised_linked_tx,
-                num_compromised_torn_mine = num_compromised_torn_mine,
-                hovers = dict(
-                    num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
-                    num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
-                    num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
-                    num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
-                    num_compromised_torn_mine = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
-                )
-            ),
-            num_uncompromised = num_all - num_compromised,
-            hovers = dict(
-                num_deposit = '# of deposit transactions into tornado cash pools.',
-                num_withdraw = '# of withdrawal transactions from tornado cash pools.',
-                num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
-                num_uncompromised = '# of deposits to/withdrawals from tornado cash pools that are not potentially linked by the five reveals',
-            )
-        )
-        return stats
 
     
 
