@@ -30,11 +30,11 @@ class TestENSClusters:
         return clusters
 
     def _get_prediction(self, address) -> Set[str]:
-        if self.mode == 'dar':
+        if self._mode == 'dar':
             return self._get_dar_prediction(address)
-        elif self.mode == 'node':
+        elif self._mode == 'node':
             return self._get_node_prediction(address)
-        elif self.mode == 'both':
+        elif self._mode == 'both':
             dar_cluster: Set[str] = self._get_dar_prediction(address)
             node_cluster: Set[str] = self._get_node_prediction(address)
             cluster: Set[str] = set()
