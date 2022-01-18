@@ -229,8 +229,6 @@ def D_type_anonymity_heuristic(
     d_addr: str = miner_tx.recipient_address
     d_addr2w: Dict[str, Dict[str, Any]] = {d_addr: {}}
 
-    breakpoint()
-
     for d_pool in addr2deposits[d_addr]:
         for (d_hash, d_blocks) in addr2deposits[d_addr][d_pool]:
             delta_blocks: float = ap2blocks(miner_tx.anonimity_points, d_pool)

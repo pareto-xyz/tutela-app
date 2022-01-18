@@ -1,0 +1,1 @@
+*/5 * * * * /home/ubuntu/tutela-app/live/cronjobs/cron_test.sh

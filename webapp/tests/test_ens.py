@@ -3,17 +3,19 @@ Test how well deposit address reuse is doing by computing recall
 of a fixed set of ENS clusters.
 """
 
-import os
+import os, json
 import pandas as pd
 from tqdm import tqdm
 from typing import Any, Set, List, Optional
 
-from app.models import Address
+from app.models import Address, Embedding
 
 
 class TestENSClusters:
 
-    def __init__(self, csv_file: str):
+    def __init__(self, csv_file: str, mode: str = 'dar'):
+        assert mode in ['dar', 'node', 'both'], 'Unexpected mode.'
+        self._mode: str = mode
         self._csv_file: str = csv_file
         self._df = pd.read_csv(csv_file)
         self._clusters: List[Set[str]] = self._get_clusters(self._df)
@@ -27,12 +29,25 @@ class TestENSClusters:
 
         return clusters
 
-    def _get_prediction(self, address):
+    def _get_prediction(self, address) -> Set[str]:
+        if self._mode == 'dar':
+            return self._get_dar_prediction(address)
+        elif self._mode == 'node':
+            return self._get_node_prediction(address)
+        elif self._mode == 'both':
+            dar_cluster: Set[str] = self._get_dar_prediction(address)
+            node_cluster: Set[str] = self._get_node_prediction(address)
+            cluster: Set[str] = set()
+            cluster: Set[str] = cluster.union(dar_cluster)
+            cluster: Set[str] = cluster.union(node_cluster)
+            return cluster
+
+    def _get_dar_prediction(self, address) -> Set[str]:
         addr: Optional[Address] = \
             Address.query.filter_by(address = address).first()
 
         if addr is not None:
-            assert addr.entity == 1, "Address must be an EOA."
+            assert addr.entity == 0, "Address must be an EOA."
             cluster: List[Address] = []
             if (addr.user_cluster is not None) and (addr.user_cluster != -1):
                 cluster: List[Address] = Address.query.filter_by(
@@ -44,6 +59,17 @@ class TestENSClusters:
         else:  # if no address, then just return itself
             cluster: Set[str] = {address}
 
+        return cluster
+
+    def _get_node_prediction(self, address) -> Set[str]:
+        node: Optional[Embedding] = \
+            Embedding.query.filter_by(address = address).first()
+        if node is not None:
+            # I mapped neighbors -> distances so this is actually loading neighbors
+            cluster: List[str] = json.loads(node.distances)
+            cluster: Set[str] = set(cluster)
+        else:
+            cluster: Set[str] = {address}
         return cluster
 
     def evaluate(self):
@@ -112,6 +138,13 @@ if __name__ == "__main__":
         type=int,
         default=100000,
         help='maximum amount of clusters to show',
+    )
+    parser.add_argument(
+        '--mode',
+        type=str,
+        default='dar',
+        help='which model to use (dar|node|both)',
+        choices=['dar', 'node', 'both'],
     )
     args: Any = parser.parse_args()
 
