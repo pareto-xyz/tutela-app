@@ -207,7 +207,7 @@ def haveibeencompromised():
     response: str = json.dumps(output)
     return Response(response)
 
-def query_diff2vec(node: Embedding) -> List[Dict[str, Any]]:
+def query_diff2vec(node: Embedding, address) -> List[Dict[str, Any]]:
     """
     Search the embedding table to fetch neighbors from Diff2Vec cluster.
     """
@@ -595,7 +595,7 @@ def search_address(request: Request) -> Response:
                 raise Exception(f'Entity {entity} not supported.')
 
             # find Diff2Vec embeddings and add to front of cluster
-            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node)
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
             cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
             cluster_size += len(diff2vec_cluster)
 
@@ -632,7 +632,7 @@ def search_address(request: Request) -> Response:
         #              in Embedding (Diff2Vec) table --- 
         elif node is not None:
             # find Diff2Vec embeddings and add to front of cluster
-            cluster, cluster_size, conf = query_diff2vec(node)
+            cluster, cluster_size, conf = query_diff2vec(node, address)
 
             anon_score = compute_anonymity_score(
                 None,
@@ -938,7 +938,7 @@ def search_transaction():
     web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
     addr: Optional[Address] = Address.query.filter_by(address = address).first()
     node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
-    diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node)
+    diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
     tornado_dict: Dict[str, Any] = query_tornado_stats(address)
     anon_score = compute_anonymity_score(
                 addr,
