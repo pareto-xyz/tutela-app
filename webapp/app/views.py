@@ -305,6 +305,24 @@ def compute_anonymity_score(
 
     return score
 
+def query_heuristic(address: str, class_: Any) -> Set[str]:
+    """
+    Given an address, find out how many times this address' txs
+    appear in a heuristic. Pass the table class for heuristic.
+    """
+    rows: Optional[List[class_]] = \
+        class_.query.filter_by(address = address).all()
+
+    cluster_txs: List[str] = []
+
+    if (len(rows) > 0):
+        clusters: List[int] = list(set([row.cluster for row in rows]))
+        cluster: List[class_] = \
+            class_.query.filter(class_.cluster.in_(clusters)).all()
+        cluster_txs: List[str] = [row.transaction for row in cluster]
+
+    return set(cluster_txs)  # no duplicates
+
 def query_tornado_stats(address: str) -> Dict[str, Any]:
     """
     Given a user address, we want to supply a few statistics:
@@ -429,27 +447,6 @@ def search_address(request: Request) -> Response:
 
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
-
-
-    def query_heuristic(address: str, class_: Any) -> Set[str]:
-        """
-        Given an address, find out how many times this address' txs
-        appear in a heuristic. Pass the table class for heuristic.
-        """
-        rows: Optional[List[class_]] = \
-            class_.query.filter_by(address = address).all()
-
-        cluster_txs: List[str] = []
-
-        if (len(rows) > 0):
-            clusters: List[int] = list(set([row.cluster for row in rows]))
-            cluster: List[class_] = \
-                class_.query.filter(class_.cluster.in_(clusters)).all()
-            cluster_txs: List[str] = [row.transaction for row in cluster]
-
-        return set(cluster_txs)  # no duplicates
-
-    
 
 
     if len(address) > 0:
