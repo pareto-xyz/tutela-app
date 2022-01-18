@@ -32,7 +32,7 @@ class TestENSClusters:
             Address.query.filter_by(address = address).first()
 
         if addr is not None:
-            assert addr.entity == 1, "Address must be an EOA."
+            assert addr.entity == 0, "Address must be an EOA."
             cluster: List[Address] = []
             if (addr.user_cluster is not None) and (addr.user_cluster != -1):
                 cluster: List[Address] = Address.query.filter_by(
