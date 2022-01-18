@@ -934,32 +934,33 @@ def search_transaction():
 
     web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
     addr: Optional[Address] = Address.query.filter_by(address = address).first()
-    node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
-    diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
-    tornado_dict: Dict[str, Any] = query_tornado_stats(address)
-    anon_score = compute_anonymity_score(
-                addr,
-                ens_name = web3_resp['ens_name'],
-                # seed computing anonymity score with diff2vec + tcash reveals
-                extra_cluster_sizes = [
-                    diff2vec_size,
-                    tornado_dict['num_compromised']['num_compromised_exact_match'],
-                    tornado_dict['num_compromised']['num_compromised_gas_price'],
-                    tornado_dict['num_compromised']['num_compromised_multi_denom'],
-                    tornado_dict['num_compromised']['num_compromised_linked_tx'],
-                    tornado_dict['num_compromised']['num_compromised_torn_mine'],
-                ], 
-                extra_cluster_confs = [
-                    diff2vec_conf,
-                    1.,
-                    1.,
-                    0.5,
-                    0.25,
-                    0.25,
-                ],
-            )
-    anon_score: float = round(anon_score, 3)  # brevity is a virtue
-    output['data']['query']['anonymity_score'] = anon_score
+    if addr is not None: 
+        node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+        diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        anon_score = compute_anonymity_score(
+                    addr,
+                    ens_name = web3_resp['ens_name'],
+                    # seed computing anonymity score with diff2vec + tcash reveals
+                    extra_cluster_sizes = [
+                        diff2vec_size,
+                        tornado_dict['num_compromised']['num_compromised_exact_match'],
+                        tornado_dict['num_compromised']['num_compromised_gas_price'],
+                        tornado_dict['num_compromised']['num_compromised_multi_denom'],
+                        tornado_dict['num_compromised']['num_compromised_linked_tx'],
+                        tornado_dict['num_compromised']['num_compromised_torn_mine'],
+                    ], 
+                    extra_cluster_confs = [
+                        diff2vec_conf,
+                        1.,
+                        1.,
+                        0.5,
+                        0.25,
+                        0.25,
+                    ],
+                )
+        anon_score: float = round(anon_score, 3)  # brevity is a virtue
+        output['data']['query']['anonymity_score'] = anon_score
 
     # --
     output['data']['query']['address'] = address
