@@ -13,7 +13,7 @@ tar -xzvf google-cloud-sdk-368.0.0-linux-x86_64.tar.gz
 # install python utilities
 # make sure you are in the virtual env
 pip install --upgrade google-cloud-storage
-pip install --upgrade google-cloud-bigqueryls
+pip install --upgrade google-cloud-bigquery
 ```
 
 Then `scp` your credentials over to a save space on the instance and then define `GOOGLE_APPLICATION_CREDENTIALS` in `~/.bashrc`.
