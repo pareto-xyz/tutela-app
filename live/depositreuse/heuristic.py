@@ -20,6 +20,7 @@ import pandas as pd
 import networkx as nx
 from tqdm import tqdm
 from os.path import join
+from collections import Counter
 from typing import List, Any, Tuple, Set, Dict
 
 from live import utils
@@ -209,18 +210,20 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 
     # -- handle user clusters
     user_cluster: pd.Series = metadata.user_cluster
-    unique_users: List[int] = range(
+    unique_user_clusters: List[int] = range(
         user_cluster[~pd.isna(user_cluster)].min(),
         user_cluster[~pd.isna(user_cluster)].max()+1)
 
-    for cluster in unique_users:
+    for cluster in unique_user_clusters:
+        # for each new cluster found, check if its already in the db and if so
+        # grab the already assigned clusters.
         cluster: pd.DataFrame = metadata[user_cluster == cluster]
         addresses: List[str] = list(cluster.address.unique())
 
-        # compute this in batches of 50
-        batch_size: int = 50
+        # compute this in batches of 100
+        batch_size: int = 100
         num_batches: int = len(addresses) // batch_size
-        existing: List[int] = []
+        old_clusters: List[int] = []
         count: int = 0
 
         for b in range(num_batches):
@@ -231,8 +234,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
             cursor.execute(command)
             out: List[Tuple[Any]] = cursor.fetchall()
             out: List[int] = [x[0] for x in out]
-            out: List[int] = list(set(out))
-            existing.extend(out)
+            old_clusters.extend(out)
             count += batch_size
 
         if len(addresses) % batch_size != 0:
@@ -243,8 +245,18 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
             cursor.execute(command)
             out: List[Tuple[Any]] = cursor.fetchall()
             out: List[int] = [x[0] for x in out]
-            out: List[int] = list(set(out))
-            existing.extend(out)
+            old_clusters.extend(out)
+
+        breakpoint()
+        # `old_clusters` stores all clusters. Find the most common one!
+        mode_cluster: int = Counter(old_clusters).most_common()
+        unique_old_clusters: Set[int] = set(old_clusters)
+
+        if len(unique_old_clusters) > 1:
+            pass
+
+        # replace new cluster w/ matched old cluster!
+        metadata[user_cluster == cluster].cluster = mode_cluster
 
 # ---
 # begin main function
