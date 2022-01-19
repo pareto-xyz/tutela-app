@@ -598,6 +598,7 @@ ul.dropdown-menu {
 
 .col-12 > table > tbody > tr:not(:first-of-type) > td:first-of-type{
     padding-top: 0.5rem;
+    white-space: pre;
 }
 
 tr{
