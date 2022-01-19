@@ -182,7 +182,7 @@ def add_clusters_to_metadata(
     return metadata
 
 
-def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
+def merge_clusters_with_db(metadata: pd.DataFrame, greedy: bool = False) -> pd.DataFrame:
     """
     The current user clusters and exchange clusters are enumerated 
     from 0 onward. A simple solution would be to just start from the 
@@ -221,14 +221,15 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
         print(f'merging clusters: {field_name}')
         pbar = tqdm(total=len(metadata[field_name]))
         for cluster_ in unique_clusters:
-            # for each new cluster found, check if its already in the db and if so
+            # for each new cluster found, check if it's already in the db and if so
             # grab the already assigned clusters.
             cluster: pd.DataFrame = metadata[metadata[field_name] == cluster_]
             cluster_size: int = len(cluster)
+            # Note that this logic ignores new addresses. New addresses will be 
+            # inserted via metadata object below.
             addresses: List[str] = list(cluster.address.unique())
 
-            # compute this in batches of 100
-            batch_size: int = 1000
+            batch_size: int = 1000  # compute this in batches
             num_batches: int = len(addresses) // batch_size
             old_clusters: List[int] = []
             count: int = 0
@@ -261,7 +262,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
             else:
                 unique_old_clusters: List[int] = []
 
-            if len(unique_old_clusters) > 0:
+            if len(unique_old_clusters) > 0 and not args.greedy:
                 # if our cluster joins multiple old clusters, we need to make this consistent
                 # by merging old clusters. Need to do this in batches too.
                 num_batches: int = len(unique_old_clusters) // batch_size
@@ -469,15 +470,14 @@ def main(args: Any):
         # clusters such that any address is in only one address
         logger.info('merging clusters in current metadata with db')
         if args.debug:
-            metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+            metadata: pd.DataFrame = merge_clusters_with_db(metadata, greedy=args.greedy)
         else:
             try:
-                metadata: pd.DataFrame = merge_clusters_with_db(metadata)
+                metadata: pd.DataFrame = merge_clusters_with_db(metadata, greedy=args.greedy)
             except:
                 logger.error('failed in merge_clusters_with_db()')
                 sys.exit(0)
 
-        breakpoint()
         merged_file: str = join(proc_path, 'metadata-merged.csv')
         metadata.to_csv(merged_file, index=False)
 
@@ -536,6 +536,8 @@ if __name__ == "__main__":
                         help='only execute the code to edit database (default: False)')
     parser.add_argument('--debug', action='store_true', default=False,
                         help='throw errors / no try-catch (default: False)')
+    parser.add_argument('--greedy', action='store_true', default=False,
+                        help='do not correct old clusters, just new ones (default: False)')
     args = parser.parse_args()
 
     main(args)
