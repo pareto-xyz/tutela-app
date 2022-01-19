@@ -203,14 +203,15 @@ def merge_clusters_with_db(metadata: pd.DataFrame, greedy: bool = False) -> pd.D
     """
     import psycopg2
 
-    conn: Any = psycopg2.connect(
-        database = utils.CONSTANTS['postgres_db'], 
-        user = utils.CONSTANTS['postgres_user'])
-    cursor: Any = conn.cursor()
 
     def __merge_clusters(
         metadata: pd.DataFrame, 
         field_name: str = 'user_cluster') -> pd.DataFrame:
+
+        conn: Any = psycopg2.connect(
+            database = utils.CONSTANTS['postgres_db'], 
+            user = utils.CONSTANTS['postgres_user'])
+        cursor: Any = conn.cursor()
 
         # don't update all the time!
         metadata: pd.DataFrame = metadata[metadata.conf >= 0.5]
