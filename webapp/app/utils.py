@@ -835,3 +835,12 @@ def find_reveals(transactions: Set[str], class_: Any) -> Set[str]:
     reveals: Set[str] = set([row.transaction for row in rows])
     reveals: Set[str] = reveals.intersection(transactions)
     return reveals
+
+
+def conf_to_label(conf: float) -> str:
+    if conf > 0.98: 
+        return 'high'
+    elif conf > 0.95:
+        return 'medium'
+    else:
+        return 'low'
