@@ -180,7 +180,6 @@ def main(args: Any):
     else:
         logger.info('entering get_last_block')
         last_block: int = get_last_block()
-        breakpoint()
         logger.info(f'last_block={last_block}')
 
     logger.info('entering update_bigquery')
