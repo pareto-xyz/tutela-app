@@ -6,3 +6,4 @@ source init_env.sh;
 python /home/ubuntu/tutela-app/live/depositreuse/data.py;
 python /home/ubuntu/tutela-app/live/tornadocash/data.py;
 python /home/ubuntu/tutela-app/live/tornadocash/features.py;
+python /home/ubuntu/tutela-app/scripts/utils/reset_redis.py;
