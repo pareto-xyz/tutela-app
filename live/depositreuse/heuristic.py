@@ -363,6 +363,8 @@ def main(args: Any):
     # algorithm completed at this point: we need to now populate db
     if not args.no_db:
         metadata: pd.DataFrame = pd.read_csv(metadata_file)
+        metadata.user_cluster = metadata.user_cluster.astype(pd.Int64Dtype())
+        metadata.exchange_cluster = metadata.exchange_cluster.astype(pd.Int64Dtype())
 
         # merge these user_clusters consistently with the existing
         # clusters such that any address is in only one address
