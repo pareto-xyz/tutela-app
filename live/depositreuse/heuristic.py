@@ -200,7 +200,44 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
     Create a new cluster 101, that contains all members in cluster 0, 
     cluster 1, and also `c`.
     """
-    pass
+    import psycopg2
+
+    conn: Any = psycopg2.connect(
+        database = utils.CONSTANTS['postgres_db'], 
+        user = utils.CONSTANTS['postgres_user'])
+    cursor: Any = conn.cursor()
+
+    # -- handle user clusters
+    user_cluster: pd.Series = metadata.user_cluster
+    unique_users: List[int] = range(
+        user_cluster[~pd.isna(user_cluster)].min(),
+        user_cluster[~pd.isna(user_cluster)].max()+1)
+
+    for cluster in unique_users:
+        cluster: pd.DataFrame = metadata[user_cluster == cluster]
+        addresses: List[str] = list(cluster.address.unique())
+
+        # compute this in batches of 50
+        batch_size: int = 50
+        num_batches: int = len(addresses) // batch_size
+        existing: List[int] = []
+        breakpoint()
+
+        for b in range(num_batches):
+            batch: List[str] = addresses[b*batch_size:(b+1)*batch_size]
+            batch: List[str] = ["'" + address + "'" for address in batch]
+            batch: str = '(' + ','.join(batch) + ')'
+            command: str = f"select user_cluster from address where address in {batch}"
+            cursor.execute(command)
+            out: List[int] = cursor.fetchall()
+            existing.extend(out)
+
+        if len(addresses) % batch_size != 0:
+            batch: List[str] = addresses[b*batch_size:]
+            batch: str = ','.join(batch)
+            command: str = f"select user_cluster from address where address in {batch}"
+            out: List[int] = cursor.execute(command)
+            existing.extend(out)
 
 # ---
 # begin main function
@@ -367,7 +404,6 @@ def main(args: Any):
         # need to recast upon loading csv
         metadata.user_cluster = metadata.user_cluster.astype(pd.Int64Dtype())
         metadata.exchange_cluster = metadata.exchange_cluster.astype(pd.Int64Dtype())
-        breakpoint()
 
         # merge these user_clusters consistently with the existing
         # clusters such that any address is in only one address
