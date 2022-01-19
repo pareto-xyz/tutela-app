@@ -221,7 +221,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
         batch_size: int = 50
         num_batches: int = len(addresses) // batch_size
         existing: List[int] = []
-        breakpoint()
+        count: int = 0
 
         for b in range(num_batches):
             batch: List[str] = addresses[b*batch_size:(b+1)*batch_size]
@@ -229,14 +229,21 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
             batch: str = '(' + ','.join(batch) + ')'
             command: str = f"select user_cluster from address where address in {batch}"
             cursor.execute(command)
-            out: List[int] = cursor.fetchall()
+            out: List[Tuple[Any]] = cursor.fetchall()
+            out: List[int] = [x[0] for x in out]
+            out: List[int] = list(set(out))
             existing.extend(out)
+            count += batch_size
 
         if len(addresses) % batch_size != 0:
-            batch: List[str] = addresses[b*batch_size:]
-            batch: str = ','.join(batch)
+            batch: List[str] = addresses[count:]
+            batch: List[str] = ["'" + address + "'" for address in batch]
+            batch: str = '(' + ','.join(batch) + ')'
             command: str = f"select user_cluster from address where address in {batch}"
-            out: List[int] = cursor.execute(command)
+            cursor.execute(command)
+            out: List[Tuple[Any]] = cursor.fetchall()
+            out: List[int] = [x[0] for x in out]
+            out: List[int] = list(set(out))
             existing.extend(out)
 
 # ---
@@ -244,16 +251,16 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 # --
 
 def main(args: Any):
+    log_path: str = utils.CONSTANTS['log_path']
+    os.makedirs(log_path, exist_ok=True)
+
+    log_file: str = join(log_path, 'depositreuse-heuristic.log')
+    if os.path.isfile(log_file):
+        os.remove(log_file)  # remove old file (yesterday's)
+
+    logger = utils.get_logger(log_file)
+
     if not args.db_only:
-        log_path: str = utils.CONSTANTS['log_path']
-        os.makedirs(log_path, exist_ok=True)
-
-        log_file: str = join(log_path, 'depositreuse-heuristic.log')
-        if os.path.isfile(log_file):
-            os.remove(log_file)  # remove old file (yesterday's)
-
-        logger = utils.get_logger(log_file)
-
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
         depo_path: str = join(data_path, 'live/depositreuse')
