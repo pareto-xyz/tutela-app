@@ -214,10 +214,10 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
         user_cluster[~pd.isna(user_cluster)].min(),
         user_cluster[~pd.isna(user_cluster)].max()+1)
 
-    for cluster in unique_user_clusters:
+    for cluster_ in unique_user_clusters:
         # for each new cluster found, check if its already in the db and if so
         # grab the already assigned clusters.
-        cluster: pd.DataFrame = metadata[user_cluster == cluster]
+        cluster: pd.DataFrame = metadata[user_cluster == cluster_]
         addresses: List[str] = list(cluster.address.unique())
 
         # compute this in batches of 100
@@ -247,16 +247,15 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
             out: List[int] = [x[0] for x in out]
             old_clusters.extend(out)
 
-        breakpoint()
         # `old_clusters` stores all clusters. Find the most common one!
-        mode_cluster: int = Counter(old_clusters).most_common()
+        mode_cluster: int = Counter(old_clusters).most_common()[0][0]
         unique_old_clusters: Set[int] = set(old_clusters)
 
         if len(unique_old_clusters) > 1:
             pass
 
         # replace new cluster w/ matched old cluster!
-        metadata[user_cluster == cluster].cluster = mode_cluster
+        metadata.loc[metadata.user_cluster == cluster_, 'user_cluster'] = mode_cluster
 
 # ---
 # begin main function
