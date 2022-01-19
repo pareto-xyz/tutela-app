@@ -1043,7 +1043,7 @@ def make_weekly_plot():
         }
         for transaction in transactions:
             ts: datetime = datetime.strptime(transaction['timestamp'], '%m/%d/%Y')
-            if (ts >= cur_start) and (ts <= cur_end):
+            if (ts >= cur_start) and (ts < cur_end):
                 counts[transaction['heuristic']] += 1
 
         start_date: str = cur_start.strftime('%m/%d/%Y')
