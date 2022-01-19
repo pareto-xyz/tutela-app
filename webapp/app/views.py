@@ -1006,6 +1006,7 @@ def make_weekly_plot():
         return Response(output)
 
     today: datetime = datetime.today()
+    today: datetime = datetime.strptime(today.strftime('%m/%d/%Y'), '%m/%d/%Y')
 
     if window == '1mth':
         delta: relativedelta = relativedelta(months=1)
@@ -1043,6 +1044,7 @@ def make_weekly_plot():
         }
         for transaction in transactions:
             ts: datetime = datetime.strptime(transaction['timestamp'], '%m/%d/%Y')
+
             if (ts >= cur_start) and (ts < cur_end):
                 counts[transaction['heuristic']] += 1
 
