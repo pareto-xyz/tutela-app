@@ -466,6 +466,7 @@ def main(args: Any):
         )
         cursor = conn.cursor()
 
+        # -- step 1: copy deposits into db
         deposit_columns: List[str] = [
             'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
             'gas_price', 'block_number', 'block_hash', 'tornado_cash_address'
@@ -473,7 +474,9 @@ def main(args: Any):
         deposit_columns: str = ','.join(deposit_columns)
         command = f"COPY tornado_deposit({deposit_columns}) FROM '{deposit_file}' DELIMITER ',' CSV HEADER;"
         cursor.execute(command)
+        conn.commit()
 
+        # -- step 2: copy deposits into db
         withdraw_columns: List[str] = [
             'hash', 'transaction_index', 'from_address', 'to_address', 'gas',
             'gas_price', 'block_number', 'block_hash', 'tornado_cash_address',
@@ -482,7 +485,12 @@ def main(args: Any):
         withdraw_columns: str = ','.join(withdraw_columns)
         command: str = f"COPY tornado_withdraw({withdraw_columns}) FROM '{withdraw_file}' DELIMITER ',' CSV HEADER;"
         cursor.execute(command)
+        conn.commit()
 
+        # -- step 3: insert deposits into TornadoPool
+        select_sql: str = f"select b.hash as transaction, b.from_address as address, b.tornado_cash_address as pool from tornado_deposit as b"
+        command: str = f"insert into tornado_pool(transaction, address, pool) ({select_sql}) on conflict do nothing;"
+        cursor.execute(command)
         conn.commit()
 
         cursor.close()
