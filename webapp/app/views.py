@@ -207,6 +207,197 @@ def haveibeencompromised():
     response: str = json.dumps(output)
     return Response(response)
 
+def query_diff2vec(node: Embedding, address) -> List[Dict[str, Any]]:
+    """
+    Search the embedding table to fetch neighbors from Diff2Vec cluster.
+    """
+    cluster: List[Dict[str, Any]] = []
+    cluster_conf: float = 0
+
+    if node is not None:
+        neighbors: List[int] = json.loads(node.neighbors)
+        distances: List[float] = json.loads(node.distances)
+
+        for neighbor, distance in zip(neighbors, distances):
+            # swap terms b/c of upload accident
+            neighbor, distance = distance, neighbor
+            if neighbor == address: continue  # skip
+            member: Dict[str, Any] = {
+                'address': neighbor,
+                # '_distance': distance,
+                    # add one to make max 1
+                'conf': round(float(1./abs(10.*distance+1.)), 3),
+                'heuristic': DIFF2VEC_HEUR, 
+                'entity': NODE,
+                'ens_name': get_ens_name(neighbor, ns),
+            }
+            cluster.append(member)
+            cluster_conf += member['conf']
+
+    cluster_size: int = len(cluster)
+    cluster_conf: float = cluster_conf / float(cluster_size)
+
+    return cluster, cluster_size, cluster_conf
+
+def compute_anonymity_score(
+        addr: Optional[Address],
+        ens_name: Optional[str] = None,
+        exchange_weight: float = 0.1,
+        slope: float = 0.1,
+        extra_cluster_sizes: List[int] = [],
+        extra_cluster_confs: List[float] = []
+    ) -> float:
+    """
+    Only EOA addresses have an anonymity score. If we get an exchange,
+    we return an anonymity score of 0. If we get a deposit, we return -1,
+    which represents N/A.
+
+    For EOA addresses, we grade the anonymity by the confidence and number 
+    of other EOA addresses in the same cluster, as well as the confidence 
+    and number of other exchanges in the same cluster (which we find through
+    the deposits this address interacts with). Exchange interactions are 
+    discounted (by `exchange_weight` factor) compared to other EOAs.
+
+    If ens_name is provided and not empty, we cap the anonymity score at 90.
+    If addr is None, we assume clusters are specified in extra_cluster_*.
+    """
+    cluster_confs: List[float] = extra_cluster_sizes
+    cluster_sizes: List[float] = extra_cluster_confs
+
+    if addr is not None:
+        if addr.entity == entity_to_int(DEPOSIT):
+            return -1  # represents N/A
+        elif addr.entity == entity_to_int(EXCHANGE):
+            return 0   # CEX have no anonymity
+
+        assert addr.entity == entity_to_int(EOA), \
+            f'Unknown entity: {entity_to_str(addr.entity)}'
+
+        if addr.user_cluster is not None:
+            # find all other EOA addresses with same `dar_user_cluster`.
+            num_cluster: int = Address.query.filter(
+                Address.user_cluster == addr.user_cluster,
+                or_(Address.entity == entity_to_int(EOA)),
+            ).limit(HARD_MAX).count()
+            cluster_confs.append(addr.conf)
+            cluster_sizes.append(num_cluster)
+
+            # find all DEPOSIT address with same `user_cluster`.
+            deposits: Optional[List[Address]] = Address.query.filter(
+                Address.user_cluster == addr.user_cluster,
+                Address.entity == entity_to_int(DEPOSIT),
+            ).limit(HARD_MAX).all()
+
+            exchanges: Set[str] = set([
+                deposit.exchange_cluster for deposit in deposits])
+            cluster_confs.append(addr.conf * exchange_weight)
+            cluster_sizes.append(len(exchanges))
+
+    cluster_confs: np.array = np.array(cluster_confs)
+    cluster_sizes: np.array = np.array(cluster_sizes)
+    score: float = get_anonymity_score(
+        cluster_confs, cluster_sizes, slope = slope)
+
+    if ens_name is not None:
+        if len(ens_name) > 0 and '.eth' in ens_name:
+            # having an ENS name caps your maximum anonymity score
+            score: float = min(score, 0.90)
+
+    return score
+
+def query_heuristic(address: str, class_: Any) -> Set[str]:
+    """
+    Given an address, find out how many times this address' txs
+    appear in a heuristic. Pass the table class for heuristic.
+    """
+    rows: Optional[List[class_]] = \
+        class_.query.filter_by(address = address).all()
+
+    cluster_txs: List[str] = []
+
+    if (len(rows) > 0):
+        clusters: List[int] = list(set([row.cluster for row in rows]))
+        cluster: List[class_] = \
+            class_.query.filter(class_.cluster.in_(clusters)).all()
+        cluster_txs: List[str] = [row.transaction for row in cluster]
+
+    return set(cluster_txs)  # no duplicates
+
+def query_tornado_stats(address: str) -> Dict[str, Any]:
+    """
+    Given a user address, we want to supply a few statistics:
+
+    1) Number of deposits made to Tornado pools.
+    2) Number of withdraws made to Tornado pools.
+    3) Number of deposits made that are part of a cluster or of a TCash reveal.
+    """
+    exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
+    gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
+    multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
+    linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
+    torn_mine_txs: Set[str] = query_heuristic(address, TornMining)
+
+    reveal_txs: Set[str] = set().union(
+        exact_match_txs, gas_price_txs, multi_denom_txs, 
+        linked_txs, torn_mine_txs)
+
+    # find all txs where the from_address is the current user.
+    deposits: Optional[List[TornadoDeposit]] = \
+        TornadoDeposit.query.filter_by(from_address = address).all()
+    deposit_txs: Set[str] = set([d.hash for d in deposits])
+    num_deposit: int = len(deposit_txs)
+
+    # find all txs where the recipient_address is the current user
+    withdraws: Optional[List[TornadoWithdraw]] = \
+        TornadoWithdraw.query.filter_by(recipient_address = address).all()
+    withdraw_txs: Set[str] = set([w.hash for w in withdraws])
+    num_withdraw: int = len(withdraw_txs)
+
+    all_txs: Set[str] = deposit_txs.union(withdraw_txs)
+    num_all: int = num_deposit + num_withdraw
+
+    num_remain: int = len(all_txs - reveal_txs)
+    num_remain_exact_match: int = len(all_txs - exact_match_txs)
+    num_remain_gas_price: int = len(all_txs - gas_price_txs)
+    num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
+    num_remain_linked_tx: int = len(all_txs - linked_txs)
+    num_remain_torn_mine: int = len(all_txs - torn_mine_txs)
+
+    num_compromised: int = num_all - num_remain
+    num_compromised_exact_match = num_all - num_remain_exact_match
+    num_compromised_gas_price = num_all - num_remain_gas_price
+    num_compromised_multi_denom = num_all - num_remain_multi_denom
+    num_compromised_linked_tx = num_all - num_remain_linked_tx
+    num_compromised_torn_mine = num_all - num_remain_torn_mine
+
+    # compute number of txs compromised by TCash heuristics
+    stats: Dict[str, Any] = dict(
+        num_deposit = num_deposit,
+        num_withdraw = num_withdraw,
+        num_compromised = dict(
+            all_reveals = num_compromised,
+            num_compromised_exact_match = num_compromised_exact_match,
+            num_compromised_gas_price = num_compromised_gas_price,
+            num_compromised_multi_denom = num_compromised_multi_denom,
+            num_compromised_linked_tx = num_compromised_linked_tx,
+            num_compromised_torn_mine = num_compromised_torn_mine,
+            hovers = dict(
+                num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
+                num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
+                num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
+                num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
+                num_compromised_torn_mine = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
+            )
+        ),
+        num_uncompromised = num_all - num_compromised,
+        hovers = dict(
+            num_deposit = '# of deposit transactions into tornado cash pools.',
+            num_withdraw = '# of withdrawal transactions from tornado cash pools.',
+            num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
+            num_uncompromised = '# of deposits to/withdrawals from tornado cash pools that are not potentially linked by the five reveals',
+        )
+    )
+    return stats
 
 def search_address(request: Request) -> Response:
     """
@@ -256,199 +447,6 @@ def search_address(request: Request) -> Response:
 
     for k in output['data']['metadata']['filter_by'].keys():
         output['data']['metadata']['filter_by'][k] = checker.get(f'filter_{k}')
-
-
-    def compute_anonymity_score(
-        addr: Optional[Address],
-        ens_name: Optional[str] = None,
-        exchange_weight: float = 0.1,
-        slope: float = 0.1,
-        extra_cluster_sizes: List[int] = [],
-        extra_cluster_confs: List[float] = []
-    ) -> float:
-        """
-        Only EOA addresses have an anonymity score. If we get an exchange,
-        we return an anonymity score of 0. If we get a deposit, we return -1,
-        which represents N/A.
-
-        For EOA addresses, we grade the anonymity by the confidence and number 
-        of other EOA addresses in the same cluster, as well as the confidence 
-        and number of other exchanges in the same cluster (which we find through
-        the deposits this address interacts with). Exchange interactions are 
-        discounted (by `exchange_weight` factor) compared to other EOAs.
-
-        If ens_name is provided and not empty, we cap the anonymity score at 90.
-        If addr is None, we assume clusters are specified in extra_cluster_*.
-        """
-        cluster_confs: List[float] = extra_cluster_sizes
-        cluster_sizes: List[float] = extra_cluster_confs
-
-        if addr is not None:
-            if addr.entity == entity_to_int(DEPOSIT):
-                return -1  # represents N/A
-            elif addr.entity == entity_to_int(EXCHANGE):
-                return 0   # CEX have no anonymity
-
-            assert addr.entity == entity_to_int(EOA), \
-                f'Unknown entity: {entity_to_str(addr.entity)}'
-
-            if addr.user_cluster is not None:
-                # find all other EOA addresses with same `dar_user_cluster`.
-                num_cluster: int = Address.query.filter(
-                    Address.user_cluster == addr.user_cluster,
-                    or_(Address.entity == entity_to_int(EOA)),
-                ).limit(HARD_MAX).count()
-                cluster_confs.append(addr.conf)
-                cluster_sizes.append(num_cluster)
-
-                # find all DEPOSIT address with same `user_cluster`.
-                deposits: Optional[List[Address]] = Address.query.filter(
-                    Address.user_cluster == addr.user_cluster,
-                    Address.entity == entity_to_int(DEPOSIT),
-                ).limit(HARD_MAX).all()
-
-                exchanges: Set[str] = set([
-                    deposit.exchange_cluster for deposit in deposits])
-                cluster_confs.append(addr.conf * exchange_weight)
-                cluster_sizes.append(len(exchanges))
-
-        cluster_confs: np.array = np.array(cluster_confs)
-        cluster_sizes: np.array = np.array(cluster_sizes)
-        score: float = get_anonymity_score(
-            cluster_confs, cluster_sizes, slope = slope)
-
-        if ens_name is not None:
-            if len(ens_name) > 0 and '.eth' in ens_name:
-                # having an ENS name caps your maximum anonymity score
-                score: float = min(score, 0.90)
-
-        return score
-
-    def query_heuristic(address: str, class_: Any) -> Set[str]:
-        """
-        Given an address, find out how many times this address' txs
-        appear in a heuristic. Pass the table class for heuristic.
-        """
-        rows: Optional[List[class_]] = \
-            class_.query.filter_by(address = address).all()
-
-        cluster_txs: List[str] = []
-
-        if (len(rows) > 0):
-            clusters: List[int] = list(set([row.cluster for row in rows]))
-            cluster: List[class_] = \
-                class_.query.filter(class_.cluster.in_(clusters)).all()
-            cluster_txs: List[str] = [row.transaction for row in cluster]
-
-        return set(cluster_txs)  # no duplicates
-
-    def query_tornado_stats(address: str) -> Dict[str, Any]:
-        """
-        Given a user address, we want to supply a few statistics:
-
-        1) Number of deposits made to Tornado pools.
-        2) Number of withdraws made to Tornado pools.
-        3) Number of deposits made that are part of a cluster or of a TCash reveal.
-        """
-        exact_match_txs: Set[str] = query_heuristic(address, ExactMatch)
-        gas_price_txs: Set[str] = query_heuristic(address, GasPrice)
-        multi_denom_txs: Set[str] = query_heuristic(address, MultiDenom)
-        linked_txs: Set[str] = query_heuristic(address, LinkedTransaction)
-        torn_mine_txs: Set[str] = query_heuristic(address, TornMining)
-
-        reveal_txs: Set[str] = set().union(
-            exact_match_txs, gas_price_txs, multi_denom_txs, 
-            linked_txs, torn_mine_txs)
-
-        # find all txs where the from_address is the current user.
-        deposits: Optional[List[TornadoDeposit]] = \
-            TornadoDeposit.query.filter_by(from_address = address).all()
-        deposit_txs: Set[str] = set([d.hash for d in deposits])
-        num_deposit: int = len(deposit_txs)
-
-        # find all txs where the recipient_address is the current user
-        withdraws: Optional[List[TornadoWithdraw]] = \
-            TornadoWithdraw.query.filter_by(recipient_address = address).all()
-        withdraw_txs: Set[str] = set([w.hash for w in withdraws])
-        num_withdraw: int = len(withdraw_txs)
-
-        all_txs: Set[str] = deposit_txs.union(withdraw_txs)
-        num_all: int = num_deposit + num_withdraw
-
-        num_remain: int = len(all_txs - reveal_txs)
-        num_remain_exact_match: int = len(all_txs - exact_match_txs)
-        num_remain_gas_price: int = len(all_txs - gas_price_txs)
-        num_remain_multi_denom: int = len(all_txs - multi_denom_txs)
-        num_remain_linked_tx: int = len(all_txs - linked_txs)
-        num_remain_torn_mine: int = len(all_txs - torn_mine_txs)
-
-        num_compromised: int = num_all - num_remain
-        num_compromised_exact_match = num_all - num_remain_exact_match
-        num_compromised_gas_price = num_all - num_remain_gas_price
-        num_compromised_multi_denom = num_all - num_remain_multi_denom
-        num_compromised_linked_tx = num_all - num_remain_linked_tx
-        num_compromised_torn_mine = num_all - num_remain_torn_mine
-
-        # compute number of txs compromised by TCash heuristics
-        stats: Dict[str, Any] = dict(
-            num_deposit = num_deposit,
-            num_withdraw = num_withdraw,
-            num_compromised = dict(
-                all_reveals = num_compromised,
-                num_compromised_exact_match = num_compromised_exact_match,
-                num_compromised_gas_price = num_compromised_gas_price,
-                num_compromised_multi_denom = num_compromised_multi_denom,
-                num_compromised_linked_tx = num_compromised_linked_tx,
-                num_compromised_torn_mine = num_compromised_torn_mine,
-                hovers = dict(
-                    num_compromised_exact_match = '# of deposits to/withdrawals from tornado cash pools linked through the address match heuristic. Address match links transactions if a unique address deposits and withdraws to a Tornado Cash pool.',
-                    num_compromised_gas_price = '# of deposits to/withdrawals from tornado cash pools linked through the unique gas price heuristic. Unique gas price links deposit and withdrawal transactions that use a unique and specific (e.g. 3.1415) gas price.',
-                    num_compromised_multi_denom = '# of deposit/withdrawals into tornado cash pools linked through the multi-denomination reveal. Multi-denomination reveal is when a “source” wallet mixes a specific set of denominations and your “destination” wallet withdraws them all. For example, if you mix 3x 10 ETH, 2x 1 ETH, 1x 0.1 ETH to get 32.1 ETH, you could reveal yourself within the Tornado protocol if no other wallet has mixed this exact denomination set.',
-                    num_compromised_linked_tx = '# of deposits to/withdrawals from tornado cash pools linked through the linked address reveal. Linked address reveal connects wallets that interact outside of Tornado Cash.',
-                    num_compromised_torn_mine = '# of deposits to/withdrawals from tornado cash pools linked through the TORN mining reveal. Careless swapping of Anonymity Points to TORN tokens reveal information of when deposits were made.',
-                )
-            ),
-            num_uncompromised = num_all - num_compromised,
-            hovers = dict(
-                num_deposit = '# of deposit transactions into tornado cash pools.',
-                num_withdraw = '# of withdrawal transactions from tornado cash pools.',
-                num_compromised = '# of deposits to/withdrawals from tornado cash pools that may be linked through the mis-use of Tornado cash.',
-                num_uncompromised = '# of deposits to/withdrawals from tornado cash pools that are not potentially linked by the five reveals',
-            )
-        )
-        return stats
-
-    def query_diff2vec(node: Embedding) -> List[Dict[str, Any]]:
-        """
-        Search the embedding table to fetch neighbors from Diff2Vec cluster.
-        """
-        cluster: List[Dict[str, Any]] = []
-        cluster_conf: float = 0
-
-        if node is not None:
-            neighbors: List[int] = json.loads(node.neighbors)
-            distances: List[float] = json.loads(node.distances)
-
-            for neighbor, distance in zip(neighbors, distances):
-                # swap terms b/c of upload accident
-                neighbor, distance = distance, neighbor
-                if neighbor == address: continue  # skip
-                member: Dict[str, Any] = {
-                    'address': neighbor,
-                    # '_distance': distance,
-                     # add one to make max 1
-                    'conf': round(float(1./abs(10.*distance+1.)), 3),
-                    'heuristic': DIFF2VEC_HEUR, 
-                    'entity': NODE,
-                    'ens_name': get_ens_name(neighbor, ns),
-                }
-                cluster.append(member)
-                cluster_conf += member['conf']
-
-        cluster_size: int = len(cluster)
-        cluster_conf: float = cluster_conf / float(cluster_size)
-
-        return cluster, cluster_size, cluster_conf
 
 
     if len(address) > 0:
@@ -594,7 +592,7 @@ def search_address(request: Request) -> Response:
                 raise Exception(f'Entity {entity} not supported.')
 
             # find Diff2Vec embeddings and add to front of cluster
-            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node)
+            diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
             cluster: List[Dict[str, Any]] = diff2vec_cluster + cluster
             cluster_size += len(diff2vec_cluster)
 
@@ -631,7 +629,7 @@ def search_address(request: Request) -> Response:
         #              in Embedding (Diff2Vec) table --- 
         elif node is not None:
             # find Diff2Vec embeddings and add to front of cluster
-            cluster, cluster_size, conf = query_diff2vec(node)
+            cluster, cluster_size, conf = query_diff2vec(node, address)
 
             anon_score = compute_anonymity_score(
                 None,
@@ -933,6 +931,36 @@ def search_transaction():
     stats['num_ethereum']['hovers'] = dict(
         DEPO_REUSE_HEUR = 'when two user addresses send to the same centralized exchange deposit address, they are linked by the deposit address reuse heuristic'
     )
+
+    web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
+    addr: Optional[Address] = Address.query.filter_by(address = address).first()
+    if addr is not None: 
+        node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+        diff2vec_cluster, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
+        tornado_dict: Dict[str, Any] = query_tornado_stats(address)
+        anon_score = compute_anonymity_score(
+                    addr,
+                    ens_name = web3_resp['ens_name'],
+                    # seed computing anonymity score with diff2vec + tcash reveals
+                    extra_cluster_sizes = [
+                        diff2vec_size,
+                        tornado_dict['num_compromised']['num_compromised_exact_match'],
+                        tornado_dict['num_compromised']['num_compromised_gas_price'],
+                        tornado_dict['num_compromised']['num_compromised_multi_denom'],
+                        tornado_dict['num_compromised']['num_compromised_linked_tx'],
+                        tornado_dict['num_compromised']['num_compromised_torn_mine'],
+                    ], 
+                    extra_cluster_confs = [
+                        diff2vec_conf,
+                        1.,
+                        1.,
+                        0.5,
+                        0.25,
+                        0.25,
+                    ],
+                )
+        anon_score: float = round(anon_score, 3)  # brevity is a virtue
+        output['data']['query']['anonymity_score'] = anon_score
 
     # --
     output['data']['query']['address'] = address

@@ -354,7 +354,7 @@ def main(args: Any):
         metadata.to_csv(metadata_file, index=False)
     else:
         data_path: str = utils.CONSTANTS['data_path']
-        depo_path: str = join(data_path, '/live/depositreuse')
+        depo_path: str = join(data_path, 'live/depositreuse')
         proc_path: str = join(depo_path, 'processed')
         metadata_file: str = join(proc_path, 'metadata.csv')
         tx_file: str = join(proc_path, 'transactions.csv')
@@ -363,8 +363,11 @@ def main(args: Any):
     # algorithm completed at this point: we need to now populate db
     if not args.no_db:
         metadata: pd.DataFrame = pd.read_csv(metadata_file)
+
+        # need to recast upon loading csv
         metadata.user_cluster = metadata.user_cluster.astype(pd.Int64Dtype())
         metadata.exchange_cluster = metadata.exchange_cluster.astype(pd.Int64Dtype())
+        breakpoint()
 
         # merge these user_clusters consistently with the existing
         # clusters such that any address is in only one address
