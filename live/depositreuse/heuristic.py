@@ -286,7 +286,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame, greedy: bool = False) -> pd.D
                     count += batch_size
 
             # replace new cluster w/ matched old cluster!
-            metadata.loc[metadata[field_name] == cluster_, 'field_name'] = mode_cluster
+            metadata.loc[metadata[field_name] == cluster_, field_name] = mode_cluster
             pbar.update(cluster_size)
         pbar.close()
 
