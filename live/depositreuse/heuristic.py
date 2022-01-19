@@ -488,8 +488,9 @@ def main(args: Any):
             user = utils.CONSTANTS['postgres_user'])
         cursor: Any = conn.cursor()
 
-        # step 1: delete rows from address table where TCash
-        cursor.execute("delete from address where heuristic > 0");
+        # step 1: delete rows from address staging table where TCash
+        cursor.execute("delete from address_staging");
+        conn.commit()
 
         # step 2: insert metadata rows into address table: this includes 
         # all TCash and includes most recent DAR
@@ -503,10 +504,18 @@ def main(args: Any):
             'exchange_cluster',
         ]
         columns: str = ','.join(columns)
-        command: str = f"COPY address({columns}) FROM '{merged_file}' DELIMITER ',' CSV HEADER;"
+        # copy to an empty table `address_staging`
+        command: str = f"COPY address_staging({columns}) FROM '{merged_file}' DELIMITER ',' CSV HEADER;"
         cursor.execute(command)
+        conn.commit()
 
-        # step 3: insert transactions into deposit_transactions table
+        # step 3: insert values from `address_staging` into `address`.
+        set_sql: str = f"set user_cluster = EXCLUDED.user_cluster, exchange_cluster = EXCLUDED.exchange_cluster"
+        command: str = f"insert into address({columns}) select {columns} from address_staging on conflict (address) do update {set_sql};"
+        cursor.execute(command)
+        conn.commit()
+
+        # step 4: insert transactions into deposit_transactions table
         columns: List[str] = [
             'address',
             'deposit',
@@ -518,7 +527,6 @@ def main(args: Any):
         columns: str = ','.join(columns)
         cursor.execute(f"COPY deposit_transaction({columns}) FROM '{tx_file}' DELIMITER ',' CSV HEADER;")
         cursor.execute(command)
-
         conn.commit()
 
         cursor.close()
