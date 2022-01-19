@@ -1,6 +1,7 @@
-0 23 * * * /home/ubuntu/tutela-app/live/cronjobs/cron_daily.sh
-0 23 * * 1 /home/ubuntu/tutela-app/live/cronjobs/cron_mon.sh
-0 23 * * 2 /home/ubuntu/tutela-app/live/cronjobs/cron_tue.sh
-0 23 * * 3 /home/ubuntu/tutela-app/live/cronjobs/cron_wed.sh
-0 23 * * 4 /home/ubuntu/tutela-app/live/cronjobs/cron_thu.sh
-0 23 * * 5 /home/ubuntu/tutela-app/live/cronjobs/cron_fri.sh
+0 23 * * * /home/ubuntu/tutela-app/live/cronjobs/cron_daily.sh > /home/ubuntu/tutela-app/logs/cron.daily.log 2>&1
+0 23 * * 1 /home/ubuntu/tutela-app/live/cronjobs/cron_mon.sh > /home/ubuntu/tutela-app/logs/cron.mon.log 2>&1
+0 23 * * 2 /home/ubuntu/tutela-app/live/cronjobs/cron_tue.sh > /home/ubuntu/tutela-app/logs/cron.tue.log 2>&1
+0 23 * * 3 /home/ubuntu/tutela-app/live/cronjobs/cron_wed.sh > /home/ubuntu/tutela-app/logs/cron.wed.log 2>&1
+0 23 * * 4 /home/ubuntu/tutela-app/live/cronjobs/cron_thu.sh > /home/ubuntu/tutela-app/logs/cron.thu.log 2>&1
+0 23 * * 5 /home/ubuntu/tutela-app/live/cronjobs/cron_fri.sh > /home/ubuntu/tutela-app/logs/cron.fri.log 2>&1
+0 23 * * 5 /home/ubuntu/tutela-app/live/cronjobs/cron_sat.sh > /home/ubuntu/tutela-app/logs/cron.sat.log 2>&1
