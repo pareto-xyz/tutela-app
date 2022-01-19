@@ -249,13 +249,34 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 
         # `old_clusters` stores all clusters. Find the most common one!
         mode_cluster: int = Counter(old_clusters).most_common()[0][0]
-        unique_old_clusters: Set[int] = set(old_clusters)
+        unique_old_clusters: List[int] = list(set(old_clusters))
 
         if len(unique_old_clusters) > 1:
-            pass
+            # if our cluster joins multiple old clusters, we need to make this consistent
+            # by merging old clusters. Need to do this in batches too.
+            num_batches: int = len(unique_old_clusters) // batch_size
+            count: int = 0
+            for b in range(num_batches):
+                batch: List[str] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                batch: str = '(' + ','.join(batch) + ')'
+                command: str = f"update address set user_cluster = {mode_cluster} where user_cluster in {batch}"
+                cursor.execute(command)
+                conn.commit()
+                count += batch_size
+
+            if len(unique_old_clusters) % batch_size != 0:
+                batch: List[str] = unique_old_clusters[count:]
+                batch: str = '(' + ','.join(batch) + ')'
+                command: str = f"update address set user_cluster = {mode_cluster} where user_cluster in {batch}"
+                cursor.execute(command)
+                conn.commit()
+                count += batch_size
 
         # replace new cluster w/ matched old cluster!
         metadata.loc[metadata.user_cluster == cluster_, 'user_cluster'] = mode_cluster
+
+    cursor.close()
+    conn.close()
 
 # ---
 # begin main function
