@@ -212,18 +212,23 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
         metadata: pd.DataFrame, 
         field_name: str = 'user_cluster') -> pd.DataFrame:
 
+        # don't update all the time!
+        metadata: pd.DataFrame = metadata[metadata.conf >= 0.5]
         unique_clusters: List[int] = range(
             metadata[field_name][~pd.isna(metadata[field_name])].min(),
             metadata[field_name][~pd.isna(metadata[field_name])].max()+1)
-
+        
+        print(f'merging clusters: {field_name}')
+        pbar = tqdm(total=len(metadata[field_name]))
         for cluster_ in unique_clusters:
             # for each new cluster found, check if its already in the db and if so
             # grab the already assigned clusters.
             cluster: pd.DataFrame = metadata[metadata[field_name] == cluster_]
+            cluster_size: int = len(cluster)
             addresses: List[str] = list(cluster.address.unique())
 
             # compute this in batches of 100
-            batch_size: int = 100
+            batch_size: int = 1000
             num_batches: int = len(addresses) // batch_size
             old_clusters: List[int] = []
             count: int = 0
@@ -235,7 +240,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
                 command: str = f"select {field_name} from address where address in {batch}"
                 cursor.execute(command)
                 out: List[Tuple[Any]] = cursor.fetchall()
-                out: List[int] = [x[0] for x in out]
+                out: List[int] = [x[0] for x in out if x[0] is not None]
                 old_clusters.extend(out)
                 count += batch_size
 
@@ -246,20 +251,24 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
                 command: str = f"select {field_name} from address where address in {batch}"
                 cursor.execute(command)
                 out: List[Tuple[Any]] = cursor.fetchall()
-                out: List[int] = [x[0] for x in out]
+                out: List[int] = [x[0] for x in out if x[0] is not None]
                 old_clusters.extend(out)
 
             # `old_clusters` stores all clusters. Find the most common one!
-            mode_cluster: int = Counter(old_clusters).most_common()[0][0]
-            unique_old_clusters: List[int] = list(set(old_clusters))
+            if len(old_clusters) > 0:
+                mode_cluster: int = Counter(old_clusters).most_common()[0][0]
+                unique_old_clusters: List[int] = list(set(old_clusters) - set([mode_cluster]))
+            else:
+                unique_old_clusters: List[int] = []
 
-            if len(unique_old_clusters) > 1:
+            if len(unique_old_clusters) > 0:
                 # if our cluster joins multiple old clusters, we need to make this consistent
                 # by merging old clusters. Need to do this in batches too.
                 num_batches: int = len(unique_old_clusters) // batch_size
                 count: int = 0
                 for b in range(num_batches):
-                    batch: List[str] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                    batch: List[int] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                    batch: List[str] = [str(x) for x in batch]
                     batch: str = '(' + ','.join(batch) + ')'
                     command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
                     cursor.execute(command)
@@ -268,6 +277,7 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 
                 if len(unique_old_clusters) % batch_size != 0:
                     batch: List[str] = unique_old_clusters[count:]
+                    batch: List[str] = [str(x) for x in batch]
                     batch: str = '(' + ','.join(batch) + ')'
                     command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
                     cursor.execute(command)
@@ -276,6 +286,8 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
 
             # replace new cluster w/ matched old cluster!
             metadata.loc[metadata[field_name] == cluster_, 'field_name'] = mode_cluster
+            pbar.update(cluster_size)
+        pbar.close()
 
         cursor.close()
         conn.close()
@@ -465,6 +477,7 @@ def main(args: Any):
                 logger.error('failed in merge_clusters_with_db()')
                 sys.exit(0)
 
+        breakpoint()
         merged_file: str = join(proc_path, 'metadata-merged.csv')
         metadata.to_csv(merged_file, index=False)
 
