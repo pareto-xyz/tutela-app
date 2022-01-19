@@ -208,75 +208,84 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
         user = utils.CONSTANTS['postgres_user'])
     cursor: Any = conn.cursor()
 
-    # -- handle user clusters
-    user_cluster: pd.Series = metadata.user_cluster
-    unique_user_clusters: List[int] = range(
-        user_cluster[~pd.isna(user_cluster)].min(),
-        user_cluster[~pd.isna(user_cluster)].max()+1)
+    def __merge_clusters(
+        metadata: pd.DataFrame, 
+        field_name: str = 'user_cluster') -> pd.DataFrame:
 
-    for cluster_ in unique_user_clusters:
-        # for each new cluster found, check if its already in the db and if so
-        # grab the already assigned clusters.
-        cluster: pd.DataFrame = metadata[user_cluster == cluster_]
-        addresses: List[str] = list(cluster.address.unique())
+        unique_clusters: List[int] = range(
+            metadata[field_name][~pd.isna(metadata[field_name])].min(),
+            metadata[field_name][~pd.isna(metadata[field_name])].max()+1)
 
-        # compute this in batches of 100
-        batch_size: int = 100
-        num_batches: int = len(addresses) // batch_size
-        old_clusters: List[int] = []
-        count: int = 0
+        for cluster_ in unique_clusters:
+            # for each new cluster found, check if its already in the db and if so
+            # grab the already assigned clusters.
+            cluster: pd.DataFrame = metadata[metadata[field_name] == cluster_]
+            addresses: List[str] = list(cluster.address.unique())
 
-        for b in range(num_batches):
-            batch: List[str] = addresses[b*batch_size:(b+1)*batch_size]
-            batch: List[str] = ["'" + address + "'" for address in batch]
-            batch: str = '(' + ','.join(batch) + ')'
-            command: str = f"select user_cluster from address where address in {batch}"
-            cursor.execute(command)
-            out: List[Tuple[Any]] = cursor.fetchall()
-            out: List[int] = [x[0] for x in out]
-            old_clusters.extend(out)
-            count += batch_size
-
-        if len(addresses) % batch_size != 0:
-            batch: List[str] = addresses[count:]
-            batch: List[str] = ["'" + address + "'" for address in batch]
-            batch: str = '(' + ','.join(batch) + ')'
-            command: str = f"select user_cluster from address where address in {batch}"
-            cursor.execute(command)
-            out: List[Tuple[Any]] = cursor.fetchall()
-            out: List[int] = [x[0] for x in out]
-            old_clusters.extend(out)
-
-        # `old_clusters` stores all clusters. Find the most common one!
-        mode_cluster: int = Counter(old_clusters).most_common()[0][0]
-        unique_old_clusters: List[int] = list(set(old_clusters))
-
-        if len(unique_old_clusters) > 1:
-            # if our cluster joins multiple old clusters, we need to make this consistent
-            # by merging old clusters. Need to do this in batches too.
-            num_batches: int = len(unique_old_clusters) // batch_size
+            # compute this in batches of 100
+            batch_size: int = 100
+            num_batches: int = len(addresses) // batch_size
+            old_clusters: List[int] = []
             count: int = 0
+
             for b in range(num_batches):
-                batch: List[str] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                batch: List[str] = addresses[b*batch_size:(b+1)*batch_size]
+                batch: List[str] = ["'" + address + "'" for address in batch]
                 batch: str = '(' + ','.join(batch) + ')'
-                command: str = f"update address set user_cluster = {mode_cluster} where user_cluster in {batch}"
+                command: str = f"select {field_name} from address where address in {batch}"
                 cursor.execute(command)
-                conn.commit()
+                out: List[Tuple[Any]] = cursor.fetchall()
+                out: List[int] = [x[0] for x in out]
+                old_clusters.extend(out)
                 count += batch_size
 
-            if len(unique_old_clusters) % batch_size != 0:
-                batch: List[str] = unique_old_clusters[count:]
+            if len(addresses) % batch_size != 0:
+                batch: List[str] = addresses[count:]
+                batch: List[str] = ["'" + address + "'" for address in batch]
                 batch: str = '(' + ','.join(batch) + ')'
-                command: str = f"update address set user_cluster = {mode_cluster} where user_cluster in {batch}"
+                command: str = f"select {field_name} from address where address in {batch}"
                 cursor.execute(command)
-                conn.commit()
-                count += batch_size
+                out: List[Tuple[Any]] = cursor.fetchall()
+                out: List[int] = [x[0] for x in out]
+                old_clusters.extend(out)
 
-        # replace new cluster w/ matched old cluster!
-        metadata.loc[metadata.user_cluster == cluster_, 'user_cluster'] = mode_cluster
+            # `old_clusters` stores all clusters. Find the most common one!
+            mode_cluster: int = Counter(old_clusters).most_common()[0][0]
+            unique_old_clusters: List[int] = list(set(old_clusters))
 
-    cursor.close()
-    conn.close()
+            if len(unique_old_clusters) > 1:
+                # if our cluster joins multiple old clusters, we need to make this consistent
+                # by merging old clusters. Need to do this in batches too.
+                num_batches: int = len(unique_old_clusters) // batch_size
+                count: int = 0
+                for b in range(num_batches):
+                    batch: List[str] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                    batch: str = '(' + ','.join(batch) + ')'
+                    command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
+                    cursor.execute(command)
+                    conn.commit()
+                    count += batch_size
+
+                if len(unique_old_clusters) % batch_size != 0:
+                    batch: List[str] = unique_old_clusters[count:]
+                    batch: str = '(' + ','.join(batch) + ')'
+                    command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
+                    cursor.execute(command)
+                    conn.commit()
+                    count += batch_size
+
+            # replace new cluster w/ matched old cluster!
+            metadata.loc[metadata[field_name] == cluster_, 'field_name'] = mode_cluster
+
+        cursor.close()
+        conn.close()
+
+        return metadata
+
+    metadata: pd.DataFrame = __merge_clusters(metadata, 'user_cluster')
+    metadata: pd.DataFrame = __merge_clusters(metadata, 'exchange_cluster')
+
+    return metadata
 
 # ---
 # begin main function
