@@ -195,7 +195,12 @@ function ClusterPage(props) {
                             {searchType === 'other' && <>
                                 {showResultsSection && <div className="row results-section">
 
-                                    <QueryInfo data={queryInfo} loading={loadingQuery} aliases={aliases} />
+                                    <QueryInfo
+                                        data={queryInfo}
+                                        loading={loadingQuery}
+                                        aliases={aliases}
+                                        link={<a href={`/transactions?address=${inputAddress}`}>see revealing transactions</a>}
+                                    />
                                     <TornadoInfo data={tornado} aliases={aliases} />
 
                                 </div>}

@@ -20,6 +20,7 @@ import pandas as pd
 import networkx as nx
 from tqdm import tqdm
 from os.path import join
+from collections import Counter
 from typing import List, Any, Tuple, Set, Dict
 
 from live import utils
@@ -200,23 +201,119 @@ def merge_clusters_with_db(metadata: pd.DataFrame) -> pd.DataFrame:
     Create a new cluster 101, that contains all members in cluster 0, 
     cluster 1, and also `c`.
     """
-    pass
+    import psycopg2
+
+    conn: Any = psycopg2.connect(
+        database = utils.CONSTANTS['postgres_db'], 
+        user = utils.CONSTANTS['postgres_user'])
+    cursor: Any = conn.cursor()
+
+    def __merge_clusters(
+        metadata: pd.DataFrame, 
+        field_name: str = 'user_cluster') -> pd.DataFrame:
+
+        # don't update all the time!
+        metadata: pd.DataFrame = metadata[metadata.conf >= 0.5]
+        unique_clusters: List[int] = range(
+            metadata[field_name][~pd.isna(metadata[field_name])].min(),
+            metadata[field_name][~pd.isna(metadata[field_name])].max()+1)
+        
+        print(f'merging clusters: {field_name}')
+        pbar = tqdm(total=len(metadata[field_name]))
+        for cluster_ in unique_clusters:
+            # for each new cluster found, check if its already in the db and if so
+            # grab the already assigned clusters.
+            cluster: pd.DataFrame = metadata[metadata[field_name] == cluster_]
+            cluster_size: int = len(cluster)
+            addresses: List[str] = list(cluster.address.unique())
+
+            # compute this in batches of 100
+            batch_size: int = 1000
+            num_batches: int = len(addresses) // batch_size
+            old_clusters: List[int] = []
+            count: int = 0
+
+            for b in range(num_batches):
+                batch: List[str] = addresses[b*batch_size:(b+1)*batch_size]
+                batch: List[str] = ["'" + address + "'" for address in batch]
+                batch: str = '(' + ','.join(batch) + ')'
+                command: str = f"select {field_name} from address where address in {batch}"
+                cursor.execute(command)
+                out: List[Tuple[Any]] = cursor.fetchall()
+                out: List[int] = [x[0] for x in out if x[0] is not None]
+                old_clusters.extend(out)
+                count += batch_size
+
+            if len(addresses) % batch_size != 0:
+                batch: List[str] = addresses[count:]
+                batch: List[str] = ["'" + address + "'" for address in batch]
+                batch: str = '(' + ','.join(batch) + ')'
+                command: str = f"select {field_name} from address where address in {batch}"
+                cursor.execute(command)
+                out: List[Tuple[Any]] = cursor.fetchall()
+                out: List[int] = [x[0] for x in out if x[0] is not None]
+                old_clusters.extend(out)
+
+            # `old_clusters` stores all clusters. Find the most common one!
+            if len(old_clusters) > 0:
+                mode_cluster: int = Counter(old_clusters).most_common()[0][0]
+                unique_old_clusters: List[int] = list(set(old_clusters) - set([mode_cluster]))
+            else:
+                unique_old_clusters: List[int] = []
+
+            if len(unique_old_clusters) > 0:
+                # if our cluster joins multiple old clusters, we need to make this consistent
+                # by merging old clusters. Need to do this in batches too.
+                num_batches: int = len(unique_old_clusters) // batch_size
+                count: int = 0
+                for b in range(num_batches):
+                    batch: List[int] = unique_old_clusters[b*batch_size:(b+1)*batch_size]
+                    batch: List[str] = [str(x) for x in batch]
+                    batch: str = '(' + ','.join(batch) + ')'
+                    command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
+                    cursor.execute(command)
+                    conn.commit()
+                    count += batch_size
+
+                if len(unique_old_clusters) % batch_size != 0:
+                    batch: List[str] = unique_old_clusters[count:]
+                    batch: List[str] = [str(x) for x in batch]
+                    batch: str = '(' + ','.join(batch) + ')'
+                    command: str = f"update address set {field_name} = {mode_cluster} where {field_name} in {batch}"
+                    cursor.execute(command)
+                    conn.commit()
+                    count += batch_size
+
+            # replace new cluster w/ matched old cluster!
+            metadata.loc[metadata[field_name] == cluster_, 'field_name'] = mode_cluster
+            pbar.update(cluster_size)
+        pbar.close()
+
+        cursor.close()
+        conn.close()
+
+        return metadata
+
+    metadata: pd.DataFrame = __merge_clusters(metadata, 'user_cluster')
+    metadata: pd.DataFrame = __merge_clusters(metadata, 'exchange_cluster')
+
+    return metadata
 
 # ---
 # begin main function
 # --
 
 def main(args: Any):
+    log_path: str = utils.CONSTANTS['log_path']
+    os.makedirs(log_path, exist_ok=True)
+
+    log_file: str = join(log_path, 'depositreuse-heuristic.log')
+    if os.path.isfile(log_file):
+        os.remove(log_file)  # remove old file (yesterday's)
+
+    logger = utils.get_logger(log_file)
+
     if not args.db_only:
-        log_path: str = utils.CONSTANTS['log_path']
-        os.makedirs(log_path, exist_ok=True)
-
-        log_file: str = join(log_path, 'depositreuse-heuristic.log')
-        if os.path.isfile(log_file):
-            os.remove(log_file)  # remove old file (yesterday's)
-
-        logger = utils.get_logger(log_file)
-
         data_path: str = utils.CONSTANTS['data_path']
         static_path: str = utils.CONSTANTS['static_path']
         depo_path: str = join(data_path, 'live/depositreuse')
@@ -354,7 +451,7 @@ def main(args: Any):
         metadata.to_csv(metadata_file, index=False)
     else:
         data_path: str = utils.CONSTANTS['data_path']
-        depo_path: str = join(data_path, '/live/depositreuse')
+        depo_path: str = join(data_path, 'live/depositreuse')
         proc_path: str = join(depo_path, 'processed')
         metadata_file: str = join(proc_path, 'metadata.csv')
         tx_file: str = join(proc_path, 'transactions.csv')
@@ -363,6 +460,10 @@ def main(args: Any):
     # algorithm completed at this point: we need to now populate db
     if not args.no_db:
         metadata: pd.DataFrame = pd.read_csv(metadata_file)
+
+        # need to recast upon loading csv
+        metadata.user_cluster = metadata.user_cluster.astype(pd.Int64Dtype())
+        metadata.exchange_cluster = metadata.exchange_cluster.astype(pd.Int64Dtype())
 
         # merge these user_clusters consistently with the existing
         # clusters such that any address is in only one address
@@ -376,6 +477,7 @@ def main(args: Any):
                 logger.error('failed in merge_clusters_with_db()')
                 sys.exit(0)
 
+        breakpoint()
         merged_file: str = join(proc_path, 'metadata-merged.csv')
         metadata.to_csv(merged_file, index=False)
 

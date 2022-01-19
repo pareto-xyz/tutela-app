@@ -17,8 +17,8 @@ def get_last_block():
     data_path:  str = utils.CONSTANTS['data_path']
     depo_path: str = join(data_path, 'live/depositreuse')
     transactions: pd.DataFrame = pd.read_csv(
-        join(depo_path, 'ethereum_transactions_live.csv'))
-    last_block: int = int(transactions.block_number.max())
+        join(depo_path, 'ethereum_blocks_live.csv'))
+    last_block: int = int(transactions.number.max())
 
     return last_block
 

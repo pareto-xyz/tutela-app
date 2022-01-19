@@ -1,1 +1,1 @@
-*/5 * * * * /home/ubuntu/tutela-app/live/cronjobs/cron_test.sh
+*/5 * * * * /home/ubuntu/tutela-app/live/cronjobs/cron_test.sh > /home/ubuntu/tutela-app/logs/cron.test.log 2>&1
