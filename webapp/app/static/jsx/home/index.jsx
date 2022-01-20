@@ -65,6 +65,10 @@ export default function IndexPage() {
                             href="https://torn.community/t/funded-bounty-anonymity-research-tools/1437">Tornado Cash Grant</a>.
                         We respect your privacy and so do not save search results.
                     </div>
+                    <div className="section-desc">
+                        Read our <a
+                            href="https://arxiv.org/abs/2201.06811">whitepaper</a> to learn more.
+                    </div>
                 </div>
                 <div className="full-page col-12" id="reveals">
                     <h3 className="right-section-header">
