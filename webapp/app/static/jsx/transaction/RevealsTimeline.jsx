@@ -72,7 +72,7 @@ export default function RevealTimeline({ addr, loadNewData, aliases }) {
                     <ResponsiveContainer aspect={0.5} maxHeight={500}>
                         <BarChart onClick={onClickWeek}
                             data={plotData}
-                            margin={{ top: 5, right: 0, left: -45, bottom: 125 }}>
+                            margin={{ top: 5, right: 0, left: -35, bottom: 125 }}>
                             <CartesianGrid />
                             <XAxis dataKey="name" interval='preserveStartEnd' />
                             <YAxis label={{ value: '# of reveals', fill: 'white', angle: -90, offset: 30, position: 'insideLeft' }} className="yaxis" />
