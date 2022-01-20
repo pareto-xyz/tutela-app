@@ -1,6 +1,6 @@
 # Tutela: an Ethereum and Tornado Cash Anonymity Tool
 
-The repo contains open-source code for [Tutela](http://tutela.xyz), an anonymity tool for Ethereum and Tornado Cash users. 
+The repo contains open-source code for [Tutela](http://tutela.xyz), an anonymity tool for Ethereum and Tornado Cash users. For a more technical description, please refer to the public [whitepaper](https://arxiv.org/abs/2201.06811). 
 
 ## About Tutela
 
@@ -69,6 +69,7 @@ We aim to provide consistent updates over time as we improve Tutela.
 - **(12/22)** We added five Tornado Cash heuristics. If you search an address who has used Tornado Cash, Tutela will now show compromised transactions. If you search an address corresponding to a Tornado Cash pool, you will get statistics on the pool's true anonymity size. We are currently in progress on deploying Diff2Vec at scale. 
 - **(12/28)** Deployed first instance if Diff2Vec. Some improvements to be made.
 - **(1/10)** Working on a live updating pipeline.
+- **(1/19)** Completed live updating pipeline and another round of changes from user-feedback.
 
 ## Contributors
 
