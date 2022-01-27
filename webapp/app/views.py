@@ -632,7 +632,8 @@ def search_address(request: Request) -> Response:
         elif node is not None:
             # find Diff2Vec embeddings and add to front of cluster
             cluster, cluster_size, conf = query_diff2vec(node, address)
-            print(conf, type(conf))
+            if type(conf) == list and len(conf) == 1:
+                conf = conf[0]
 
             anon_score = compute_anonymity_score(
                 None,
