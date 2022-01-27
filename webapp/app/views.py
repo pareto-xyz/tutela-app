@@ -632,8 +632,6 @@ def search_address(request: Request) -> Response:
         elif node is not None:
             # find Diff2Vec embeddings and add to front of cluster
             cluster, cluster_size, conf = query_diff2vec(node, address)
-            if type(conf) == list and len(conf) == 1:
-                conf = conf[0]
 
             anon_score = compute_anonymity_score(
                 None,
@@ -661,7 +659,7 @@ def search_address(request: Request) -> Response:
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
-            output['data']['query']['conf_label'] = conf_to_label(conf),
+            output['data']['query']['conf_label'] = conf_to_label(conf)
             output['data']['query']['hovers'] = {
                 'heuristic': 'this is the primary reveal linking the input address to addresses shown below. It will default to diff2vec, the ML algorithm.',
                 'conf': 'indicates confidence (between 0 and 1) that the below addresses are linked to the input address. This is based on how many reveals and the types of reveals that the input address has committed.'
