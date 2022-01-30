@@ -61,7 +61,7 @@ export default function AccordionOfResults(props) {
                                             <div className="row">
                                                 <div className="col-12 panel-sub">result #{startIndex + idx + 1}</div>
                                                 <div className="col-12 table-responsive">
-                                                    <AgnosticTable keyValues={result} toIgnore={new Set(['address', 'id', 'metadata'])} aliases={aliases} />
+                                                    <AgnosticTable keyValues={result} toIgnore={new Set(['conf', 'address', 'id', 'metadata'])} aliases={aliases} />
                                                 </div>
                                                 <div className="col-12 etherscan-link">
                                                     {rowTitle === 'address' && <a href={`https://etherscan.io/address/${title}`}>view on etherscan</a>}

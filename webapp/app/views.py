@@ -14,7 +14,7 @@ from app.models import \
     TornadoDeposit, TornadoWithdraw, Embedding, DepositTransaction
 from app.utils import \
     get_anonymity_score, get_order_command, \
-    entity_to_int, entity_to_str, to_dict, \
+    entity_to_int, entity_to_str, to_dict, conf_to_label, \
     heuristic_to_str, is_valid_address, get_today_date_str, \
     is_tornado_address, get_equal_user_deposit_txs, find_reveals, \
     AddressRequestChecker, TornadoPoolRequestChecker, \
@@ -222,11 +222,13 @@ def query_diff2vec(node: Embedding, address) -> List[Dict[str, Any]]:
             # swap terms b/c of upload accident
             neighbor, distance = distance, neighbor
             if neighbor == address: continue  # skip
+            cur_conf: float = float(1./abs(10.*distance+1.))
             member: Dict[str, Any] = {
                 'address': neighbor,
                 # '_distance': distance,
                     # add one to make max 1
-                'conf': round(float(1./abs(10.*distance+1.)), 3),
+                'conf': round(cur_conf, 3),
+                'conf_label': conf_to_label(cur_conf),
                 'heuristic': DIFF2VEC_HEUR, 
                 'entity': NODE,
                 'ens_name': get_ens_name(neighbor, ns),
@@ -657,6 +659,7 @@ def search_address(request: Request) -> Response:
             output['data']['query']['heuristic'] = DIFF2VEC_HEUR
             output['data']['query']['entity'] = NODE
             output['data']['query']['conf'] = round(conf, 3)
+            output['data']['query']['conf_label'] = conf_to_label(conf)
             output['data']['query']['hovers'] = {
                 'heuristic': 'this is the primary reveal linking the input address to addresses shown below. It will default to diff2vec, the ML algorithm.',
                 'conf': 'indicates confidence (between 0 and 1) that the below addresses are linked to the input address. This is based on how many reveals and the types of reveals that the input address has committed.'
