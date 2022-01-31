@@ -495,7 +495,7 @@ def main(args: Any):
         # step 2: insert metadata rows into address table: this includes 
         # all TCash and includes most recent DAR
         columns: List[str] = [
-            'address'
+            'address',
             'entity',
             'conf',
             'meta_data',
