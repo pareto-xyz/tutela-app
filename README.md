@@ -20,7 +20,7 @@ In response, Tutela has focused on informing users which of their Ethereum addre
 
 Across all of Ethereum, we would like to cluster together addresses that likely belong to the same entity. 
 
-#### [Deposit Address Reuse](https://arxiv.org/pdf/2005.14051.pdf)
+#### [Deposit Address Reuse](https://fc20.ifca.ai/preproceedings/31.pdf)
 
 When you send tokens from an Ethereum wallet to your account at a centralized exchange, the exchange creates a unique deposit address for each customer. If you reuse the same deposit address by sending tokens from multiple Ethereum wallets to it, your two wallets can be linked. Even if you send tokens from multiple wallets to multiple deposits, all of these addresses can be linked. In this way, it is possible to build a complex graph of address relationships.
 
