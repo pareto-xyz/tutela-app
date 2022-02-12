@@ -937,8 +937,9 @@ def search_transaction():
 
     web3_resp: Dict[str, Any] = query_web3(address, w3, ns)
     addr: Optional[Address] = Address.query.filter_by(address = address).first()
-    if addr is not None: 
-        node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+    node: Optional[Embedding] = Embedding.query.filter_by(address = address).first()
+
+    if addr is not None or node is not None: 
         _, diff2vec_size, diff2vec_conf = query_diff2vec(node, address)
         tornado_dict: Dict[str, Any] = query_tornado_stats(address)
         anon_score = compute_anonymity_score(
@@ -965,6 +966,7 @@ def search_transaction():
         anon_score: float = round(anon_score, 3)  # brevity is a virtue
         output['data']['query']['anonymity_score'] = anon_score
 
+        
     # --
     output['data']['query']['address'] = address
     output['data']['query']['start_date'] = start_date
