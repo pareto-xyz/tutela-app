@@ -10,8 +10,8 @@ itsdangerous==2.0.1
 Jinja2==3.0.2
 Mako==1.1.5
 MarkupSafe==2.0.1
-psycopg2-binary
-SQLAlchemy==1.4.26
+# psycopg2-binary
+# SQLAlchemy==1.4.26
 Werkzeug==2.0.2
-web3
+# web3
 zipp==3.6.0
