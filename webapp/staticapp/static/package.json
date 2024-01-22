@@ -44,5 +44,8 @@
     "react-router-dom": "^6.0.2",
     "recharts": "^2.1.8",
     "watch": "^1.0.2"
+  },
+  "engines": {
+    "node": "16.14.0"
   }
 }
