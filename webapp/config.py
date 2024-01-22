@@ -19,5 +19,6 @@ class Config(object):
     DEBUG: bool = True
     TESTING: bool = False
     MAX_SHOW: int = 25
-    SQLALCHEMY_DATABASE_URI: str = get_database_uri(env = 'development')
+    # Uncomment me for actual version...
+    # SQLALCHEMY_DATABASE_URI: str = get_database_uri(env = 'development')
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
