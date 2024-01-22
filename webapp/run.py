@@ -1,5 +1,6 @@
 import os
-from app import app
+# from app import app      # full functioning app
+from staticapp import app  # skeleton static app
 from typing import Any
 
 

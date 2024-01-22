@@ -1,0 +1,25 @@
+.instructions-transactions{
+    text-align: center;
+}
+
+/** CHART **/
+
+.recharts-rectangle.recharts-tooltip-cursor {
+    fill: var(--fadedgrey);
+}
+
+.select-window-button {
+    padding: 3px 5px;
+    background-color: var(--fadedgrey);
+    color: white;
+    font-family: "PT Sans", sans-serif;
+    border-radius:5px;
+    -webkit-border-radius:5px;
+    -moz-border-radius:5px;
+    -ms-border-radius:5px;
+    -o-border-radius:5px;
+}
+.select-window {
+    margin: auto;
+    text-align: center;
+}
