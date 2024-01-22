@@ -15,6 +15,11 @@ export default function IndexPage() {
                 <Header />
                 <div className="full-page main col-12">
                     <div className="row">
+                        <div class="alert alert-warning" role="alert">
+                            This project is no longer being supported live. This website is now a static page intended as a demo and cannot resolve queries. If you wish to host Tutela or customize it for your personal use cases, please see the <a href="https://github.com/pareto-xyz/tutela-app">public code</a>.
+                        </div>
+                    </div>
+                    <div className="row">
                         <h1 className="col-12">assess your anonymity.</h1>
                     </div>
                     <div className="justify-center row">
